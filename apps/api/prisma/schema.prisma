@@ -1,0 +1,290 @@
+// Prisma 7 schema. URL is supplied via prisma.config.ts (datasource.url = env DATABASE_URL).
+// learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider           = "prisma-client"
+  output             = "../generated/prisma"
+  runtime            = "nodejs"
+  moduleFormat       = "cjs"
+  importFileExtension = ""
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Enums ----------
+enum Role {
+  USER
+  ORGANIZER
+  ADMIN
+}
+
+enum Gender {
+  WOMAN
+  MAN
+  UNDISCLOSED
+}
+
+enum GenderTrack {
+  WOMEN_ONLY
+  MEN_ONLY
+  MIXED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum Language {
+  URDU
+  ENGLISH
+  BOTH
+}
+
+enum LifeStage {
+  STUDENT
+  EARLY_CAREER
+  PROFESSIONAL
+  BUSINESS_OWNER
+  PARENT
+  OTHER
+}
+
+enum SocialEnergy {
+  LISTENER
+  MIX
+  INITIATOR
+}
+
+enum Intent {
+  MAKE_FRIENDS
+  MEET_OUTSIDE_BUBBLE
+  NETWORKING
+  NEW_TO_CITY
+  PRACTICE_ENGLISH
+}
+
+enum BeveragePref {
+  COFFEE
+  CHAI
+  EITHER
+}
+
+enum EventStatus {
+  DRAFT
+  OPEN
+  FULL
+  CLOSED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum AttendanceStatus {
+  BOOKED
+  ATTENDED
+  NO_SHOW
+}
+
+enum MeetAgain {
+  ALL
+  SOME
+  NO
+}
+
+enum GroupFeel {
+  TOO_SIMILAR
+  JUST_RIGHT
+  TOO_DIFFERENT
+}
+
+enum SizeFeel {
+  TOO_SMALL
+  JUST_RIGHT
+  TOO_BIG
+}
+
+enum ComeAgain {
+  YES
+  MAYBE
+  NO
+}
+
+// ---------- Models ----------
+model User {
+  id                 String             @id @default(cuid())
+  phone              String             @unique
+  role               Role               @default(USER)
+  verificationStatus VerificationStatus @default(PENDING)
+  cnicImagePath      String?
+  reliabilityScore   Int                @default(100)
+
+  // Profile (§12 intake)
+  firstName          String?
+  lastInitial        String?
+  ageBand            String?
+  gender             Gender?
+  city               String?
+  areas              String[]
+  language           Language?
+  availability       String[]
+  interests          String[]
+  lifeStage          LifeStage?
+  socialEnergy       SocialEnergy?
+  intents            Intent[]
+  newcomerStatus     String?
+  beveragePref       BeveragePref?
+  accessibilityNeeds String?
+  photoConsent       Boolean            @default(false)
+  codeOfConductAt    DateTime?
+
+  blockedUserIds     String[]
+
+  bookings           Booking[]
+  feedback           Feedback[]
+  reportsMade        Report[]           @relation("ReportsMade")
+  reportsAgainst     Report[]           @relation("ReportsAgainst")
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model Cafe {
+  id            String   @id @default(cuid())
+  name          String
+  area          String
+  address       String?
+  lat           Float?
+  lng           Float?
+  deadHourSlots String[]
+  compTerms     String?
+  events        Event[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Event {
+  id          String            @id @default(cuid())
+  cafe        Cafe              @relation(fields: [cafeId], references: [id])
+  cafeId      String
+  title       String?
+  startAt     DateTime
+  genderTrack GenderTrack
+  area        String
+  capacity    Int
+  pricePKR    Int
+  seatsLeft   Int
+  status      EventStatus       @default(OPEN)
+
+  bookings    Booking[]
+  groups      GroupAssignment[]
+  feedback    Feedback[]
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([status, startAt])
+  @@index([area, genderTrack])
+}
+
+model Booking {
+  id               String           @id @default(cuid())
+  user             User             @relation(fields: [userId], references: [id])
+  userId           String
+  event            Event            @relation(fields: [eventId], references: [id])
+  eventId          String
+  paymentStatus    PaymentStatus    @default(PENDING)
+  attendanceStatus AttendanceStatus @default(BOOKED)
+  amountPKR        Int
+  paymentRef       String?          @unique
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([userId, eventId])
+  @@index([eventId, paymentStatus])
+}
+
+model GroupAssignment {
+  id         String   @id @default(cuid())
+  event      Event    @relation(fields: [eventId], references: [id])
+  eventId    String
+  userIds    String[]
+  matchScore Float?
+  algoVersion String  @default("manual")
+  createdAt  DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model Feedback {
+  id             String     @id @default(cuid())
+  user           User       @relation(fields: [userId], references: [id])
+  userId         String
+  event          Event      @relation(fields: [eventId], references: [id])
+  eventId        String
+  enjoyment      Int // 1-5
+  meetAgain      MeetAgain
+  seeAgainNames  String?
+  mixFelt        GroupFeel
+  sizeFelt       SizeFeel
+  cafeRating     Int // 1-5
+  comeAgain      ComeAgain
+  inviteFriend   Boolean
+  nps            Int // 0-10
+  feltUnsafe     Boolean    @default(false)
+  unsafeDetails  String?
+  improve        String?
+  createdAt      DateTime   @default(now())
+
+  @@unique([userId, eventId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  meta      Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([action])
+}
+
+model Report {
+  id           String   @id @default(cuid())
+  reporter     User     @relation("ReportsMade", fields: [reporterId], references: [id])
+  reporterId   String
+  subject      User     @relation("ReportsAgainst", fields: [subjectId], references: [id])
+  subjectId    String
+  eventId      String?
+  reason       String
+  createdAt    DateTime @default(now())
+
+  @@index([subjectId])
+}

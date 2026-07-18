@@ -1,0 +1,17 @@
+node_modules/
+generated/
+dist/
+.next/
+out/
+.turbo/
+coverage/
+*.log
+.env
+.env.local
+.env.*.local
+.DS_Store
+e2e/shots/
+uploads/
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/.expo/
