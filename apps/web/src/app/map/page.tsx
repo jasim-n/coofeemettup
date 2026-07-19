@@ -8,12 +8,20 @@ const EventsMap = dynamic(() => import('@/components/events-map'), { ssr: false 
 
 export default function MapPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Meetups near you</h1>
-        <Link href="/events" className="text-muted-foreground text-sm hover:underline">
-          List view
-        </Link>
+    <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <p className="eyebrow text-primary">Near you</p>
+          <h1 className="display mt-1 text-3xl">Meetup map</h1>
+        </div>
+        <div className="flex gap-3 text-sm font-semibold">
+          <Link href="/events" className="text-primary hover:underline">
+            List view
+          </Link>
+          <Link href="/" className="text-muted-foreground hover:underline">
+            Home
+          </Link>
+        </div>
       </div>
       <EventsMap />
     </main>

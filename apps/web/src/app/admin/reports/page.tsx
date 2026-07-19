@@ -42,24 +42,35 @@ export default function AdminReportsPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-      <Link href="/admin" className="text-muted-foreground text-sm hover:underline">
+      <Link
+        href="/admin"
+        className="text-muted-foreground text-sm font-semibold hover:underline"
+      >
         ← Admin
       </Link>
-      <h1 className="mt-2 text-xl font-semibold tracking-tight">Reports</h1>
-      {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
+      <div className="mt-3 mb-8">
+        <p className="eyebrow text-primary">Safety &amp; trust</p>
+        <h1 className="display mt-1 text-4xl uppercase">Reports</h1>
+      </div>
 
-      <div className="mt-4 space-y-2">
+      {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
+
+      <div className="space-y-2">
         {reports.length === 0 && (
-          <p className="text-muted-foreground text-sm">No reports — all clear.</p>
+          <div className="rounded-3xl border border-dashed py-10 text-center">
+            <p className="text-3xl">🛡️</p>
+            <p className="text-muted-foreground mt-2 text-sm">No reports — all clear.</p>
+          </div>
         )}
         {reports.map((r) => (
-          <Card key={r.id}>
-            <CardContent className="space-y-1 py-3 text-sm">
-              <p className="font-medium">
-                {label(r.reporter)} <span className="text-muted-foreground">reported</span>{' '}
+          <Card key={r.id} className="rounded-3xl shadow-soft">
+            <CardContent className="space-y-1.5 py-4 text-sm">
+              <p className="font-heading font-bold tracking-tight">
+                {label(r.reporter)}{' '}
+                <span className="text-muted-foreground font-normal">reported</span>{' '}
                 {label(r.subject)}
               </p>
-              <p>{r.reason}</p>
+              <p className="text-foreground">{r.reason}</p>
               <p className="text-muted-foreground text-xs">
                 {new Date(r.createdAt).toLocaleString('en-PK')}
                 {r.eventId ? ` · event ${r.eventId}` : ''}

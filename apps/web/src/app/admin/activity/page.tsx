@@ -41,22 +41,32 @@ export default function AdminActivityPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-      <Link href="/admin" className="text-muted-foreground text-sm hover:underline">
+      <Link
+        href="/admin"
+        className="text-muted-foreground text-sm font-semibold hover:underline"
+      >
         ← Admin
       </Link>
-      <h1 className="font-heading mt-2 text-xl font-bold tracking-tight">Activity log</h1>
-      {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
+      <div className="mt-3 mb-8">
+        <p className="eyebrow text-primary">Admin console</p>
+        <h1 className="display mt-1 text-4xl uppercase">Activity log</h1>
+      </div>
 
-      <div className="mt-4 space-y-2">
+      {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
+
+      <div className="space-y-2">
         {entries.length === 0 && (
-          <p className="text-muted-foreground text-sm">No activity yet.</p>
+          <div className="rounded-3xl border border-dashed py-10 text-center">
+            <p className="text-3xl">📋</p>
+            <p className="text-muted-foreground mt-2 text-sm">No activity yet.</p>
+          </div>
         )}
         {entries.map((e) => (
-          <Card key={e.id}>
+          <Card key={e.id} className="rounded-3xl shadow-soft">
             <CardContent className="flex items-start justify-between gap-3 py-2.5 text-sm">
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary">{e.action}</Badge>
+                  <Badge variant="brand">{e.action}</Badge>
                   {e.targetType && (
                     <span className="text-muted-foreground text-xs">
                       {e.targetType}:{e.targetId?.slice(0, 8)}

@@ -5,18 +5,17 @@ import Link from 'next/link';
 import { ApiError, type EventDto, type GenderTrack } from '@jrst/api-client';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants } from '@/components/ui/button';
 
 const AREAS = ['F-6', 'F-7', 'Blue Area', 'Gulberg'];
-const TRACK_BADGE: Record<string, string> = {
-  WOMEN_ONLY: 'bg-pink-100 text-pink-700 border-transparent',
-  MEN_ONLY: 'bg-sky-100 text-sky-700 border-transparent',
-  MIXED: 'bg-accent text-accent-foreground border-transparent',
+const TRACK: Record<string, { label: string; badge: 'brand' | 'secondary'; bar: string }> = {
+  WOMEN_ONLY: { label: 'women only', badge: 'brand', bar: 'bg-gradient-sky' },
+  MEN_ONLY: { label: 'men only', badge: 'secondary', bar: 'bg-gradient-sky' },
+  MIXED: { label: 'mixed', badge: 'secondary', bar: 'bg-gradient-ember' },
 };
 const selectClass =
-  'h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring';
+  'h-10 rounded-full border border-input bg-card/60 px-4 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<EventDto[] | null>(null);
@@ -46,10 +45,13 @@ export default function EventsPage() {
   }, [area, track]);
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight">Upcoming meetups</h1>
-        <div className="flex gap-3 text-sm">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-8">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <p className="eyebrow text-primary">Islamabad · Lahore</p>
+          <h1 className="display mt-1 text-3xl">Upcoming meetups</h1>
+        </div>
+        <div className="flex gap-3 text-sm font-semibold">
           <Link href="/map" className="text-primary hover:underline">
             Map
           </Link>
@@ -79,38 +81,44 @@ export default function EventsPage() {
       {error && <p className="text-destructive text-sm">{error}</p>}
       {!events && !error && <p className="text-muted-foreground text-sm">Loading…</p>}
       {events && events.length === 0 && (
-        <p className="text-muted-foreground text-sm">No meetups match your filters.</p>
+        <div className="rounded-3xl border border-dashed py-14 text-center">
+          <p className="text-3xl">🫖</p>
+          <p className="text-muted-foreground mt-2 text-sm">No meetups match your filters.</p>
+        </div>
       )}
 
-      <div className="space-y-3">
-        {events?.map((ev) => (
-          <Link key={ev.id} href={`/events/${ev.id}`} className="block">
-            <Card className="transition-all hover:-translate-y-0.5 hover:shadow-md">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="font-heading text-lg">
-                    {ev.title ?? 'Coffee meetup'}
-                  </CardTitle>
-                  <Badge className={TRACK_BADGE[ev.genderTrack]}>
-                    {ev.genderTrack.replace('_', ' ').toLowerCase()}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                <span>{formatDateTime(ev.startAt)}</span>
-                <span>{ev.cafe?.name ?? ev.area}</span>
-                <span>{formatPKR(ev.pricePKR)}</span>
-                <span>{ev.seatsLeft} seats left</span>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-6">
-        <Link href="/profile" className={buttonVariants({ variant: 'outline', className: 'w-full' })}>
-          Edit your profile
-        </Link>
+      <div className="space-y-4">
+        {events?.map((ev) => {
+          const t = TRACK[ev.genderTrack];
+          const low = ev.seatsLeft > 0 && ev.seatsLeft <= 2;
+          return (
+            <Link key={ev.id} href={`/events/${ev.id}`} className="block">
+              <Card className="flex-row gap-0 p-0 transition-all hover:-translate-y-0.5 hover:shadow-glow">
+                <div className={`w-2 shrink-0 ${t?.bar ?? 'bg-gradient-ember'}`} />
+                <CardContent className="flex-1 py-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="font-heading text-lg font-bold tracking-tight">
+                      {ev.title ?? 'Coffee meetup'}
+                    </h2>
+                    <Badge variant={t?.badge ?? 'secondary'}>{t?.label ?? ev.genderTrack}</Badge>
+                  </div>
+                  <div className="text-muted-foreground mt-2 space-y-1 text-sm">
+                    <p>🗓️ {formatDateTime(ev.startAt)}</p>
+                    <p>📍 {ev.cafe?.name ?? ev.area}</p>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="font-heading text-primary text-lg font-extrabold">
+                      {formatPKR(ev.pricePKR)}
+                    </span>
+                    <Badge variant={low ? 'warning' : 'secondary'}>
+                      {ev.seatsLeft > 0 ? `${ev.seatsLeft} seats left` : 'full'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
     </main>
   );

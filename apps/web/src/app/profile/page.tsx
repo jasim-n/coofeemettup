@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 const selectClass =
-  'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring';
+  'h-10 rounded-full border border-input bg-card/60 px-4 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25';
 
 const INTENT_LABELS: Record<string, string> = {
   MAKE_FRIENDS: 'Make new friends',
@@ -123,20 +123,26 @@ export default function ProfilePage() {
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Your profile</h1>
-        <Link href="/events" className="text-muted-foreground text-sm hover:underline">
+      {/* Header */}
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <p className="eyebrow text-primary">Account</p>
+          <h1 className="display mt-1 text-3xl">Your profile</h1>
+        </div>
+        <Link href="/events" className="text-muted-foreground font-semibold text-sm hover:underline">
           Meetups
         </Link>
       </div>
 
-      <div className="mb-6 space-y-2 rounded-xl border p-4">
-        <p className="text-sm font-medium">Identity verification</p>
-        <p className="text-muted-foreground text-xs">
-          Status: <span className="font-medium">{user.verificationStatus}</span>
+      {/* Identity verification */}
+      <div className="mb-8 rounded-3xl border bg-card p-5 shadow-soft space-y-3">
+        <p className="eyebrow text-primary">Identity verification</p>
+        <p className="text-sm text-muted-foreground">
+          Status:{' '}
+          <span className="font-heading font-bold text-foreground">{user.verificationStatus}</span>
         </p>
         {user.verificationStatus !== 'VERIFIED' && (
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="text-muted-foreground text-xs">
               Upload a photo of your CNIC for review.
             </p>
@@ -151,104 +157,120 @@ export default function ProfilePage() {
         {cnicMsg && <p className="text-xs text-green-600">{cnicMsg}</p>}
       </div>
 
-      <form onSubmit={submit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="firstName">First name</Label>
-            <Input id="firstName" {...field('firstName')} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="lastInitial">Last initial</Label>
-            <Input id="lastInitial" maxLength={2} {...field('lastInitial')} />
-          </div>
-        </div>
+      <form onSubmit={submit} className="space-y-8">
+        {/* Section: Basic info */}
+        <section className="space-y-4">
+          <p className="eyebrow text-primary">Basic info</p>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label>Age band</Label>
-            <select className={selectClass} {...field('ageBand')}>
-              <option value="">—</option>
-              <option>18-24</option>
-              <option>25-34</option>
-              <option>35-44</option>
-              <option>45+</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="firstName">First name</Label>
+              <Input id="firstName" {...field('firstName')} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="lastInitial">Last initial</Label>
+              <Input id="lastInitial" maxLength={2} {...field('lastInitial')} />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Gender</Label>
-            <select className={selectClass} {...field('gender')}>
-              <option value="">—</option>
-              <option value="WOMAN">Woman</option>
-              <option value="MAN">Man</option>
-              <option value="UNDISCLOSED">Prefer not to say</option>
-            </select>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Age band</Label>
+              <select className={selectClass} {...field('ageBand')}>
+                <option value="">—</option>
+                <option>18-24</option>
+                <option>25-34</option>
+                <option>35-44</option>
+                <option>45+</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Gender</Label>
+              <select className={selectClass} {...field('gender')}>
+                <option value="">—</option>
+                <option value="WOMAN">Woman</option>
+                <option value="MAN">Man</option>
+                <option value="UNDISCLOSED">Prefer not to say</option>
+              </select>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label>City</Label>
-            <select className={selectClass} {...field('city')}>
-              <option value="">—</option>
-              <option>Islamabad</option>
-              <option>Lahore</option>
-            </select>
+        {/* Section: Location */}
+        <section className="space-y-4">
+          <p className="eyebrow text-primary">Location</p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>City</Label>
+              <select className={selectClass} {...field('city')}>
+                <option value="">—</option>
+                <option>Islamabad</option>
+                <option>Lahore</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Language</Label>
+              <select className={selectClass} {...field('language')}>
+                <option value="">—</option>
+                <option value="URDU">Urdu</option>
+                <option value="ENGLISH">English</option>
+                <option value="BOTH">Both</option>
+              </select>
+            </div>
           </div>
+
           <div className="space-y-1.5">
-            <Label>Language</Label>
-            <select className={selectClass} {...field('language')}>
-              <option value="">—</option>
-              <option value="URDU">Urdu</option>
-              <option value="ENGLISH">English</option>
-              <option value="BOTH">Both</option>
-            </select>
+            <Label htmlFor="areas">Areas you can reach</Label>
+            <Input id="areas" placeholder="F-6, F-7, Blue Area" {...field('areas')} />
           </div>
-        </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="areas">Areas you can reach (comma-separated)</Label>
-          <Input id="areas" placeholder="F-6, F-7, Blue Area" {...field('areas')} />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="availability">Availability (comma-separated)</Label>
-          <Input id="availability" placeholder="Sat afternoon, Sun afternoon" {...field('availability')} />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="interests">Interests (comma-separated)</Label>
-          <Input id="interests" placeholder="Books, Startups, Film" {...field('interests')} />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label>Life stage</Label>
-            <select className={selectClass} {...field('lifeStage')}>
-              <option value="">—</option>
-              <option value="STUDENT">Student</option>
-              <option value="EARLY_CAREER">Early-career</option>
-              <option value="PROFESSIONAL">Professional</option>
-              <option value="BUSINESS_OWNER">Business owner</option>
-              <option value="PARENT">Parent</option>
-              <option value="OTHER">Other</option>
-            </select>
+            <Label htmlFor="availability">When are you free?</Label>
+            <Input id="availability" placeholder="Sat afternoon, Sun afternoon" {...field('availability')} />
           </div>
-          <div className="space-y-1.5">
-            <Label>In a new group you…</Label>
-            <select className={selectClass} {...field('socialEnergy')}>
-              <option value="">—</option>
-              <option value="LISTENER">Listen &amp; warm up slowly</option>
-              <option value="MIX">A mix</option>
-              <option value="INITIATOR">Get it going</option>
-            </select>
-          </div>
-        </div>
+        </section>
 
-        <div className="space-y-1.5">
-          <Label>What are you hoping for?</Label>
-          <div className="space-y-1">
+        {/* Section: About you */}
+        <section className="space-y-4">
+          <p className="eyebrow text-primary">About you</p>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="interests">Interests</Label>
+            <Input id="interests" placeholder="Books, Startups, Film" {...field('interests')} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Life stage</Label>
+              <select className={selectClass} {...field('lifeStage')}>
+                <option value="">—</option>
+                <option value="STUDENT">Student</option>
+                <option value="EARLY_CAREER">Early-career</option>
+                <option value="PROFESSIONAL">Professional</option>
+                <option value="BUSINESS_OWNER">Business owner</option>
+                <option value="PARENT">Parent</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>In a new group you…</Label>
+              <select className={selectClass} {...field('socialEnergy')}>
+                <option value="">—</option>
+                <option value="LISTENER">Listen &amp; warm up slowly</option>
+                <option value="MIX">A mix</option>
+                <option value="INITIATOR">Get it going</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* Section: What you're hoping for */}
+        <section className="space-y-3">
+          <p className="eyebrow text-primary">What are you hoping for?</p>
+          <div className="rounded-3xl border bg-card/60 p-4 space-y-2.5">
             {Object.values(Intent).map((it) => (
-              <label key={it} className="flex items-center gap-2 text-sm">
+              <label key={it} className="flex items-center gap-3 text-sm cursor-pointer">
                 <input
                   type="checkbox"
                   checked={intents.includes(it)}
@@ -257,40 +279,61 @@ export default function ProfilePage() {
                       e.target.checked ? [...prev, it] : prev.filter((x) => x !== it),
                     )
                   }
+                  className="accent-primary"
                 />
                 {INTENT_LABELS[it] ?? it}
               </label>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="space-y-1.5">
-          <Label>Coffee or chai?</Label>
-          <select className={selectClass} {...field('beveragePref')}>
-            <option value="">—</option>
-            <option value="COFFEE">Coffee</option>
-            <option value="CHAI">Chai</option>
-            <option value="EITHER">Either</option>
-          </select>
-        </div>
+        {/* Section: Preferences */}
+        <section className="space-y-4">
+          <p className="eyebrow text-primary">Preferences</p>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="accessibilityNeeds">Accessibility needs (optional)</Label>
-          <Textarea id="accessibilityNeeds" {...field('accessibilityNeeds')} />
-        </div>
+          <div className="space-y-1.5">
+            <Label>Coffee or chai?</Label>
+            <select className={selectClass} {...field('beveragePref')}>
+              <option value="">—</option>
+              <option value="COFFEE">Coffee ☕</option>
+              <option value="CHAI">Chai 🍵</option>
+              <option value="EITHER">Either</option>
+            </select>
+          </div>
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={photo} onChange={(e) => setPhoto(e.target.checked)} />
-          OK to appear in event group photos
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          I agree to the Community Code of Conduct
-        </label>
+          <div className="space-y-1.5">
+            <Label htmlFor="accessibilityNeeds">Accessibility needs (optional)</Label>
+            <Textarea id="accessibilityNeeds" {...field('accessibilityNeeds')} />
+          </div>
+        </section>
 
-        {status && <p className="text-sm text-green-600">{status}</p>}
+        {/* Section: Consent */}
+        <section className="rounded-3xl border bg-card/60 p-4 space-y-3">
+          <p className="eyebrow text-primary">Consent</p>
+          <label className="flex items-center gap-3 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={photo}
+              onChange={(e) => setPhoto(e.target.checked)}
+              className="accent-primary"
+            />
+            OK to appear in event group photos
+          </label>
+          <label className="flex items-center gap-3 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="accent-primary"
+            />
+            I agree to the Community Code of Conduct
+          </label>
+        </section>
+
+        {status && <p className="text-sm text-green-600 font-medium">{status}</p>}
         {error && <p className="text-destructive text-sm">{error}</p>}
-        <Button type="submit" className="w-full" disabled={busy}>
+
+        <Button type="submit" size="lg" className="w-full" disabled={busy}>
           {busy ? 'Saving…' : 'Save profile'}
         </Button>
       </form>

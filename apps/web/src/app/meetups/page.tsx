@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function MeetupsPage() {
   const { user, loading } = useAuth();
@@ -66,76 +66,109 @@ export default function MeetupsPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">My meetups</h1>
-        <Link href="/events" className="text-muted-foreground text-sm hover:underline">
-          Browse
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <p className="eyebrow text-primary">Your bookings</p>
+          <h1 className="display mt-1 text-3xl">My meetups</h1>
+        </div>
+        <Link href="/events" className="text-primary font-semibold text-sm hover:underline">
+          Browse →
         </Link>
       </div>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
-      {bookings === null && !error && <p className="text-muted-foreground text-sm">Loading…</p>}
+      {error && <p className="text-destructive text-sm mb-4">{error}</p>}
+      {bookings === null && !error && (
+        <p className="text-muted-foreground text-sm">Loading…</p>
+      )}
       {bookings?.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          You haven&apos;t joined any meetups yet. <Link href="/events" className="underline">Browse</Link>.
-        </p>
+        <div className="rounded-3xl border border-dashed py-12 text-center">
+          <p className="text-3xl">🎟️</p>
+          <p className="text-muted-foreground mt-2 text-sm">
+            No meetups yet.{' '}
+            <Link href="/events" className="text-primary font-semibold hover:underline">
+              Browse events
+            </Link>
+            .
+          </p>
+        </div>
       )}
 
-      <div className="space-y-3">
-        {bookings?.map((b) => (
-          <Card key={b.id} className={b.status === 'CANCELLED' ? 'opacity-60' : undefined}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-3">
-                <CardTitle className="text-base">{b.event?.title ?? 'Coffee meetup'}</CardTitle>
-                {b.status === 'CANCELLED' ? (
-                  <Badge variant="secondary">
-                    {b.paymentStatus === 'REFUNDED' ? 'refunded' : 'cancelled'}
-                  </Badge>
-                ) : b.status === 'WAITLISTED' ? (
-                  <Badge variant="secondary">waitlisted</Badge>
-                ) : (
-                  <Badge variant={b.paymentStatus === 'PAID' ? 'default' : 'secondary'}>
-                    {b.paymentStatus.toLowerCase()}
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {b.event && (
-                <p className="text-muted-foreground">
-                  {formatDateTime(b.event.startAt)} · {b.event.cafe?.name ?? b.event.area} ·{' '}
-                  {formatPKR(b.amountPKR)}
-                </p>
-              )}
-              {b.status === 'WAITLISTED' && (
-                <p className="text-muted-foreground text-xs">
-                  You’re on the waitlist. We’ll notify you the moment a spot opens.
-                </p>
-              )}
-              {b.status !== 'CANCELLED' && (
-                <div className="flex gap-2">
-                  {b.status === 'ACTIVE' && b.paymentStatus === 'PENDING' && (
-                    <Link
-                      href={`/events/${b.eventId}`}
-                      className="text-primary text-xs font-medium hover:underline"
-                    >
-                      Complete payment →
-                    </Link>
-                  )}
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    disabled={busy === b.id}
-                    onClick={() => void cancel(b)}
-                  >
-                    {busy === b.id ? 'Cancelling…' : 'Cancel booking'}
-                  </Button>
+      <div className="space-y-4">
+        {bookings?.map((b) => {
+          const isCancelled = b.status === 'CANCELLED';
+          const isWaitlisted = b.status === 'WAITLISTED';
+          const isPaid = b.paymentStatus === 'PAID';
+          const isRefunded = b.paymentStatus === 'REFUNDED';
+
+          let badgeVariant: 'success' | 'warning' | 'destructive' | 'secondary' | 'outline' =
+            'secondary';
+          let badgeLabel = b.paymentStatus.toLowerCase();
+          if (isCancelled) {
+            badgeVariant = isRefunded ? 'secondary' : 'destructive';
+            badgeLabel = isRefunded ? 'refunded' : 'cancelled';
+          } else if (isWaitlisted) {
+            badgeVariant = 'warning';
+            badgeLabel = 'waitlisted';
+          } else if (isPaid) {
+            badgeVariant = 'success';
+            badgeLabel = 'paid';
+          }
+
+          return (
+            <Card
+              key={b.id}
+              className={`rounded-3xl transition-all ${isCancelled ? 'opacity-60' : 'hover:-translate-y-0.5 hover:shadow-glow'}`}
+            >
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="font-heading text-lg font-bold tracking-tight">
+                    {b.event?.title ?? 'Coffee meetup'}
+                  </h2>
+                  <Badge variant={badgeVariant}>{badgeLabel}</Badge>
                 </div>
-              )}
-              {b.status === 'ACTIVE' && <GroupMembers eventId={b.eventId} />}
-            </CardContent>
-          </Card>
-        ))}
+
+                {b.event && (
+                  <div className="text-muted-foreground text-sm space-y-1">
+                    <p>🗓️ {formatDateTime(b.event.startAt)}</p>
+                    <p>📍 {b.event.cafe?.name ?? b.event.area}</p>
+                    <p className="font-heading text-primary font-extrabold text-base">
+                      {formatPKR(b.amountPKR)}
+                    </p>
+                  </div>
+                )}
+
+                {isWaitlisted && (
+                  <p className="text-muted-foreground text-xs bg-secondary/50 rounded-2xl px-3 py-2">
+                    You’re on the waitlist — we’ll notify you the moment a spot opens.
+                  </p>
+                )}
+
+                {!isCancelled && (
+                  <div className="flex gap-2 items-center">
+                    {b.status === 'ACTIVE' && b.paymentStatus === 'PENDING' && (
+                      <Link
+                        href={`/events/${b.eventId}`}
+                        className="text-primary text-xs font-semibold hover:underline"
+                      >
+                        Complete payment →
+                      </Link>
+                    )}
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      disabled={busy === b.id}
+                      onClick={() => void cancel(b)}
+                    >
+                      {busy === b.id ? 'Cancelling…' : 'Cancel booking'}
+                    </Button>
+                  </div>
+                )}
+
+                {b.status === 'ACTIVE' && <GroupMembers eventId={b.eventId} />}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </main>
   );
@@ -189,13 +222,13 @@ function GroupMembers({ eventId }: { eventId: string }) {
 
   return (
     <div className="mt-3 space-y-2 border-t pt-3">
-      <p className="text-xs font-medium">Your group</p>
+      <p className="eyebrow text-primary">Your group</p>
       {members.map((m) => (
         <div key={m.id} className="flex items-center justify-between gap-2">
-          <span className="text-sm">
+          <span className="text-sm font-medium">
             {m.firstName ?? 'Member'} {m.lastInitial ?? ''}
             {m.interests.length > 0 && (
-              <span className="text-muted-foreground text-xs"> · {m.interests.slice(0, 3).join(', ')}</span>
+              <span className="text-muted-foreground text-xs font-normal"> · {m.interests.slice(0, 3).join(', ')}</span>
             )}
           </span>
           <div className="flex gap-1">

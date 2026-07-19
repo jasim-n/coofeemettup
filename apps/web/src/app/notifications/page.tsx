@@ -39,24 +39,37 @@ export default function NotificationsPage() {
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-heading text-xl font-bold tracking-tight">Notifications</h1>
-        <Link href="/" className="text-muted-foreground text-sm hover:underline">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <p className="eyebrow text-primary">Inbox</p>
+          <h1 className="display mt-1 text-3xl">Notifications</h1>
+        </div>
+        <Link href="/" className="text-muted-foreground font-semibold text-sm hover:underline">
           Home
         </Link>
       </div>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && <p className="text-destructive text-sm mb-4">{error}</p>}
       {items.length === 0 && !error && (
-        <p className="text-muted-foreground text-sm">No notifications yet.</p>
+        <div className="rounded-3xl border border-dashed py-12 text-center">
+          <p className="text-3xl">🔔</p>
+          <p className="text-muted-foreground mt-2 text-sm">You’re all caught up.</p>
+        </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {items.map((n) => (
-          <Card key={n.id} className={n.readAt ? undefined : 'border-primary/40 bg-secondary/40'}>
-            <CardContent className="py-3">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-medium">{n.title}</p>
+          <Card
+            key={n.id}
+            className={`rounded-3xl transition-all ${
+              n.readAt
+                ? ''
+                : 'bg-secondary/50 ring-1 ring-primary/20'
+            }`}
+          >
+            <CardContent className="py-4 px-5">
+              <div className="flex items-start justify-between gap-3">
+                <p className={`text-sm ${n.readAt ? 'font-medium' : 'font-bold'}`}>{n.title}</p>
                 <span className="text-muted-foreground shrink-0 text-xs">
                   {new Date(n.createdAt).toLocaleString('en-PK', {
                     day: 'numeric',
@@ -66,7 +79,9 @@ export default function NotificationsPage() {
                   })}
                 </span>
               </div>
-              {n.body && <p className="text-muted-foreground mt-0.5 text-sm">{n.body}</p>}
+              {n.body && (
+                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{n.body}</p>
+              )}
             </CardContent>
           </Card>
         ))}

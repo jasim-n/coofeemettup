@@ -88,15 +88,21 @@ export default function AdminEventPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-      <Link href="/admin" className="text-muted-foreground text-sm hover:underline">
+      <Link
+        href="/admin"
+        className="text-muted-foreground text-sm font-semibold hover:underline"
+      >
         ← Admin
       </Link>
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">Event bookings</h1>
+
+      <div className="mt-3 mb-8 flex items-start justify-between gap-3">
+        <div>
+          <p className="eyebrow text-primary">Event management</p>
+          <h1 className="display mt-1 text-4xl uppercase">Bookings</h1>
+        </div>
         <Button
           size="sm"
-          variant="outline"
-          className="text-destructive border-destructive/40"
+          variant="destructive"
           disabled={busy}
           onClick={() => {
             if (
@@ -111,18 +117,26 @@ export default function AdminEventPage() {
           Cancel event
         </Button>
       </div>
-      {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-base">Paid attendees</CardTitle>
+      {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
+
+      <Card className="rounded-3xl shadow-soft">
+        <CardHeader className="pb-2">
+          <p className="eyebrow text-primary">Attendance</p>
+          <CardTitle className="font-heading font-bold tracking-tight">Paid attendees</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {bookings.length === 0 && (
-            <p className="text-muted-foreground text-sm">No paid bookings yet.</p>
+            <div className="rounded-3xl border border-dashed py-10 text-center">
+              <p className="text-3xl">🎟️</p>
+              <p className="text-muted-foreground mt-2 text-sm">No paid bookings yet.</p>
+            </div>
           )}
           {bookings.map((b) => (
-            <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 text-sm">
+            <div
+              key={b.id}
+              className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 text-sm"
+            >
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -133,7 +147,7 @@ export default function AdminEventPage() {
                     )
                   }
                 />
-                <span>{b.user.firstName ?? b.user.phone}</span>
+                <span className="font-medium">{b.user.firstName ?? b.user.phone}</span>
                 <Badge variant="secondary">{b.attendanceStatus}</Badge>
                 <span className="text-muted-foreground text-xs">rel {b.user.reliabilityScore}</span>
               </label>
@@ -157,7 +171,7 @@ export default function AdminEventPage() {
               </div>
             </div>
           ))}
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <Button
               disabled={busy || selected.length === 0}
               onClick={() =>
@@ -190,25 +204,38 @@ export default function AdminEventPage() {
 
       {preview && (
         <div className="mt-6">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-medium">Suggested groups (preview — not saved)</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="eyebrow text-primary">Preview</p>
+              <h2 className="font-heading font-bold tracking-tight">
+                Suggested groups — not saved
+              </h2>
+            </div>
             <button
               type="button"
               onClick={() => setPreview(null)}
-              className="text-muted-foreground text-xs hover:underline"
+              className="text-muted-foreground text-xs font-semibold hover:underline"
             >
               Dismiss
             </button>
           </div>
           {preview.groups.length === 0 && (
-            <p className="text-muted-foreground text-sm">No suggestions — need paid attendees.</p>
+            <div className="rounded-3xl border border-dashed py-10 text-center">
+              <p className="text-3xl">🤔</p>
+              <p className="text-muted-foreground mt-2 text-sm">
+                No suggestions — need paid attendees.
+              </p>
+            </div>
           )}
           <div className="space-y-2">
             {preview.groups.map((g, i) => (
-              <Card key={i} className={g.oddOneOut.length > 0 ? 'border-destructive/50' : undefined}>
+              <Card
+                key={i}
+                className={`rounded-3xl shadow-soft ${g.oddOneOut.length > 0 ? 'border-destructive/50' : ''}`}
+              >
                 <CardContent className="space-y-1 py-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">
+                    <span className="font-heading font-bold tracking-tight">
                       Group {i + 1} · {g.userIds.length} members
                     </span>
                     <Badge variant="secondary">match {Math.round(g.score * 100)}%</Badge>
@@ -238,22 +265,30 @@ export default function AdminEventPage() {
         </div>
       )}
 
-      <h2 className="mt-6 mb-2 text-sm font-medium">Groups</h2>
-      <div className="space-y-2">
-        {groups.length === 0 && <p className="text-muted-foreground text-sm">No groups yet.</p>}
-        {groups.map((g) => (
-          <Card key={g.id}>
-            <CardContent className="flex items-center justify-between py-3 text-sm">
-              <span>
-                <span className="text-muted-foreground">{g.algoVersion} · </span>
-                {g.userIds.length} members
-              </span>
-              {g.matchScore !== null && (
-                <Badge variant="secondary">match {Math.round(g.matchScore * 100)}%</Badge>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="mt-8">
+        <p className="eyebrow text-primary">Formed groups</p>
+        <h2 className="font-heading mb-3 font-bold tracking-tight">Groups</h2>
+        <div className="space-y-2">
+          {groups.length === 0 && (
+            <div className="rounded-3xl border border-dashed py-10 text-center">
+              <p className="text-3xl">👥</p>
+              <p className="text-muted-foreground mt-2 text-sm">No groups yet.</p>
+            </div>
+          )}
+          {groups.map((g) => (
+            <Card key={g.id} className="rounded-3xl shadow-soft">
+              <CardContent className="flex items-center justify-between py-3 text-sm">
+                <span>
+                  <span className="text-muted-foreground">{g.algoVersion} · </span>
+                  <span className="font-medium">{g.userIds.length} members</span>
+                </span>
+                {g.matchScore !== null && (
+                  <Badge variant="secondary">match {Math.round(g.matchScore * 100)}%</Badge>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </main>
   );

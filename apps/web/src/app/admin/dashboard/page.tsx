@@ -13,7 +13,7 @@ const VERDICT: Record<
 > = {
   GO: {
     label: 'GO ✅',
-    cls: 'bg-green-600 text-white',
+    cls: 'bg-emerald-600 text-white',
     blurb: 'Retention + referral thresholds met — the product is working.',
   },
   NO_GO: {
@@ -32,7 +32,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
       <span className="text-muted-foreground text-sm">{label}</span>
-      <span className="text-sm font-semibold tabular-nums">{value}</span>
+      <span className="font-heading text-sm font-bold tabular-nums">{value}</span>
     </div>
   );
 }
@@ -64,28 +64,37 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
-        <Link href="/admin" className="text-muted-foreground text-sm hover:underline">
+      <div className="mb-8">
+        <p className="eyebrow text-primary">Admin console</p>
+        <h1 className="display mt-1 text-4xl uppercase">Dashboard</h1>
+        <Link
+          href="/admin"
+          className="text-muted-foreground mt-2 inline-block text-sm font-semibold hover:underline"
+        >
           ← Admin
         </Link>
       </div>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
       {!m && !error && <p className="text-muted-foreground text-sm">Loading metrics…</p>}
 
       {m && (
         <div className="space-y-4">
           {/* Go / No-Go gate */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Go / No-Go gate (§7)</CardTitle>
+          <Card className="overflow-hidden rounded-3xl shadow-soft">
+            <CardHeader className="pb-2">
+              <p className="eyebrow text-primary">Go / No-Go gate · §7</p>
+              <CardTitle className="font-heading text-lg font-bold tracking-tight">
+                Product health verdict
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div
-                className={`rounded-lg px-4 py-3 text-center text-lg font-bold ${VERDICT[m.goNoGo.verdict].cls}`}
+                className={`rounded-2xl px-6 py-5 text-center ${VERDICT[m.goNoGo.verdict].cls}`}
               >
-                {VERDICT[m.goNoGo.verdict].label}
+                <span className="display text-5xl uppercase">
+                  {VERDICT[m.goNoGo.verdict].label}
+                </span>
               </div>
               <p className="text-muted-foreground text-xs">
                 {VERDICT[m.goNoGo.verdict].blurb} Target: ≥{m.goNoGo.threshold.repeatRatePct}% of
@@ -110,9 +119,10 @@ export default function AdminDashboardPage() {
           </Card>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Events</CardTitle>
+            <Card className="rounded-3xl shadow-soft">
+              <CardHeader className="pb-2">
+                <p className="eyebrow text-primary">Overview</p>
+                <CardTitle className="font-heading font-bold tracking-tight">Events</CardTitle>
               </CardHeader>
               <CardContent className="space-y-1.5">
                 <Stat label="Total" value={m.events.total} />
@@ -123,9 +133,12 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Bookings & attendance</CardTitle>
+            <Card className="rounded-3xl shadow-soft">
+              <CardHeader className="pb-2">
+                <p className="eyebrow text-primary">Attendance</p>
+                <CardTitle className="font-heading font-bold tracking-tight">
+                  Bookings &amp; show rate
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1.5">
                 <Stat label="Active" value={m.bookings.active} />
@@ -140,10 +153,11 @@ export default function AdminDashboardPage() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Feedback ({m.feedback.count} responses)
+          <Card className="rounded-3xl shadow-soft">
+            <CardHeader className="pb-2">
+              <p className="eyebrow text-primary">Post-event surveys</p>
+              <CardTitle className="font-heading font-bold tracking-tight">
+                Feedback · {m.feedback.count} responses
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">

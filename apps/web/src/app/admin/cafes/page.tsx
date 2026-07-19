@@ -117,9 +117,13 @@ export default function AdminCafesPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Cafes</h1>
-        <Link href="/admin" className="text-muted-foreground text-sm hover:underline">
+      <div className="mb-8">
+        <p className="eyebrow text-primary">Admin console</p>
+        <h1 className="display mt-1 text-4xl uppercase">Cafes</h1>
+        <Link
+          href="/admin"
+          className="text-muted-foreground mt-2 inline-block text-sm font-semibold hover:underline"
+        >
           ← Admin
         </Link>
       </div>
@@ -134,14 +138,17 @@ export default function AdminCafesPage() {
           onSave={(f) => void save(f)}
         />
       ) : (
-        <Button className="mb-4" onClick={() => setEditing('new')}>
+        <Button className="mb-6" onClick={() => setEditing('new')}>
           + Add cafe
         </Button>
       )}
 
       <div className="space-y-3">
         {cafes.length === 0 && (
-          <p className="text-muted-foreground text-sm">No cafes yet.</p>
+          <div className="rounded-3xl border border-dashed py-10 text-center">
+            <p className="text-3xl">☕</p>
+            <p className="text-muted-foreground mt-2 text-sm">No cafes yet — add one above.</p>
+          </div>
         )}
         {cafes.map((c) =>
           editing === c.id ? (
@@ -153,10 +160,10 @@ export default function AdminCafesPage() {
               onSave={(f) => void save(f, c.id)}
             />
           ) : (
-            <Card key={c.id}>
+            <Card key={c.id} className="rounded-3xl shadow-soft">
               <CardContent className="flex items-start justify-between gap-3 py-4 text-sm">
                 <div className="space-y-0.5">
-                  <p className="font-medium">{c.name}</p>
+                  <p className="font-heading font-bold tracking-tight">{c.name}</p>
                   <p className="text-muted-foreground text-xs">
                     {c.area}
                     {c.address ? ` · ${c.address}` : ''}
@@ -174,8 +181,7 @@ export default function AdminCafesPage() {
                   </Button>
                   <Button
                     size="xs"
-                    variant="outline"
-                    className="text-destructive border-destructive/40"
+                    variant="destructive"
                     disabled={busy}
                     onClick={() => void remove(c)}
                   >
@@ -207,10 +213,11 @@ function CafeForm({
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
-    <Card className="mb-4">
-      <CardHeader>
-        <CardTitle className="text-base">
-          {initial.name ? 'Edit cafe' : 'New cafe'}
+    <Card className="mb-6 rounded-3xl shadow-soft">
+      <CardHeader className="pb-2">
+        <p className="eyebrow text-primary">{initial.name ? 'Editing' : 'New venue'}</p>
+        <CardTitle className="font-heading font-bold tracking-tight">
+          {initial.name ? 'Edit cafe' : 'Add a cafe'}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -258,7 +265,7 @@ function CafeForm({
             <Label htmlFor="c-terms">Comp terms</Label>
             <Input id="c-terms" value={form.compTerms} onChange={set('compTerms')} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-1">
             <Button type="submit" disabled={busy}>
               {busy ? 'Saving…' : 'Save'}
             </Button>

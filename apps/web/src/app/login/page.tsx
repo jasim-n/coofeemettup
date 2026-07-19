@@ -52,82 +52,101 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="bg-gradient-hero flex flex-1 flex-col items-center justify-center px-6 py-16">
-      <div className="mb-6 text-center text-white">
-        <Wordmark className="text-3xl" />
-        <p className="mt-2 text-sm text-white/85">
+    <main className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-gradient-hero">
+      {/* decorative blobs */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -right-24 size-80 rounded-full bg-gradient-sky opacity-30 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 -left-20 size-72 rounded-full bg-gradient-ember opacity-20 blur-3xl"
+      />
+
+      {/* hero wordmark */}
+      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-6 pt-16 text-center">
+        <Wordmark className="text-2xl text-white" />
+        <p className="text-white/80 text-sm font-medium">
           Small groups. Real conversations. Good coffee.
         </p>
       </div>
-      <div className="w-full max-w-sm space-y-5 rounded-2xl border border-white/20 bg-card p-6 shadow-xl">
-        <div className="space-y-1 text-center">
-          <h1 className="font-heading text-lg font-bold tracking-tight">
-            {step === 'phone' ? 'Sign in' : 'Enter your code'}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            {step === 'phone'
-              ? 'Enter your mobile number to get a code.'
-              : `We sent a 6-digit code to ${phone}.`}
-          </p>
-        </div>
 
-      {step === 'phone' ? (
-        <form onSubmit={handleRequest} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="phone">Mobile number</Label>
-            <Input
-              id="phone"
-              inputMode="tel"
-              placeholder="03XX XXXXXXX"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              autoFocus
-              required
-            />
-          </div>
-          {error && <p className="text-destructive text-sm">{error}</p>}
-          <Button type="submit" className="w-full" disabled={busy}>
-            {busy ? 'Sending…' : 'Send code'}
-          </Button>
-        </form>
-      ) : (
-        <form onSubmit={handleVerify} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="code">Verification code</Label>
-            <Input
-              id="code"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="000000"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              autoFocus
-              required
-            />
-          </div>
-          {devCode && (
-            <p className="bg-secondary text-secondary-foreground rounded-md px-3 py-2 text-center text-sm">
-              Dev code: <span className="font-mono font-semibold">{devCode}</span>
+      {/* card */}
+      <div className="mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-16">
+        <div className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6">
+          <div className="space-y-1 text-center">
+            <p className="eyebrow text-primary">
+              {step === 'phone' ? 'Step 1 of 2' : 'Step 2 of 2'}
             </p>
+            <h1 className="display text-2xl uppercase">
+              {step === 'phone' ? 'Sign in' : 'Check your phone'}
+            </h1>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              {step === 'phone'
+                ? 'Enter your mobile number — we’ll send a one-time code.'
+                : `We sent a 6-digit code to ${phone}.`}
+            </p>
+          </div>
+
+          {step === 'phone' ? (
+            <form onSubmit={handleRequest} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="font-semibold">Mobile number</Label>
+                <Input
+                  id="phone"
+                  inputMode="tel"
+                  placeholder="03XX XXXXXXX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+              {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+              <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
+                {busy ? 'Sending…' : 'Send code →'}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerify} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="code" className="font-semibold">Verification code</Label>
+                <Input
+                  id="code"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+              {devCode && (
+                <p className="bg-secondary text-secondary-foreground rounded-2xl px-4 py-2.5 text-center text-sm">
+                  Dev code: <span className="font-mono font-bold">{devCode}</span>
+                </p>
+              )}
+              {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+              <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
+                {busy ? 'Verifying…' : 'Verify & sign in →'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-full text-muted-foreground"
+                onClick={() => {
+                  setStep('phone');
+                  setCode('');
+                  setError(null);
+                }}
+              >
+                ← Use a different number
+              </Button>
+            </form>
           )}
-          {error && <p className="text-destructive text-sm">{error}</p>}
-          <Button type="submit" className="w-full" disabled={busy}>
-            {busy ? 'Verifying…' : 'Verify & sign in'}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full"
-            onClick={() => {
-              setStep('phone');
-              setCode('');
-              setError(null);
-            }}
-          >
-            Use a different number
-          </Button>
-        </form>
-      )}
+        </div>
       </div>
     </main>
   );
