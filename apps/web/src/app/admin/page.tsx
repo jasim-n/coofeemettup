@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ApiError, type CreateEventInput, type EventDto } from '@jrst/api-client';
+import { ApiError, type Cafe, type CreateEventInput, type EventDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
@@ -17,8 +17,9 @@ const selectClass =
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const [events, setEvents] = useState<EventDto[]>([]);
+  const [cafes, setCafes] = useState<Cafe[]>([]);
   const [form, setForm] = useState({
-    cafeId: 'seed-cafe-f7',
+    cafeId: '',
     title: '',
     startAt: '',
     genderTrack: 'MIXED',
@@ -34,6 +35,18 @@ export default function AdminPage() {
   const load = useCallback(() => {
     if (!isAdmin) return;
     api.listAllEvents().then(setEvents).catch(() => undefined);
+    api
+      .listCafes()
+      .then((list) => {
+        setCafes(list);
+        // Default the picker + area to the first cafe if not chosen yet.
+        setForm((f) =>
+          f.cafeId || list.length === 0
+            ? f
+            : { ...f, cafeId: list[0]!.id, area: list[0]!.area },
+        );
+      })
+      .catch(() => undefined);
   }, [isAdmin]);
 
   useEffect(() => {
@@ -77,6 +90,9 @@ export default function AdminPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Admin</h1>
         <div className="flex gap-3 text-sm">
+          <Link href="/admin/cafes" className="text-primary hover:underline">
+            Cafes
+          </Link>
           <Link href="/admin/activity" className="text-primary hover:underline">
             Activity
           </Link>
@@ -105,12 +121,36 @@ export default function AdminPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="cafeId">Cafe ID</Label>
-                <Input
-                  id="cafeId"
-                  value={form.cafeId}
-                  onChange={(e) => setForm((f) => ({ ...f, cafeId: e.target.value }))}
-                />
+                <Label htmlFor="cafeId">Cafe</Label>
+                {cafes.length === 0 ? (
+                  <p className="text-muted-foreground py-1.5 text-xs">
+                    No cafes yet —{' '}
+                    <Link href="/admin/cafes" className="underline">
+                      add one
+                    </Link>
+                    .
+                  </p>
+                ) : (
+                  <select
+                    id="cafeId"
+                    className={selectClass}
+                    value={form.cafeId}
+                    onChange={(e) => {
+                      const cafe = cafes.find((c) => c.id === e.target.value);
+                      setForm((f) => ({
+                        ...f,
+                        cafeId: e.target.value,
+                        area: cafe?.area ?? f.area,
+                      }));
+                    }}
+                  >
+                    {cafes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} · {c.area}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="startAt">Starts at</Label>

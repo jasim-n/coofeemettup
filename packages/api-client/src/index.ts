@@ -4,6 +4,8 @@ import type {
   AuthResponse,
   BookingDto,
   BookingWithUser,
+  Cafe,
+  CreateCafeInput,
   CreateEventInput,
   EventDto,
   FeedbackDto,
@@ -16,6 +18,7 @@ import type {
   PendingVerification,
   PublicUser,
   ReportDto,
+  UpdateCafeInput,
   SubmitFeedbackInput,
   UpdateProfileInput,
 } from '@jrst/types';
@@ -167,6 +170,23 @@ export class ApiClient {
 
   cancelEvent(eventId: string): Promise<EventDto> {
     return this.request('POST', `/events/${eventId}/cancel`);
+  }
+
+  // ---- cafes (admin) ----
+  listCafes(): Promise<Cafe[]> {
+    return this.request('GET', '/cafes');
+  }
+
+  createCafe(input: CreateCafeInput): Promise<Cafe> {
+    return this.request('POST', '/cafes', input);
+  }
+
+  updateCafe(id: string, input: UpdateCafeInput): Promise<Cafe> {
+    return this.request('PATCH', `/cafes/${id}`, input);
+  }
+
+  deleteCafe(id: string): Promise<{ ok: true }> {
+    return this.request('DELETE', `/cafes/${id}`);
   }
 
   // ---- bookings ----

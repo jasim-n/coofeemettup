@@ -147,7 +147,20 @@ export interface Cafe {
   lng: number | null;
   deadHourSlots: string[];
   compTerms: string | null;
+  _count?: { events: number };
 }
+
+export interface CreateCafeInput {
+  name: string;
+  area: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+  deadHourSlots?: string[];
+  compTerms?: string;
+}
+
+export type UpdateCafeInput = Partial<CreateCafeInput>;
 
 export interface EventDto {
   id: string;
