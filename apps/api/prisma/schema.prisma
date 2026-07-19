@@ -191,6 +191,12 @@ model Event {
   seatsLeft   Int
   status      EventStatus       @default(OPEN)
 
+  // Optional one-off location — overrides the cafe on the map + detail when set.
+  venueName    String?
+  venueAddress String?
+  lat          Float?
+  lng          Float?
+
   bookings    Booking[]
   groups      GroupAssignment[]
   feedback    Feedback[]

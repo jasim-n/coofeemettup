@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ApiError, type Cafe, type CreateEventInput, type EventDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
@@ -15,6 +16,16 @@ import { Badge } from '@/components/ui/badge';
 const selectClass =
   'h-10 rounded-full border border-input bg-card/60 px-4 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25';
 
+// MapLibre touches window/document — load client-only.
+const LocationPicker = dynamic(() => import('@/components/location-picker'), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-muted/50 grid h-56 place-items-center rounded-2xl border text-sm text-muted-foreground">
+      Loading map…
+    </div>
+  ),
+});
+
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const [events, setEvents] = useState<EventDto[]>([]);
@@ -27,6 +38,9 @@ export default function AdminPage() {
     area: 'F-7',
     capacity: '8',
     pricePKR: '900',
+    venueName: '',
+    lat: '',
+    lng: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -71,6 +85,7 @@ export default function AdminPage() {
     setError(null);
     setBusy(true);
     try {
+      const hasPin = form.lat.trim() !== '' && form.lng.trim() !== '';
       const input: CreateEventInput = {
         cafeId: form.cafeId,
         title: form.title || undefined,
@@ -79,9 +94,13 @@ export default function AdminPage() {
         area: form.area,
         capacity: Number(form.capacity),
         pricePKR: Number(form.pricePKR),
+        // Optional one-off location — overrides the cafe on the map when set.
+        venueName: form.venueName.trim() || undefined,
+        lat: hasPin ? Number(form.lat) : undefined,
+        lng: hasPin ? Number(form.lng) : undefined,
       };
       await api.createEvent(input);
-      setForm((f) => ({ ...f, title: '', startAt: '' }));
+      setForm((f) => ({ ...f, title: '', startAt: '', venueName: '', lat: '', lng: '' }));
       load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -222,6 +241,37 @@ export default function AdminPage() {
                 />
               </div>
             </div>
+            <div className="space-y-2 rounded-3xl border border-dashed p-4">
+              <div className="flex items-center justify-between">
+                <p className="eyebrow text-primary">Custom location (optional)</p>
+                {(form.venueName || form.lat) && (
+                  <button
+                    type="button"
+                    className="text-muted-foreground text-xs font-semibold hover:underline"
+                    onClick={() => setForm((f) => ({ ...f, venueName: '', lat: '', lng: '' }))}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Leave empty to use the cafe’s location. Drop a pin to host this meetup somewhere
+                else — it’ll override the cafe on the map.
+              </p>
+              <Input
+                placeholder="Venue name (e.g. Rose &amp; Jasmine Garden)"
+                value={form.venueName}
+                onChange={(e) => setForm((f) => ({ ...f, venueName: e.target.value }))}
+              />
+              <LocationPicker
+                lat={form.lat.trim() ? Number(form.lat) : undefined}
+                lng={form.lng.trim() ? Number(form.lng) : undefined}
+                onChange={(la, ln) =>
+                  setForm((f) => ({ ...f, lat: la.toFixed(6), lng: ln.toFixed(6) }))
+                }
+              />
+            </div>
+
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" disabled={busy} size="lg" className="w-full rounded-full">
               {busy ? 'Creating…' : 'Create event →'}

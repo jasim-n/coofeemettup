@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import MapGL, { Marker, NavigationControl, Popup } from 'react-map-gl/maplibre';
 import type { StyleSpecification } from 'maplibre-gl';
-import { ApiError, type Cafe, type EventDto } from '@jrst/api-client';
+import { ApiError, type EventDto } from '@jrst/api-client';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 
@@ -23,8 +23,12 @@ const OSM_STYLE: StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-interface CafeGroup {
-  cafe: Cafe;
+interface LocationGroup {
+  key: string;
+  name: string;
+  area: string;
+  lat: number;
+  lng: number;
   events: EventDto[];
   seatsLeft: number;
 }
@@ -72,20 +76,29 @@ export default function EventsMap() {
     };
   }, []);
 
-  // One pin per cafe (events at the same venue share a location).
+  // One pin per location. An event's custom pin overrides its cafe when set;
+  // otherwise events at the same cafe share a pin.
   const groups = useMemo(() => {
-    const byCafe = new Map<string, CafeGroup>();
+    const map = new Map<string, LocationGroup>();
     for (const e of events) {
-      if (!e.cafe || e.cafe.lat == null || e.cafe.lng == null) continue;
-      const g = byCafe.get(e.cafe.id) ?? { cafe: e.cafe, events: [], seatsLeft: 0 };
+      const hasCustom = e.lat != null && e.lng != null;
+      const lat = hasCustom ? e.lat! : (e.cafe?.lat ?? null);
+      const lng = hasCustom ? e.lng! : (e.cafe?.lng ?? null);
+      if (lat == null || lng == null) continue;
+      const key = hasCustom
+        ? `custom:${lat.toFixed(5)},${lng.toFixed(5)}`
+        : `cafe:${e.cafe!.id}`;
+      const name = hasCustom ? (e.venueName ?? 'Meetup spot') : (e.cafe?.name ?? e.area);
+      const area = hasCustom ? (e.venueAddress ?? e.area) : (e.cafe?.area ?? e.area);
+      const g = map.get(key) ?? { key, name, area, lat, lng, events: [], seatsLeft: 0 };
       g.events.push(e);
       g.seatsLeft += e.seatsLeft;
-      byCafe.set(e.cafe.id, g);
+      map.set(key, g);
     }
-    return [...byCafe.values()];
+    return [...map.values()];
   }, [events]);
 
-  const selected = groups.find((g) => g.cafe.id === selectedId) ?? null;
+  const selected = groups.find((g) => g.key === selectedId) ?? null;
 
   return (
     <div className="relative h-[70vh] w-full overflow-hidden rounded-xl border">
@@ -99,15 +112,15 @@ export default function EventsMap() {
         <NavigationControl position="top-right" />
         {groups.map((g) => (
           <Marker
-            key={g.cafe.id}
-            longitude={g.cafe.lng!}
-            latitude={g.cafe.lat!}
-            onClick={() => setSelectedId(g.cafe.id)}
+            key={g.key}
+            longitude={g.lng}
+            latitude={g.lat}
+            onClick={() => setSelectedId(g.key)}
           >
             <button
               type="button"
               className="flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white bg-primary px-2 text-xs font-semibold text-primary-foreground shadow-md"
-              title={`${g.cafe.name} — ${g.events.length} meetup(s)`}
+              title={`${g.name} — ${g.events.length} meetup(s)`}
             >
               {g.events.length}
             </button>
@@ -115,8 +128,8 @@ export default function EventsMap() {
         ))}
         {selected && (
           <Popup
-            longitude={selected.cafe.lng!}
-            latitude={selected.cafe.lat!}
+            longitude={selected.lng}
+            latitude={selected.lat}
             anchor="bottom"
             offset={16}
             maxWidth="260px"
@@ -124,9 +137,9 @@ export default function EventsMap() {
             closeOnClick={false}
           >
             <div className="space-y-2 p-1">
-              <p className="text-sm font-medium">{selected.cafe.name}</p>
+              <p className="text-sm font-medium">{selected.name}</p>
               <p className="text-muted-foreground text-xs">
-                {selected.cafe.area} · {selected.seatsLeft} seats left
+                {selected.area} · {selected.seatsLeft} seats left
               </p>
               <ul className="max-h-48 space-y-2 overflow-auto">
                 {selected.events.map((e) => (

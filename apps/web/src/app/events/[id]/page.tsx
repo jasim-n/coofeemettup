@@ -126,7 +126,10 @@ export default function EventDetailPage() {
             </p>
             <p className="flex items-center gap-2">
               <span className="text-base">📍</span>
-              <span>{event.cafe?.name ?? event.area} · {event.area}</span>
+              <span>
+                {event.venueName ?? event.cafe?.name ?? event.area} ·{' '}
+                {event.venueAddress ?? event.area}
+              </span>
             </p>
             <p className="flex items-center gap-2">
               <span className="text-base">🪑</span>

@@ -173,6 +173,11 @@ export interface EventDto {
   pricePKR: number;
   seatsLeft: number;
   status: EventStatus;
+  /** Optional one-off location — overrides the cafe on the map + detail when set. */
+  venueName: string | null;
+  venueAddress: string | null;
+  lat: number | null;
+  lng: number | null;
   cafe?: Cafe;
   _count?: { bookings: number };
 }
@@ -213,6 +218,10 @@ export interface CreateEventInput {
   area: string;
   capacity: number;
   pricePKR: number;
+  venueName?: string;
+  venueAddress?: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface UpdateProfileInput {

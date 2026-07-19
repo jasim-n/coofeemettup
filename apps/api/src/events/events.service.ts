@@ -33,6 +33,10 @@ export class EventsService {
         pricePKR: dto.pricePKR,
         seatsLeft: dto.capacity,
         status: 'OPEN',
+        venueName: dto.venueName ?? null,
+        venueAddress: dto.venueAddress ?? null,
+        lat: dto.lat ?? null,
+        lng: dto.lng ?? null,
       },
     });
   }
