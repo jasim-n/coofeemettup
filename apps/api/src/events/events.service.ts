@@ -1,11 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { GenderTrack } from '../../generated/prisma/client';
 import { CreateEventDto } from './dto/create-event.dto';
 
 @Injectable()
 export class EventsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly payments: PaymentsService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async create(dto: CreateEventDto) {
     const cafe = await this.prisma.cafe.findUnique({
@@ -53,5 +63,64 @@ export class EventsService {
       orderBy: { startAt: 'desc' },
       include: { cafe: true, _count: { select: { bookings: true } } },
     });
+  }
+
+  /** Admin/organizer cancels an event: refund every paid booking, notify all, mark CANCELLED. */
+  async cancelEvent(eventId: string) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+    if (!event) throw new NotFoundException('Event not found');
+    if (event.status === 'CANCELLED') {
+      throw new BadRequestException('Event is already cancelled');
+    }
+    if (event.status === 'COMPLETED') {
+      throw new BadRequestException('A completed event cannot be cancelled');
+    }
+
+    // Every live booking (active or waitlisted) gets cancelled.
+    const affected = await this.prisma.booking.findMany({
+      where: { eventId, status: { not: 'CANCELLED' } },
+    });
+
+    // Org-initiated cancellation → always a full refund for anyone who paid.
+    for (const b of affected) {
+      if (b.paymentStatus === 'PAID') {
+        await this.payments.refund(b.paymentRef, b.amountPKR);
+      }
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.booking.updateMany({
+        where: { eventId, status: { not: 'CANCELLED' }, paymentStatus: 'PAID' },
+        data: {
+          status: 'CANCELLED',
+          paymentStatus: 'REFUNDED',
+          cancelledAt: new Date(),
+        },
+      }),
+      this.prisma.booking.updateMany({
+        where: {
+          eventId,
+          status: { not: 'CANCELLED' },
+          paymentStatus: { not: 'PAID' },
+        },
+        data: { status: 'CANCELLED', cancelledAt: new Date() },
+      }),
+      this.prisma.event.update({
+        where: { id: eventId },
+        data: { status: 'CANCELLED' },
+      }),
+    ]);
+
+    await this.notifications.notifyMany(
+      affected.map((b) => b.userId),
+      'event.cancelled',
+      'Meetup cancelled',
+      'Unfortunately this meetup has been cancelled. Any payment has been fully refunded.',
+      { eventId },
+    );
+
+    return this.prisma.event.findUnique({ where: { id: eventId } });
   }
 }

@@ -91,7 +91,26 @@ export default function AdminEventPage() {
       <Link href="/admin" className="text-muted-foreground text-sm hover:underline">
         ← Admin
       </Link>
-      <h1 className="mt-2 text-xl font-semibold tracking-tight">Event bookings</h1>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-tight">Event bookings</h1>
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-destructive border-destructive/40"
+          disabled={busy}
+          onClick={() => {
+            if (
+              window.confirm(
+                'Cancel this event? All bookings will be cancelled, paid attendees fully refunded, and everyone notified. This cannot be undone.',
+              )
+            ) {
+              void run(() => api.cancelEvent(id));
+            }
+          }}
+        >
+          Cancel event
+        </Button>
+      </div>
       {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
 
       <Card className="mt-4">

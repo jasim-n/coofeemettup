@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -46,5 +54,19 @@ export class EventsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.events.findOne(id);
+  }
+
+  @Roles('ADMIN', 'ORGANIZER')
+  @Post(':id/cancel')
+  @HttpCode(200)
+  async cancel(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    const event = await this.events.cancelEvent(id);
+    void this.audit.log({
+      actorId: user.id,
+      action: 'event.cancelled',
+      targetType: 'event',
+      targetId: id,
+    });
+    return event;
   }
 }

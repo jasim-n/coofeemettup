@@ -44,6 +44,12 @@ export class BookingsController {
     return this.bookings.listMine(user.id);
   }
 
+  @Post('bookings/:id/cancel')
+  @HttpCode(200)
+  cancel(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.bookings.cancel(user.id, id);
+  }
+
   @Get('events/:eventId/my-group')
   myGroup(@CurrentUser() user: AuthUser, @Param('eventId') eventId: string) {
     return this.bookings.myGroup(user.id, eventId);

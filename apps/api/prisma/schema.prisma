@@ -95,6 +95,12 @@ enum AttendanceStatus {
   NO_SHOW
 }
 
+enum BookingStatus {
+  ACTIVE
+  WAITLISTED
+  CANCELLED
+}
+
 enum MeetAgain {
   ALL
   SOME
@@ -204,14 +210,18 @@ model Booking {
   eventId          String
   paymentStatus    PaymentStatus    @default(PENDING)
   attendanceStatus AttendanceStatus @default(BOOKED)
+  status           BookingStatus    @default(ACTIVE)
   amountPKR        Int
   paymentRef       String?          @unique
+  cancelledAt      DateTime?
+  waitlistedAt     DateTime?
 
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
   @@unique([userId, eventId])
   @@index([eventId, paymentStatus])
+  @@index([eventId, status, waitlistedAt])
 }
 
 model GroupAssignment {

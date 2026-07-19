@@ -44,6 +44,8 @@ export abstract class PaymentProvider {
     paymentRef: string,
     status: string,
   ): WebhookResult;
+  /** Reverse a captured payment. Real gateways call their refund API here. */
+  abstract refund(paymentRef: string, amountPKR: number): Promise<void>;
 }
 
 @Injectable()
@@ -81,5 +83,10 @@ export class MockPaymentProvider extends PaymentProvider {
     }
     if (status !== 'PAID' && status !== 'FAILED') throw new Error('Bad status');
     return { paymentRef, status };
+  }
+
+  // Mock gateway: refunds settle instantly, nothing to call.
+  refund(): Promise<void> {
+    return Promise.resolve();
   }
 }

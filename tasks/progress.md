@@ -71,8 +71,15 @@ Seed admin phone: +923001112222 (dev OTP in API console). Sample cafe id: seed-c
 - App now runs against Neon + Upstash (only the API process is local). `apps/api/.env` keeps local Postgres/Redis URLs commented as fallback. Dev OTP is returned in the request-otp response (`devCode`) when NODE_ENV!=production + shown/prefilled on the web login.
 - No code changes for hosting — just env swaps. Login/OTP/events verified end-to-end on hosted stack.
 
+## Cancel / Refund / Waitlist (task #50) ✅ — 15/15 integration checks green
+Booking lifecycle field added: `status BookingStatus{ACTIVE|WAITLISTED|CANCELLED}` + `cancelledAt`/`waitlistedAt` (migration `20260719120000_add_booking_status`, applied to Neon). **Cancel booking** (`POST /bookings/:id/cancel`): refund only if >24h before start (else CANCELLED, no refund — decision), releases seat, reopens FULL→OPEN, promotes earliest waitlister→ACTIVE + notifies "pay to claim" (seat NOT held). **Join FULL event → WAITLISTED** (can't pay until promoted). **Cancel event** (`POST /events/:id/cancel`, admin): refunds all paid, cancels all bookings, notifies everyone (always full refund — org-initiated). Refund seam added to PaymentProvider (`refund()`; mock no-op). Web: My-Meetups cancel + status badges, event-detail waitlist join + cancel, admin cancel-event button.
+
+## GOTCHA (root cause, fixed) — lazy Prisma promises + fire-and-forget
+`void this.prisma.x.create(...)` **never executes** — Prisma promises are lazy (run only on `await`/`.then`). `AuditService.log` worked because it's `async` + awaits internally; `NotificationsService.create` returned a **bare** promise, so every `void notifications.create/notifyMany` silently no-op'd — meaning #49's `booking.paid`/`group.reveal`/`verification` notifications were never persisted. **Fix:** hardened `NotificationsService.create` to `async` + internal `await` + try/catch (mirrors `audit.log`), so fire-and-forget `void` callers now write and a notif hiccup can't break the request. Rule: any fire-and-forget service method wrapping a Prisma write MUST await internally.
+
 ## Decisions
 Stack: NestJS + Next.js + Prisma 7 + pnpm/Turbo, Tailwind + shadcn/ui (NO DWTC). Mixed gender tracks. Per-event pricing. Build-first (concierge gate skipped). Public npm only.
+Refund policy: 24h cutoff (full refund only if cancelled >24h before start; event cancellation always full refund). Waitlist: auto-promote earliest + notify to pay, seat not held.
 
 ## RESUME HERE → Phase 2 remaining (BLOCKED on user/external accounts — do NOT fake)
 1. ~~Matching engine v1~~ ✅ DONE. Future: tune weights from feedback outcomes; add BullMQ if pools get large; matching-preview UI (show oddOneOut) in admin.

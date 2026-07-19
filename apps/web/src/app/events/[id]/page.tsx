@@ -66,8 +66,12 @@ export default function EventDetailPage() {
   if (error && !event) return <main className="p-6 text-destructive text-sm">{error}</main>;
   if (!event) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
 
+  const cancelledEvent = event.status === 'CANCELLED';
   const paid = booking?.paymentStatus === 'PAID';
-  const joined = Boolean(booking);
+  const active = booking?.status === 'ACTIVE';
+  const waitlisted = booking?.status === 'WAITLISTED';
+  const joined = Boolean(booking && booking.status !== 'CANCELLED');
+  const full = event.seatsLeft <= 0 || event.status === 'FULL';
 
   return (
     <main className="mx-auto w-full max-w-lg flex-1 px-6 py-10">
@@ -91,32 +95,86 @@ export default function EventDetailPage() {
 
           {error && <p className="text-destructive">{error}</p>}
 
-          {!joined && (
-            <Button
-              className="w-full"
-              disabled={busy || event.seatsLeft <= 0 || event.status !== 'OPEN'}
-              onClick={() => void run(() => api.joinEvent(id))}
-            >
-              {event.seatsLeft <= 0 ? 'Full' : busy ? 'Joining…' : 'Join this meetup'}
-            </Button>
-          )}
+          {cancelledEvent ? (
+            <p className="text-destructive font-medium">
+              This meetup has been cancelled.{' '}
+              {paid ? 'Your payment has been fully refunded.' : ''}
+            </p>
+          ) : (
+            <>
+              {!joined && event.status === 'OPEN' && !full && (
+                <Button
+                  className="w-full"
+                  disabled={busy}
+                  onClick={() => void run(() => api.joinEvent(id))}
+                >
+                  {busy ? 'Joining…' : 'Join this meetup'}
+                </Button>
+              )}
 
-          {joined && !paid && (
-            <Button className="w-full" disabled={busy} onClick={() => void startPayment()}>
-              {busy ? 'Redirecting…' : `Pay ${formatPKR(event.pricePKR)}`}
-            </Button>
-          )}
+              {!joined && full && (event.status === 'OPEN' || event.status === 'FULL') && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={busy}
+                  onClick={() => void run(() => api.joinEvent(id))}
+                >
+                  {busy ? 'Joining waitlist…' : 'Join waitlist'}
+                </Button>
+              )}
 
-          {paid && (
-            <div className="space-y-2">
-              <p className="text-foreground font-medium">You&apos;re in! 🎉 See you there.</p>
-              <Link
-                href={`/events/${id}/feedback`}
-                className={buttonVariants({ variant: 'outline', className: 'w-full' })}
-              >
-                Leave feedback after the meetup
-              </Link>
-            </div>
+              {waitlisted && (
+                <div className="space-y-2">
+                  <p className="text-muted-foreground">
+                    You’re on the waitlist ⏳ — we’ll notify you the moment a spot opens.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() => void run(() => api.cancelBooking(booking!.id))}
+                  >
+                    Leave waitlist
+                  </Button>
+                </div>
+              )}
+
+              {active && !paid && (
+                <div className="space-y-2">
+                  <Button className="w-full" disabled={busy} onClick={() => void startPayment()}>
+                    {busy ? 'Redirecting…' : `Pay ${formatPKR(event.pricePKR)}`}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() => void run(() => api.cancelBooking(booking!.id))}
+                  >
+                    Cancel booking
+                  </Button>
+                </div>
+              )}
+
+              {paid && (
+                <div className="space-y-2">
+                  <p className="text-foreground font-medium">You&apos;re in! 🎉 See you there.</p>
+                  <Link
+                    href={`/events/${id}/feedback`}
+                    className={buttonVariants({ variant: 'outline', className: 'w-full' })}
+                  >
+                    Leave feedback after the meetup
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() => void run(() => api.cancelBooking(booking!.id))}
+                  >
+                    Cancel booking
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

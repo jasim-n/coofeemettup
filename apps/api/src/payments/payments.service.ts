@@ -29,6 +29,12 @@ export class PaymentsService {
     });
     if (!booking || booking.userId !== userId)
       throw new NotFoundException('Booking not found');
+    if (booking.status !== 'ACTIVE')
+      throw new BadRequestException(
+        booking.status === 'WAITLISTED'
+          ? "You're on the waitlist — you can pay once a spot opens up."
+          : 'This booking is cancelled.',
+      );
     if (booking.paymentStatus === 'PAID')
       throw new BadRequestException('Already paid');
 
@@ -58,6 +64,16 @@ export class PaymentsService {
     }
     if (result.status === 'PAID') await this.confirmPaid(result.paymentRef);
     return { ok: true };
+  }
+
+  /**
+   * Reverse a paid booking's charge through the gateway. Only touches the
+   * external provider — the caller owns the DB status change (so it can stay
+   * inside the cancellation transaction). No-op if there's nothing captured.
+   */
+  async refund(paymentRef: string | null, amountPKR: number): Promise<void> {
+    if (!paymentRef) return;
+    await this.provider.refund(paymentRef, amountPKR);
   }
 
   /** Atomically claim a seat and mark the booking paid; reject if the event is full. */

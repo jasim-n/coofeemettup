@@ -96,6 +96,14 @@ export const AttendanceStatus = {
 export type AttendanceStatus =
   (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
 
+export const BookingStatus = {
+  ACTIVE: 'ACTIVE',
+  WAITLISTED: 'WAITLISTED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type BookingStatus =
+  (typeof BookingStatus)[keyof typeof BookingStatus];
+
 export interface PublicUser {
   id: string;
   phone: string;
@@ -162,8 +170,11 @@ export interface BookingDto {
   eventId: string;
   paymentStatus: PaymentStatus;
   attendanceStatus: AttendanceStatus;
+  status: BookingStatus;
   amountPKR: number;
   paymentRef: string | null;
+  cancelledAt: string | null;
+  waitlistedAt: string | null;
   createdAt: string;
   event?: EventDto;
 }

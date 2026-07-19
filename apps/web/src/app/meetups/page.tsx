@@ -31,6 +31,31 @@ export default function MeetupsPage() {
     };
   }, [user]);
 
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function cancel(b: BookingDto) {
+    const within24h =
+      !!b.event &&
+      // eslint-disable-next-line react-hooks/purity -- runs on click, not during render
+      new Date(b.event.startAt).getTime() - Date.now() < 24 * 60 * 60 * 1000;
+    const message =
+      b.paymentStatus === 'PAID'
+        ? within24h
+          ? 'Cancel this booking? It’s within 24 hours of the event, so no refund applies.'
+          : 'Cancel this booking? You’ll receive a full refund.'
+        : 'Cancel this booking?';
+    if (!window.confirm(message)) return;
+    setBusy(b.id);
+    try {
+      const updated = await api.cancelBooking(b.id);
+      setBookings((prev) => prev?.map((x) => (x.id === b.id ? updated : x)) ?? prev);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not cancel booking');
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
   if (!user)
     return (
@@ -58,23 +83,56 @@ export default function MeetupsPage() {
 
       <div className="space-y-3">
         {bookings?.map((b) => (
-          <Card key={b.id}>
+          <Card key={b.id} className={b.status === 'CANCELLED' ? 'opacity-60' : undefined}>
             <CardHeader>
               <div className="flex items-start justify-between gap-3">
                 <CardTitle className="text-base">{b.event?.title ?? 'Coffee meetup'}</CardTitle>
-                <Badge variant={b.paymentStatus === 'PAID' ? 'default' : 'secondary'}>
-                  {b.paymentStatus.toLowerCase()}
-                </Badge>
+                {b.status === 'CANCELLED' ? (
+                  <Badge variant="secondary">
+                    {b.paymentStatus === 'REFUNDED' ? 'refunded' : 'cancelled'}
+                  </Badge>
+                ) : b.status === 'WAITLISTED' ? (
+                  <Badge variant="secondary">waitlisted</Badge>
+                ) : (
+                  <Badge variant={b.paymentStatus === 'PAID' ? 'default' : 'secondary'}>
+                    {b.paymentStatus.toLowerCase()}
+                  </Badge>
+                )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-1 text-sm">
+            <CardContent className="space-y-2 text-sm">
               {b.event && (
                 <p className="text-muted-foreground">
                   {formatDateTime(b.event.startAt)} · {b.event.cafe?.name ?? b.event.area} ·{' '}
                   {formatPKR(b.amountPKR)}
                 </p>
               )}
-              <GroupMembers eventId={b.eventId} />
+              {b.status === 'WAITLISTED' && (
+                <p className="text-muted-foreground text-xs">
+                  You’re on the waitlist. We’ll notify you the moment a spot opens.
+                </p>
+              )}
+              {b.status !== 'CANCELLED' && (
+                <div className="flex gap-2">
+                  {b.status === 'ACTIVE' && b.paymentStatus === 'PENDING' && (
+                    <Link
+                      href={`/events/${b.eventId}`}
+                      className="text-primary text-xs font-medium hover:underline"
+                    >
+                      Complete payment →
+                    </Link>
+                  )}
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    disabled={busy === b.id}
+                    onClick={() => void cancel(b)}
+                  >
+                    {busy === b.id ? 'Cancelling…' : 'Cancel booking'}
+                  </Button>
+                </div>
+              )}
+              {b.status === 'ACTIVE' && <GroupMembers eventId={b.eventId} />}
             </CardContent>
           </Card>
         ))}

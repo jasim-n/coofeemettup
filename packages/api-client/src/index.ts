@@ -165,6 +165,10 @@ export class ApiClient {
     return this.request('POST', '/events', input);
   }
 
+  cancelEvent(eventId: string): Promise<EventDto> {
+    return this.request('POST', `/events/${eventId}/cancel`);
+  }
+
   // ---- bookings ----
   joinEvent(eventId: string): Promise<BookingDto> {
     return this.request('POST', `/events/${eventId}/join`);
@@ -180,6 +184,10 @@ export class ApiClient {
 
   myBookings(): Promise<BookingDto[]> {
     return this.request('GET', '/bookings/me');
+  }
+
+  cancelBooking(bookingId: string): Promise<BookingDto> {
+    return this.request('POST', `/bookings/${bookingId}/cancel`);
   }
 
   // ---- admin ----
