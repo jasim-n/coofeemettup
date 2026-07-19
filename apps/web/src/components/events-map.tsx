@@ -1,9 +1,10 @@
 'use client';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import MapGL, { Marker, NavigationControl, Popup } from 'react-map-gl/maplibre';
+import type { MapRef } from 'react-map-gl/maplibre';
 import type { StyleSpecification } from 'maplibre-gl';
 import { ApiError, type EventDto } from '@jrst/api-client';
 import { api } from '@/lib/api';
@@ -39,20 +40,8 @@ export default function EventsMap() {
   const [events, setEvents] = useState<EventDto[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [center, setCenter] = useState<{ lng: number; lat: number }>({
-    lng: 73.0479,
-    lat: 33.6844, // Islamabad fallback
-  });
-
-  // Center on the user's real location if they allow it.
-  useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setCenter({ lng: pos.coords.longitude, lat: pos.coords.latitude }),
-      () => undefined,
-      { timeout: 5000 },
-    );
-  }, []);
+  const mapRef = useRef<MapRef | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   // Load + poll for live seat counts.
   useEffect(() => {
@@ -98,14 +87,44 @@ export default function EventsMap() {
     return [...map.values()];
   }, [events]);
 
+  // Frame the map around wherever the meetups actually are (Islamabad, Lahore, …),
+  // instead of a fixed city. Refits whenever the set of pins changes.
+  useEffect(() => {
+    const m = mapRef.current;
+    if (!m || !loaded || groups.length === 0) return;
+    if (groups.length === 1) {
+      const g = groups[0]!;
+      m.flyTo({ center: [g.lng, g.lat], zoom: 13, duration: 600 });
+      return;
+    }
+    let minLng = Infinity,
+      minLat = Infinity,
+      maxLng = -Infinity,
+      maxLat = -Infinity;
+    for (const g of groups) {
+      minLng = Math.min(minLng, g.lng);
+      maxLng = Math.max(maxLng, g.lng);
+      minLat = Math.min(minLat, g.lat);
+      maxLat = Math.max(maxLat, g.lat);
+    }
+    m.fitBounds(
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
+      { padding: 64, maxZoom: 14, duration: 600 },
+    );
+  }, [groups, loaded]);
+
   const selected = groups.find((g) => g.key === selectedId) ?? null;
 
   return (
     <div className="relative h-[70vh] w-full overflow-hidden rounded-xl border">
       {error && <p className="text-destructive absolute z-10 p-4 text-sm">{error}</p>}
       <MapGL
-        key={`${center.lng},${center.lat}`}
-        initialViewState={{ longitude: center.lng, latitude: center.lat, zoom: 12 }}
+        ref={mapRef}
+        onLoad={() => setLoaded(true)}
+        initialViewState={{ longitude: 73.7, latitude: 32.6, zoom: 6 }}
         mapStyle={OSM_STYLE}
         style={{ width: '100%', height: '100%' }}
       >
