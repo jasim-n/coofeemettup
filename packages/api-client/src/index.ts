@@ -7,6 +7,7 @@ import type {
   Cafe,
   CreateCafeInput,
   CreateEventInput,
+  DashboardMetrics,
   EventDto,
   FeedbackDto,
   GenderTrack,
@@ -312,6 +313,10 @@ export class ApiClient {
 
   adminAudit(): Promise<AuditEntry[]> {
     return this.request('GET', '/admin/audit');
+  }
+
+  adminMetrics(): Promise<DashboardMetrics> {
+    return this.request('GET', '/admin/metrics');
   }
 
   // ---- notifications ----

@@ -22,6 +22,11 @@ export class AdminController {
     return this.admin.listEventBookings(eventId);
   }
 
+  @Get('admin/metrics')
+  metrics() {
+    return this.admin.getMetrics();
+  }
+
   @Post('events/:eventId/groups')
   @HttpCode(201)
   async createGroup(

@@ -292,6 +292,39 @@ export interface NotificationsResponse {
   unread: number;
 }
 
+export type GoNoGoVerdict = 'GO' | 'NO_GO' | 'INSUFFICIENT_DATA';
+
+export interface DashboardMetrics {
+  events: {
+    total: number;
+    open: number;
+    full: number;
+    completed: number;
+    cancelled: number;
+  };
+  bookings: { active: number; waitlisted: number; cancelled: number };
+  attendance: { attended: number; noShow: number; showRatePct: number };
+  feedback: {
+    count: number;
+    avgEnjoyment: number;
+    avgNps: number;
+    avgCafeRating: number;
+    pctComeAgainYes: number;
+    pctInviteFriendYes: number;
+    pctMeetAgainAllSome: number;
+    feltUnsafe: number;
+  };
+  goNoGo: {
+    verdict: GoNoGoVerdict;
+    eventsHeld: number;
+    firstTimers: number;
+    repeaters: number;
+    repeatRatePct: number;
+    referralSignal: boolean;
+    threshold: { repeatRatePct: number; minEvents: number };
+  };
+}
+
 export interface AuditEntry {
   id: string;
   actorId: string | null;

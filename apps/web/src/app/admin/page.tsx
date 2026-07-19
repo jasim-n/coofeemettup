@@ -90,6 +90,9 @@ export default function AdminPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Admin</h1>
         <div className="flex gap-3 text-sm">
+          <Link href="/admin/dashboard" className="text-primary hover:underline">
+            Dashboard
+          </Link>
           <Link href="/admin/cafes" className="text-primary hover:underline">
             Cafes
           </Link>
