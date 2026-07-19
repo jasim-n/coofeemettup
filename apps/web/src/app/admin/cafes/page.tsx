@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   ApiError,
@@ -13,6 +14,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// MapLibre touches window/document — load client-only.
+const LocationPicker = dynamic(() => import('@/components/location-picker'), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-muted/50 grid h-56 place-items-center rounded-2xl border text-sm text-muted-foreground">
+      Loading map…
+    </div>
+  ),
+});
 
 type FormState = {
   name: string;
@@ -242,14 +253,28 @@ function CafeForm({
             <Label htmlFor="c-address">Address</Label>
             <Input id="c-address" value={form.address} onChange={set('address')} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="c-lat">Latitude</Label>
-              <Input id="c-lat" inputMode="decimal" value={form.lat} onChange={set('lat')} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="c-lng">Longitude</Label>
-              <Input id="c-lng" inputMode="decimal" value={form.lng} onChange={set('lng')} />
+          <div className="space-y-1.5">
+            <Label>Location — drop a pin</Label>
+            <LocationPicker
+              lat={form.lat.trim() ? Number(form.lat) : undefined}
+              lng={form.lng.trim() ? Number(form.lng) : undefined}
+              onChange={(la, ln) =>
+                setForm((f) => ({ ...f, lat: la.toFixed(6), lng: ln.toFixed(6) }))
+              }
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="c-lat" className="text-muted-foreground text-xs font-normal">
+                  Latitude
+                </Label>
+                <Input id="c-lat" inputMode="decimal" value={form.lat} onChange={set('lat')} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="c-lng" className="text-muted-foreground text-xs font-normal">
+                  Longitude
+                </Label>
+                <Input id="c-lng" inputMode="decimal" value={form.lng} onChange={set('lng')} />
+              </div>
             </div>
           </div>
           <div className="space-y-1.5">
