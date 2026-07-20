@@ -231,7 +231,15 @@ function GroupMembers({ eventId }: { eventId: string }) {
 
   return (
     <div className="mt-3 space-y-2 border-t pt-3">
-      <p className="eyebrow text-primary">Your group</p>
+      <div className="flex items-center justify-between">
+        <p className="eyebrow text-primary">Your group</p>
+        <Link
+          href={`/events/${eventId}/chat`}
+          className="text-primary text-xs font-semibold hover:underline"
+        >
+          💬 Group chat →
+        </Link>
+      </div>
       {members.map((m) => (
         <div key={m.id} className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium">

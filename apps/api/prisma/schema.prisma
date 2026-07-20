@@ -269,6 +269,16 @@ model Feedback {
   @@unique([userId, eventId])
 }
 
+model GroupMessage {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([groupId, createdAt])
+}
+
 model Notification {
   id        String    @id @default(cuid())
   userId    String

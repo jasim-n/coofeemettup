@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
 import { CafesModule } from './cafes/cafes.module';
+import { ChatModule } from './chat/chat.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
@@ -27,6 +28,7 @@ import { HealthController } from './health/health.controller';
     AuthModule,
     EventsModule,
     CafesModule,
+    ChatModule,
     BookingsModule,
     PaymentsModule,
     AdminModule,

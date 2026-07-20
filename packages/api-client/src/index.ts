@@ -5,6 +5,7 @@ import type {
   BookingDto,
   BookingWithUser,
   Cafe,
+  ChatResponse,
   CreateCafeInput,
   CreateEventInput,
   DashboardMetrics,
@@ -287,6 +288,15 @@ export class ApiClient {
 
   myGroup(eventId: string): Promise<MyGroup> {
     return this.request('GET', `/events/${eventId}/my-group`);
+  }
+
+  // ---- group chat ----
+  eventChat(eventId: string): Promise<ChatResponse> {
+    return this.request('GET', `/events/${eventId}/chat`);
+  }
+
+  sendChatMessage(eventId: string, body: string): Promise<{ ok: true }> {
+    return this.request('POST', `/events/${eventId}/chat`, { body });
   }
 
   // ---- verification (CNIC) ----

@@ -136,6 +136,20 @@ export interface ReferralInfo {
   count: number;
 }
 
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  body: string;
+  createdAt: string;
+  firstName: string | null;
+  lastInitial: string | null;
+}
+
+export interface ChatResponse {
+  groupId: string | null;
+  messages: ChatMessage[];
+}
+
 export interface AuthResponse {
   user: PublicUser;
   csrfToken: string;
