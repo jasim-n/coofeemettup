@@ -155,6 +155,10 @@ model User {
 
   blockedUserIds     String[]
 
+  // Referrals — each user has a shareable code; new signups may carry one.
+  referralCode       String?            @unique
+  referredByCode     String?
+
   bookings           Booking[]
   feedback           Feedback[]
   reportsMade        Report[]           @relation("ReportsMade")

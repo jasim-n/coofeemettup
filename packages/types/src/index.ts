@@ -131,6 +131,11 @@ export interface PublicUser {
   updatedAt: string;
 }
 
+export interface ReferralInfo {
+  code: string;
+  count: number;
+}
+
 export interface AuthResponse {
   user: PublicUser;
   csrfToken: string;

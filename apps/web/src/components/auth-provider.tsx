@@ -8,7 +8,7 @@ interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
   requestOtp: (phone: string) => Promise<string | undefined>;
-  verifyOtp: (phone: string, code: string) => Promise<void>;
+  verifyOtp: (phone: string, code: string, referralCode?: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -52,10 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return res.devCode;
   }, []);
 
-  const verifyOtp = useCallback(async (phone: string, code: string) => {
-    const res = await api.verifyOtp(phone, code);
-    setUser(res.user);
-  }, []);
+  const verifyOtp = useCallback(
+    async (phone: string, code: string, referralCode?: string) => {
+      const res = await api.verifyOtp(phone, code, referralCode);
+      setUser(res.user);
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     await api.logout();

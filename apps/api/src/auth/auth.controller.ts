@@ -63,6 +63,7 @@ export class AuthController {
     const { user, token } = await this.auth.verifyOtp(
       this.parsePhone(dto.phone),
       dto.code,
+      dto.referralCode,
     );
     res.cookie(SESSION_COOKIE, token, sessionCookieOptions(this.config));
     const csrfToken = this.issueCsrf(res);

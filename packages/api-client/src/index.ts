@@ -18,6 +18,7 @@ import type {
   NotificationsResponse,
   PendingVerification,
   PublicUser,
+  ReferralInfo,
   ReportDto,
   UpdateCafeInput,
   UpdateEventInput,
@@ -123,8 +124,16 @@ export class ApiClient {
     return this.request('POST', '/auth/request-otp', { phone });
   }
 
-  async verifyOtp(phone: string, code: string): Promise<AuthResponse> {
-    const res = await this.request<AuthResponse>('POST', '/auth/verify-otp', { phone, code });
+  async verifyOtp(
+    phone: string,
+    code: string,
+    referralCode?: string,
+  ): Promise<AuthResponse> {
+    const res = await this.request<AuthResponse>('POST', '/auth/verify-otp', {
+      phone,
+      code,
+      ...(referralCode ? { referralCode } : {}),
+    });
     this.csrfToken = res.csrfToken;
     if (this.clientType === 'mobile' && res.token) this.authToken = res.token;
     return res;
@@ -147,6 +156,10 @@ export class ApiClient {
   // ---- profile ----
   updateProfile(input: UpdateProfileInput): Promise<PublicUser> {
     return this.request('PATCH', '/users/me', input);
+  }
+
+  myReferral(): Promise<ReferralInfo> {
+    return this.request('GET', '/users/me/referral');
   }
 
   // ---- events ----

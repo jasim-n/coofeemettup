@@ -1,4 +1,4 @@
-import { IsString, Length, Matches } from 'class-validator';
+import { IsOptional, IsString, Length, Matches } from 'class-validator';
 
 export class VerifyOtpDto {
   @IsString()
@@ -8,4 +8,8 @@ export class VerifyOtpDto {
   @IsString()
   @Matches(/^\d{6}$/, { message: 'code must be 6 digits' })
   code!: string;
+
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }

@@ -16,11 +16,11 @@ export class AuthService {
     return this.otp.request(phone);
   }
 
-  async verifyOtp(phone: string, code: string) {
+  async verifyOtp(phone: string, code: string, referralCode?: string) {
     const ok = await this.otp.verify(phone, code);
     if (!ok) throw new UnauthorizedException('Invalid or expired code');
 
-    const user = await this.users.upsertByPhone(phone);
+    const user = await this.users.upsertByPhone(phone, referralCode);
     const payload: SessionPayload = { sub: user.id, role: user.role };
     const token = await this.jwt.signAsync(payload);
     return { user, token };

@@ -135,6 +135,7 @@ export default function Home() {
             <Tile href="/meetups" icon="🎟️" label="My meetups" />
             <Tile href="/notifications" icon="🔔" label="Notifications" badge={unread} />
             <Tile href="/profile" icon="👤" label="Edit profile" />
+            <Tile href="/invite" icon="🎁" label="Invite friends" />
             <Tile href="/map" icon="🗺️" label="Map" />
             {(user.role === 'ADMIN' || user.role === 'ORGANIZER') && (
               <Tile href="/admin" icon="⚙️" label="Admin console" />

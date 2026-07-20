@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiError } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
@@ -18,6 +18,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [ref, setRef] = useState<string | null>(null);
+
+  // Capture an invite code from a shared link (/login?ref=CODE) once on mount.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('ref');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the URL on mount
+    if (code) setRef(code.toUpperCase());
+  }, []);
 
   async function handleRequest(e: React.FormEvent) {
     e.preventDefault();
@@ -42,7 +50,7 @@ export default function LoginPage() {
     setError(null);
     setBusy(true);
     try {
-      await verifyOtp(phone, code);
+      await verifyOtp(phone, code, ref ?? undefined);
       router.push('/');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -86,6 +94,11 @@ export default function LoginPage() {
                 ? 'Enter your mobile number — we’ll send a one-time code.'
                 : `We sent a 6-digit code to ${phone}.`}
             </p>
+            {ref && (
+              <p className="bg-secondary text-secondary-foreground mx-auto w-fit rounded-full px-3 py-1 text-xs font-semibold">
+                🎁 Invited with code {ref}
+              </p>
+            )}
           </div>
 
           {step === 'phone' ? (
