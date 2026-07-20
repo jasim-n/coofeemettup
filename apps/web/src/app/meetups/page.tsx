@@ -164,6 +164,15 @@ export default function MeetupsPage() {
                   </div>
                 )}
 
+                {(isPaid || isRefunded) && (
+                  <Link
+                    href={`/receipt/${b.id}`}
+                    className="text-primary inline-block text-xs font-semibold hover:underline"
+                  >
+                    View receipt →
+                  </Link>
+                )}
+
                 {b.status === 'ACTIVE' && <GroupMembers eventId={b.eventId} />}
               </CardContent>
             </Card>

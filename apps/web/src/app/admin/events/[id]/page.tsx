@@ -11,7 +11,7 @@ import {
 } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -100,22 +100,30 @@ export default function AdminEventPage() {
           <p className="eyebrow text-primary">Event management</p>
           <h1 className="display mt-1 text-4xl uppercase">Bookings</h1>
         </div>
-        <Button
-          size="sm"
-          variant="destructive"
-          disabled={busy}
-          onClick={() => {
-            if (
-              window.confirm(
-                'Cancel this event? All bookings will be cancelled, paid attendees fully refunded, and everyone notified. This cannot be undone.',
-              )
-            ) {
-              void run(() => api.cancelEvent(id));
-            }
-          }}
-        >
-          Cancel event
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <Link
+            href={`/admin/events/${id}/edit`}
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+          >
+            Edit
+          </Link>
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={busy}
+            onClick={() => {
+              if (
+                window.confirm(
+                  'Cancel this event? All bookings will be cancelled, paid attendees fully refunded, and everyone notified. This cannot be undone.',
+                )
+              ) {
+                void run(() => api.cancelEvent(id));
+              }
+            }}
+          >
+            Cancel event
+          </Button>
+        </div>
       </div>
 
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}

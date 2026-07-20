@@ -4,11 +4,13 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -54,6 +56,23 @@ export class EventsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.events.findOne(id);
+  }
+
+  @Roles('ADMIN', 'ORGANIZER')
+  @Patch(':id')
+  async update(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateEventDto,
+  ) {
+    const event = await this.events.update(id, dto);
+    void this.audit.log({
+      actorId: user.id,
+      action: 'event.updated',
+      targetType: 'event',
+      targetId: id,
+    });
+    return event;
   }
 
   @Roles('ADMIN', 'ORGANIZER')

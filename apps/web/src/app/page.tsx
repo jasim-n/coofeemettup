@@ -79,6 +79,14 @@ export default function Home() {
           <p className="text-muted-foreground -mt-3 text-center text-xs">
             Sign in with your phone in seconds. No password.
           </p>
+          <div className="text-muted-foreground mt-2 flex justify-center gap-4 text-xs font-medium">
+            <Link href="/terms" className="hover:underline">
+              Terms
+            </Link>
+            <Link href="/privacy" className="hover:underline">
+              Privacy
+            </Link>
+          </div>
         </div>
       </main>
     );

@@ -8,6 +8,7 @@ import { PaymentsService } from '../payments/payments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import type { GenderTrack } from '../../generated/prisma/client';
 import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 
 @Injectable()
 export class EventsService {
@@ -67,6 +68,46 @@ export class EventsService {
       orderBy: { startAt: 'desc' },
       include: { cafe: true, _count: { select: { bookings: true } } },
     });
+  }
+
+  /** Edit an event's details. Capacity changes recompute seatsLeft against claimed seats. */
+  async update(id: string, dto: UpdateEventDto) {
+    const event = await this.prisma.event.findUnique({ where: { id } });
+    if (!event) throw new NotFoundException('Event not found');
+    if (event.status === 'CANCELLED' || event.status === 'COMPLETED') {
+      throw new BadRequestException(
+        `A ${event.status.toLowerCase()} event can't be edited`,
+      );
+    }
+
+    const data: Record<string, unknown> = {};
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.startAt !== undefined) data.startAt = new Date(dto.startAt);
+    if (dto.genderTrack !== undefined) data.genderTrack = dto.genderTrack;
+    if (dto.area !== undefined) data.area = dto.area;
+    if (dto.pricePKR !== undefined) data.pricePKR = dto.pricePKR;
+    if (dto.venueName !== undefined) data.venueName = dto.venueName || null;
+    if (dto.venueAddress !== undefined)
+      data.venueAddress = dto.venueAddress || null;
+    if (dto.lat !== undefined) data.lat = dto.lat;
+    if (dto.lng !== undefined) data.lng = dto.lng;
+
+    if (dto.capacity !== undefined) {
+      const claimed = event.capacity - event.seatsLeft; // paid seats already taken
+      if (dto.capacity < claimed) {
+        throw new BadRequestException(
+          `Capacity can't be below the ${claimed} seat(s) already booked`,
+        );
+      }
+      data.capacity = dto.capacity;
+      data.seatsLeft = dto.capacity - claimed;
+      // Re-opening a previously-full event that now has room.
+      if (event.status === 'FULL' && dto.capacity - claimed > 0) {
+        data.status = 'OPEN';
+      }
+    }
+
+    return this.prisma.event.update({ where: { id }, data });
   }
 
   /** Admin/organizer cancels an event: refund every paid booking, notify all, mark CANCELLED. */

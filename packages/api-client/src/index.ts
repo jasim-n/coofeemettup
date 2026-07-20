@@ -20,6 +20,7 @@ import type {
   PublicUser,
   ReportDto,
   UpdateCafeInput,
+  UpdateEventInput,
   SubmitFeedbackInput,
   UpdateProfileInput,
 } from '@jrst/types';
@@ -167,6 +168,10 @@ export class ApiClient {
 
   createEvent(input: CreateEventInput): Promise<EventDto> {
     return this.request('POST', '/events', input);
+  }
+
+  updateEvent(eventId: string, input: UpdateEventInput): Promise<EventDto> {
+    return this.request('PATCH', `/events/${eventId}`, input);
   }
 
   cancelEvent(eventId: string): Promise<EventDto> {

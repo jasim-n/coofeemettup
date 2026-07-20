@@ -224,6 +224,8 @@ export interface CreateEventInput {
   lng?: number;
 }
 
+export type UpdateEventInput = Partial<Omit<CreateEventInput, 'cafeId'>>;
+
 export interface UpdateProfileInput {
   firstName?: string;
   lastInitial?: string;
