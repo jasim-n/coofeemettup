@@ -1,5 +1,10 @@
 # Progress / Decisions / Gotchas (resume anchor)
 
+## Session 2026-07-20 additions (all free, verified, pushed to jasim-n/coofeemettup)
+Cancel/refund/waitlist (#50) · notifications (#49) · cafe CRUD + **map location picker** (admin) · admin dashboard + **§7 go/no-go gate** · **bold-&-social UI redesign** (new token system in globals.css; pill buttons + gradient `hero` variant; rounded-3xl cards; vibrant badges) · **event edit** (PATCH /events/:id, capacity-vs-claimed guard) · **one-off event location** (custom pin overrides cafe; map auto-fits all pins) · **Terms/Privacy** pages + footer · **payment receipts** (/receipt/[id]) · **referral/invite** (User.referralCode + referredByCode, /invite page, ?ref= capture; rewards deferred) · **group chat** (GroupMessage, members-only, 6s polling, block-filtered) · **mobile parity** (My Meetups + cancel + group block/report + Notifications in Expo app; bundles via expo export).
+Verdict/gate thresholds, refund cutoff (24h), waitlist auto-promote — see below.
+GOTCHA: fire-and-forget Prisma writes must await internally (lazy promises) — hardened NotificationsService.create like AuditService.log.
+
 ## STATUS: Phase 0 + 1 COMPLETE ✅ · Phase 2 matching engine COMPLETE ✅ — verified green + real-browser e2e
 Phase 0: monorepo, NestJS API, Prisma 7, phone-OTP+CSRF auth, shared packages, Next.js web (Tailwind+shadcn), CI.
 Phase 1: seed (admin+cafe+event), Events, Bookings+sandbox payment, Admin groups+attendance, Feedback, full web pages + admin console.

@@ -18,7 +18,10 @@ import MapView, { Marker } from 'react-native-maps';
 import {
   ApiClient,
   ApiError,
+  type BookingDto,
   type EventDto,
+  type GroupMember,
+  type NotificationDto,
   type PublicUser,
   type SubmitFeedbackInput,
   type UpdateProfileInput,
@@ -45,7 +48,9 @@ type Screen =
   | { name: 'events' }
   | { name: 'profile' }
   | { name: 'feedback'; event: EventDto }
-  | { name: 'map' };
+  | { name: 'map' }
+  | { name: 'meetups' }
+  | { name: 'notifications' };
 
 export default function App() {
   const [booting, setBooting] = useState(true);
@@ -131,6 +136,12 @@ function AuthedApp({
   if (screen.name === 'map') {
     return <MapScreen onBack={() => setScreen({ name: 'events' })} />;
   }
+  if (screen.name === 'meetups') {
+    return <MeetupsScreen onBack={() => setScreen({ name: 'events' })} />;
+  }
+  if (screen.name === 'notifications') {
+    return <NotificationsScreen onBack={() => setScreen({ name: 'events' })} />;
+  }
   return (
     <EventsScreen
       user={user}
@@ -138,6 +149,8 @@ function AuthedApp({
       onProfile={() => setScreen({ name: 'profile' })}
       onFeedback={(event) => setScreen({ name: 'feedback', event })}
       onMap={() => setScreen({ name: 'map' })}
+      onMeetups={() => setScreen({ name: 'meetups' })}
+      onNotifications={() => setScreen({ name: 'notifications' })}
     />
   );
 }
@@ -231,12 +244,16 @@ function EventsScreen({
   onProfile,
   onFeedback,
   onMap,
+  onMeetups,
+  onNotifications,
 }: {
   user: PublicUser;
   onLogout: () => void;
   onProfile: () => void;
   onFeedback: (event: EventDto) => void;
   onMap: () => void;
+  onMeetups: () => void;
+  onNotifications: () => void;
 }) {
   const [events, setEvents] = useState<EventDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -270,17 +287,23 @@ function EventsScreen({
     <View style={styles.flex}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Upcoming meetups</Text>
-        <View style={styles.rowGap}>
-          <Pressable onPress={onMap} hitSlop={8}>
-            <Text style={styles.link}>Map</Text>
-          </Pressable>
-          <Pressable onPress={onProfile} hitSlop={8}>
-            <Text style={styles.link}>Profile</Text>
-          </Pressable>
-          <Pressable onPress={() => void onLogout()} hitSlop={8}>
-            <Text style={styles.link}>Sign out</Text>
-          </Pressable>
-        </View>
+        <Pressable onPress={() => void onLogout()} hitSlop={8}>
+          <Text style={styles.link}>Sign out</Text>
+        </Pressable>
+      </View>
+      <View style={[styles.rowGap, styles.navRow]}>
+        <Pressable onPress={onMeetups} hitSlop={8}>
+          <Text style={styles.link}>My meetups</Text>
+        </Pressable>
+        <Pressable onPress={onNotifications} hitSlop={8}>
+          <Text style={styles.link}>Notifications</Text>
+        </Pressable>
+        <Pressable onPress={onMap} hitSlop={8}>
+          <Text style={styles.link}>Map</Text>
+        </Pressable>
+        <Pressable onPress={onProfile} hitSlop={8}>
+          <Text style={styles.link}>Profile</Text>
+        </Pressable>
       </View>
       <Text style={styles.subtitle}>Signed in as {user.phone}</Text>
       {loading ? (
@@ -598,6 +621,232 @@ function MapScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
+function bookingStatus(b: BookingDto): { label: string; tint: string } {
+  if (b.status === 'CANCELLED')
+    return b.paymentStatus === 'REFUNDED'
+      ? { label: 'Refunded', tint: MUTED }
+      : { label: 'Cancelled', tint: '#C0392B' };
+  if (b.status === 'WAITLISTED') return { label: 'Waitlisted', tint: '#B8860B' };
+  if (b.paymentStatus === 'PAID') return { label: 'Paid', tint: '#2E7D32' };
+  return { label: 'Payment pending', tint: MUTED };
+}
+
+function MeetupsScreen({ onBack }: { onBack: () => void }) {
+  const [bookings, setBookings] = useState<BookingDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setBookings(await api.myBookings());
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to load bookings');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  function confirmCancel(b: BookingDto) {
+    Alert.alert('Cancel booking', 'Cancel this booking?', [
+      { text: 'Keep', style: 'cancel' },
+      {
+        text: 'Cancel booking',
+        style: 'destructive',
+        onPress: () => void doCancel(b),
+      },
+    ]);
+  }
+  async function doCancel(b: BookingDto) {
+    setBusy(b.id);
+    try {
+      const updated = await api.cancelBooking(b.id);
+      setBookings((prev) => prev.map((x) => (x.id === b.id ? updated : x)));
+    } catch (err) {
+      Alert.alert('Could not cancel', err instanceof ApiError ? err.message : 'Try again');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <View style={styles.flex}>
+      <ScreenHeader title="My meetups" onBack={onBack} />
+      {loading ? (
+        <ActivityIndicator style={styles.spinner} />
+      ) : error ? (
+        <Text style={styles.error}>{error}</Text>
+      ) : (
+        <FlatList
+          data={bookings}
+          keyExtractor={(b) => b.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<Text style={styles.subtitle}>You haven’t joined any meetups yet.</Text>}
+          renderItem={({ item: b }) => {
+            const s = bookingStatus(b);
+            return (
+              <View style={styles.card}>
+                <View style={styles.headerRow}>
+                  <Text style={styles.cardTitle}>{b.event?.title ?? 'Coffee meetup'}</Text>
+                  <Text style={[styles.badge, { color: s.tint }]}>{s.label}</Text>
+                </View>
+                {b.event && (
+                  <Text style={styles.meta}>
+                    {formatWhen(b.event.startAt)} · {b.event.cafe?.name ?? b.event.area}
+                  </Text>
+                )}
+                <Text style={styles.meta}>{formatPKR(b.amountPKR)}</Text>
+                {(b.paymentStatus === 'PAID' || b.paymentStatus === 'REFUNDED') &&
+                  b.paymentRef && (
+                    <Text style={styles.receiptRef}>Receipt · {b.paymentRef}</Text>
+                  )}
+                {b.status !== 'CANCELLED' && (
+                  <SecondaryButton
+                    label={busy === b.id ? 'Cancelling…' : 'Cancel booking'}
+                    onPress={() => confirmCancel(b)}
+                  />
+                )}
+                {b.status === 'ACTIVE' && <GroupMembersMobile eventId={b.eventId} />}
+              </View>
+            );
+          }}
+        />
+      )}
+    </View>
+  );
+}
+
+function GroupMembersMobile({ eventId }: { eventId: string }) {
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const r = await api.myGroup(eventId);
+        if (active) setMembers(r.members);
+      } catch {
+        /* group not formed yet */
+      } finally {
+        if (active) setLoaded(true);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [eventId]);
+
+  function actions(m: GroupMember) {
+    Alert.alert(`${m.firstName ?? 'Member'} ${m.lastInitial ?? ''}`.trim(), 'Group member', [
+      { text: 'Close', style: 'cancel' },
+      {
+        text: 'Block',
+        onPress: async () => {
+          try {
+            await api.blockUser(m.id);
+            setMsg('Blocked — you won’t be grouped again.');
+          } catch (err) {
+            setMsg(err instanceof ApiError ? err.message : 'Could not block');
+          }
+        },
+      },
+      {
+        text: 'Report',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.reportUser(m.id, 'Reported from the app', eventId);
+            setMsg('Reported — our team will review it.');
+          } catch (err) {
+            setMsg(err instanceof ApiError ? err.message : 'Could not report');
+          }
+        },
+      },
+    ]);
+  }
+
+  if (!loaded) return null;
+  if (members.length === 0)
+    return <Text style={styles.groupHint}>Group not formed yet.</Text>;
+
+  return (
+    <View style={styles.groupBox}>
+      <Text style={styles.fieldLabel}>Your group</Text>
+      {members.map((m) => (
+        <Pressable key={m.id} style={styles.groupMember} onPress={() => actions(m)}>
+          <Text style={styles.meta}>
+            {m.firstName ?? 'Member'} {m.lastInitial ?? ''}
+            {m.interests.length > 0 ? ` · ${m.interests.slice(0, 3).join(', ')}` : ''}
+          </Text>
+          <Text style={styles.link}>Manage</Text>
+        </Pressable>
+      ))}
+      {msg ? <Text style={styles.groupHint}>{msg}</Text> : null}
+    </View>
+  );
+}
+
+function NotificationsScreen({ onBack }: { onBack: () => void }) {
+  const [items, setItems] = useState<NotificationDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const res = await api.notifications();
+        if (active) setItems(res.items);
+        await api.markAllNotificationsRead();
+      } catch (err) {
+        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <View style={styles.flex}>
+      <ScreenHeader title="Notifications" onBack={onBack} />
+      {loading ? (
+        <ActivityIndicator style={styles.spinner} />
+      ) : error ? (
+        <Text style={styles.error}>{error}</Text>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(n) => n.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<Text style={styles.subtitle}>You’re all caught up.</Text>}
+          renderItem={({ item: n }) => (
+            <View style={[styles.card, n.readAt ? null : styles.cardUnread]}>
+              <Text style={styles.cardTitle}>{n.title}</Text>
+              {n.body ? <Text style={styles.meta}>{n.body}</Text> : null}
+              <Text style={styles.receiptRef}>
+                {new Date(n.createdAt).toLocaleString('en-PK', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </Text>
+            </View>
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
 // ---------- small building blocks ----------
 function ScreenHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
@@ -767,8 +1016,15 @@ const styles = StyleSheet.create({
   link: { color: CORAL, fontWeight: '600' },
   error: { color: '#C0392B', fontSize: 14 },
   card: { borderWidth: 1, borderColor: BORDER, backgroundColor: CARD, borderRadius: 16, padding: 16, gap: 4 },
+  cardUnread: { borderColor: CORAL, backgroundColor: '#FFF4EF' },
   cardTitle: { fontSize: 17, fontWeight: '700', color: INK },
   meta: { color: MUTED, fontSize: 13 },
+  navRow: { flexWrap: 'wrap', marginTop: 4, marginBottom: 4 },
+  badge: { fontSize: 12, fontWeight: '700' },
+  receiptRef: { color: MUTED, fontSize: 11, marginTop: 2 },
+  groupBox: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderColor: BORDER, gap: 6 },
+  groupMember: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  groupHint: { color: MUTED, fontSize: 12 },
   mapContainer: { flex: 1, backgroundColor: CREAM },
   mapHeader: { paddingHorizontal: 20 },
   mapWrap: { flex: 1 },
