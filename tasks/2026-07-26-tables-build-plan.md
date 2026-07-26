@@ -29,9 +29,13 @@ alongside existing Events). Reference flows: `docs/design/reference/`.
   Built on the existing `/map` (MapLibre + free OSM, auto-fit) — refine to full-bleed + geolocate.
 - **Discover**: search + filters (category, date, price free/paid, area) — list view.
 
-## Phase 5 — Reviews
-- After a table completes: guest rates host+table; host rates guests (feeds reliability).
-- Profile → Reviews (received), Past Tables.
+## Phase 5 — Reviews (two dimensions: per-table AND per-profile)
+- **Per table/event**: after a Table completes, a guest rates the **table + host** (stars +
+  optional comment); the host rates each **guest**. One review per (reviewer, table, subject).
+- **Per profile (reputation)**: reviews aggregate onto each account — a host rating and a guest
+  rating (avg + count), visible on **Profile → Reviews (received)**; also feeds reliabilityScore.
+- Profile → Reviews (received) + Past Tables. Gate: can only review tables you attended/hosted.
+- Confirm at build: public vs private, 1–5 stars vs thumbs, whether comments are shown.
 
 ## Mobile pass (folded in)
 - Splash + Onboarding carousel + Permissions (push/location) screens.
