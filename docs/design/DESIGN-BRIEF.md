@@ -89,13 +89,19 @@ refund, admin console.
 
 ---
 
-## 5. Open questions (confirm before building)
+## 5. Decisions (locked 2026-07-26)
 
-- Does **payment** stay (ticket/seat fee) or move to free/optional under the host model?
-- Is **matching** (auto-grouping) still used, or fully replaced by host-approved joining?
-- **Reviews**: rate the host, the table, or both? Public or private?
-- **Categories**: fixed list or free-form?
-- Adopt the **teal + dark** system app-wide now (replacing the coral redesign), or keep light as default?
-- **Host flag**: how is it granted — admin toggles it, or users apply/get approved? Any host
-  onboarding/verification before the flag is enabled?
-- Scope order: which flow to build first (Create Table? Discover/Nearby? Approval-join?).
+- **Payment: host decides per table.** Price is an optional field in Create Table → a table is
+  free or paid at the host's choice. Paid tables charge the seat fee (after approval).
+- **Join model: BOTH.** Tables use **host-approval** joining; the existing **Events** track keeps
+  **auto-matching** + instant join. Tables are ADDITIVE — a new domain alongside Events, not a
+  rename. (Matching engine stays live for Events.)
+- **Theme: light + teal accent.** Light background, teal brand accent, dark near-black headers/
+  surfaces. **Manrope** headings + **Poppins** body. (Replaces coral/cream; not dark-mode-first.)
+- **Build order: foundation first** → (1) `canHost` flag + Table model + request→approve join loop
+  → (2) reskin to teal/Manrope/Poppins → (3) Create-Table wizard → (4) Nearby + Discover →
+  (5) Reviews. Onboarding/Splash/Permissions folded into the mobile pass.
+- **Host flag**: admin-granted for v1 (an admin toggles `canHost`); "apply to host" is later.
+
+Still to confirm as we build: Reviews scope (host+table, public vs private); Categories (fixed
+list vs free-form).
