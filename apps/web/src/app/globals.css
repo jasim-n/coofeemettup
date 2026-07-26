@@ -222,6 +222,20 @@
     text-transform: uppercase;
     font-size: 0.7rem;
   }
+  /* Let a MapLibre popup render our own card chrome instead of its default box. */
+  .table-popup .maplibregl-popup-content {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 1rem;
+  }
+  .table-popup .maplibregl-popup-tip {
+    border-top-color: var(--card);
+    border-bottom-color: var(--card);
+  }
+  .table-popup .maplibregl-popup-close-button {
+    display: none;
+  }
   @keyframes float-slow {
     0%,
     100% {
