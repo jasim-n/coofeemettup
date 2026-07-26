@@ -131,14 +131,15 @@ export default function Home() {
           </section>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Tile href="/tables" icon="🪑" label="Tables" wide accent />
+            <Tile href="/tables/nearby" icon="🗺️" label="Nearby tables" wide accent />
+            <Tile href="/tables" icon="🪑" label="All tables" />
+            <Tile href="/discover" icon="🔍" label="Discover" />
             {user.canHost && <Tile href="/tables/new" icon="✨" label="Host a table" />}
             <Tile href="/events" icon="☕" label="Browse meetups" />
             <Tile href="/meetups" icon="🎟️" label="My meetups" />
             <Tile href="/notifications" icon="🔔" label="Notifications" badge={unread} />
             <Tile href="/profile" icon="👤" label="Edit profile" />
             <Tile href="/invite" icon="🎁" label="Invite friends" />
-            <Tile href="/map" icon="🗺️" label="Map" />
             {(user.role === 'ADMIN' || user.role === 'ORGANIZER') && (
               <Tile href="/admin" icon="⚙️" label="Admin console" />
             )}

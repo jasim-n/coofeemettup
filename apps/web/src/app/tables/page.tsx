@@ -38,12 +38,15 @@ export default function TablesPage() {
           <h1 className="display mt-1 text-3xl">Tables</h1>
         </div>
         <div className="flex items-center gap-3 text-sm font-semibold">
-          <Link href="/" className="text-muted-foreground hover:underline">
-            Home
+          <Link href="/tables/nearby" className="text-primary hover:underline">
+            Map
+          </Link>
+          <Link href="/discover" className="text-primary hover:underline">
+            Discover
           </Link>
           {user?.canHost && (
             <Link href="/tables/new" className={buttonVariants({ size: 'sm' })}>
-              + Host a table
+              + Host
             </Link>
           )}
         </div>
