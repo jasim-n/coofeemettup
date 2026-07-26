@@ -24,8 +24,10 @@ alongside existing Events). Reference flows: `docs/design/reference/`.
   picker; host-only entry (hidden for non-hosts). Web, then mobile.
 
 ## Phase 4 — Nearby + Discover
-- **Nearby Tables**: location-sorted list/map of open tables. **Discover**: search + filters
-  (category, date, price free/paid, area).
+- **Nearby Tables = the Snapchat-style live map** (the original concept): full-screen map centered
+  on the user, live Table pins, tap → View Details → request to join, polling for live seats.
+  Built on the existing `/map` (MapLibre + free OSM, auto-fit) — refine to full-bleed + geolocate.
+- **Discover**: search + filters (category, date, price free/paid, area) — list view.
 
 ## Phase 5 — Reviews
 - After a table completes: guest rates host+table; host rates guests (feeds reliability).
