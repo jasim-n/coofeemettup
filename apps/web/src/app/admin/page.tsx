@@ -280,6 +280,9 @@ export default function AdminPage() {
         </CardContent>
       </Card>
 
+      {/* Host access */}
+      <HostGrant />
+
       {/* Events list */}
       <div className="mt-8 mb-3 flex items-center gap-2">
         <p className="eyebrow text-primary">All events</p>
@@ -316,5 +319,53 @@ export default function AdminPage() {
         ))}
       </div>
     </main>
+  );
+}
+
+function HostGrant() {
+  const [phone, setPhone] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function setHost(canHost: boolean) {
+    if (!phone.trim()) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await api.adminSetHostByPhone(phone.trim(), canHost);
+      setMsg(`${r.phone} — host ${r.canHost ? 'enabled ✅' : 'disabled'}`);
+    } catch (err) {
+      setMsg(err instanceof ApiError ? err.message : 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="mt-6 rounded-3xl shadow-soft">
+      <CardHeader>
+        <CardTitle className="text-base">Host access</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-muted-foreground text-sm">
+          Enable a user to host Tables. Enter their phone number.
+        </p>
+        <div className="flex gap-2">
+          <Input
+            placeholder="03XX XXXXXXX"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <Button size="sm" disabled={busy} onClick={() => void setHost(true)}>
+            Grant
+          </Button>
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => void setHost(false)}>
+            Revoke
+          </Button>
+        </div>
+        {msg && <p className="text-sm font-medium text-primary">{msg}</p>}
+      </CardContent>
+    </Card>
   );
 }

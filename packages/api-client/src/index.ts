@@ -355,6 +355,10 @@ export class ApiClient {
     return this.request('POST', `/users/${userId}/host`, { canHost });
   }
 
+  adminSetHostByPhone(phone: string, canHost: boolean): Promise<{ id: string; phone: string; canHost: boolean }> {
+    return this.request('POST', '/admin/host', { phone, canHost });
+  }
+
   // ---- tables (host-created, approval-based join) ----
   createTable(input: CreateTableInput): Promise<TableDto> {
     return this.request('POST', '/tables', input);

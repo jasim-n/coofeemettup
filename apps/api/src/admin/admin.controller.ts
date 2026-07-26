@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
-import { SetHostDto } from './dto/set-host.dto';
+import { SetHostByPhoneDto, SetHostDto } from './dto/set-host.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -36,6 +36,22 @@ export class AdminController {
       action: dto.canHost ? 'host.granted' : 'host.revoked',
       targetType: 'user',
       targetId: id,
+    });
+    return result;
+  }
+
+  @Post('admin/host')
+  @HttpCode(200)
+  async setHostByPhone(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: SetHostByPhoneDto,
+  ) {
+    const result = await this.admin.setHostByPhone(dto.phone, dto.canHost);
+    void this.audit.log({
+      actorId: user.id,
+      action: dto.canHost ? 'host.granted' : 'host.revoked',
+      targetType: 'user',
+      targetId: result.id,
     });
     return result;
   }

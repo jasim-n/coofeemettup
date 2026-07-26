@@ -131,7 +131,9 @@ export default function Home() {
           </section>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Tile href="/events" icon="☕" label="Browse meetups" wide accent />
+            <Tile href="/tables" icon="🪑" label="Tables" wide accent />
+            {user.canHost && <Tile href="/tables/new" icon="✨" label="Host a table" />}
+            <Tile href="/events" icon="☕" label="Browse meetups" />
             <Tile href="/meetups" icon="🎟️" label="My meetups" />
             <Tile href="/notifications" icon="🔔" label="Notifications" badge={unread} />
             <Tile href="/profile" icon="👤" label="Edit profile" />

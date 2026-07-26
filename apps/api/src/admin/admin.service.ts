@@ -22,6 +22,16 @@ export class AdminService {
     });
   }
 
+  async setHostByPhone(phone: string, canHost: boolean) {
+    const user = await this.prisma.user.findUnique({ where: { phone } });
+    if (!user) throw new NotFoundException('No user with that phone number');
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data: { canHost },
+      select: { id: true, phone: true, canHost: true },
+    });
+  }
+
   listEventBookings(eventId: string) {
     return this.prisma.booking.findMany({
       where: { eventId, paymentStatus: 'PAID' },
