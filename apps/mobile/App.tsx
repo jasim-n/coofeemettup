@@ -19,11 +19,15 @@ import {
   ApiClient,
   ApiError,
   type BookingDto,
+  type ChatMessage,
+  type CreateTableInput,
   type EventDto,
   type GroupMember,
   type NotificationDto,
   type PublicUser,
   type SubmitFeedbackInput,
+  type TableDto,
+  type TableJoinRequestDto,
   type UpdateProfileInput,
 } from '@jrst/api-client';
 
@@ -50,7 +54,11 @@ type Screen =
   | { name: 'feedback'; event: EventDto }
   | { name: 'map' }
   | { name: 'meetups' }
-  | { name: 'notifications' };
+  | { name: 'notifications' }
+  | { name: 'tables' }
+  | { name: 'table'; id: string }
+  | { name: 'tableChat'; id: string }
+  | { name: 'createTable' };
 
 export default function App() {
   const [booting, setBooting] = useState(true);
@@ -142,6 +150,29 @@ function AuthedApp({
   if (screen.name === 'notifications') {
     return <NotificationsScreen onBack={() => setScreen({ name: 'events' })} />;
   }
+  if (screen.name === 'tables') {
+    return <TablesScreen user={user} nav={setScreen} />;
+  }
+  if (screen.name === 'table') {
+    return <TableDetailScreen id={screen.id} user={user} nav={setScreen} />;
+  }
+  if (screen.name === 'tableChat') {
+    return (
+      <TableChatScreen
+        id={screen.id}
+        userId={user.id}
+        onBack={() => setScreen({ name: 'table', id: screen.id })}
+      />
+    );
+  }
+  if (screen.name === 'createTable') {
+    return (
+      <CreateTableScreen
+        onDone={(id) => setScreen({ name: 'table', id })}
+        onBack={() => setScreen({ name: 'tables' })}
+      />
+    );
+  }
   return (
     <EventsScreen
       user={user}
@@ -151,6 +182,7 @@ function AuthedApp({
       onMap={() => setScreen({ name: 'map' })}
       onMeetups={() => setScreen({ name: 'meetups' })}
       onNotifications={() => setScreen({ name: 'notifications' })}
+      onTables={() => setScreen({ name: 'tables' })}
     />
   );
 }
@@ -246,6 +278,7 @@ function EventsScreen({
   onMap,
   onMeetups,
   onNotifications,
+  onTables,
 }: {
   user: PublicUser;
   onLogout: () => void;
@@ -254,6 +287,7 @@ function EventsScreen({
   onMap: () => void;
   onMeetups: () => void;
   onNotifications: () => void;
+  onTables: () => void;
 }) {
   const [events, setEvents] = useState<EventDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -292,6 +326,9 @@ function EventsScreen({
         </Pressable>
       </View>
       <View style={[styles.rowGap, styles.navRow]}>
+        <Pressable onPress={onTables} hitSlop={8}>
+          <Text style={styles.link}>Tables</Text>
+        </Pressable>
         <Pressable onPress={onMeetups} hitSlop={8}>
           <Text style={styles.link}>My meetups</Text>
         </Pressable>
@@ -847,6 +884,366 @@ function NotificationsScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ---------- Tables ----------
+function TablesScreen({ user, nav }: { user: PublicUser; nav: (s: Screen) => void }) {
+  const [tables, setTables] = useState<TableDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setTables(await api.browseTables());
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to load tables');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return (
+    <View style={styles.flex}>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Tables</Text>
+        <View style={styles.rowGap}>
+          {user.canHost && (
+            <Pressable onPress={() => nav({ name: 'createTable' })} hitSlop={8}>
+              <Text style={styles.link}>+ Host</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={() => nav({ name: 'events' })} hitSlop={8}>
+            <Text style={styles.link}>Back</Text>
+          </Pressable>
+        </View>
+      </View>
+      {loading ? (
+        <ActivityIndicator style={styles.spinner} />
+      ) : error ? (
+        <Text style={styles.error}>{error}</Text>
+      ) : (
+        <FlatList
+          data={tables}
+          keyExtractor={(t) => t.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<Text style={styles.subtitle}>No open tables right now.</Text>}
+          renderItem={({ item: t }) => (
+            <Pressable style={styles.card} onPress={() => nav({ name: 'table', id: t.id })}>
+              <Text style={styles.cardTitle}>{t.title ?? t.category}</Text>
+              <Text style={styles.meta}>{formatWhen(t.startAt)}</Text>
+              <Text style={styles.meta}>
+                {t.venueName ?? t.cafe?.name ?? 'See map'} ·{' '}
+                {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)} · {t.seatsLeft} left
+              </Text>
+              <Text style={styles.meta}>
+                Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
+              </Text>
+            </Pressable>
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+function TableDetailScreen({
+  id,
+  user,
+  nav,
+}: {
+  id: string;
+  user: PublicUser;
+  nav: (s: Screen) => void;
+}) {
+  const [table, setTable] = useState<TableDto | null>(null);
+  const [requests, setRequests] = useState<TableJoinRequestDto[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    const t = await api.getTable(id);
+    setTable(t);
+    if (t.hostId === user.id) setRequests(await api.tableRequests(id));
+  }, [id, user.id]);
+  useEffect(() => {
+    void load().catch((err) =>
+      setError(err instanceof ApiError ? err.message : 'Failed to load'),
+    );
+  }, [load]);
+
+  async function run(fn: () => Promise<unknown>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await fn();
+      await load();
+    } catch (err) {
+      Alert.alert('Error', err instanceof ApiError ? err.message : 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!table) {
+    return (
+      <View style={styles.flex}>
+        <ScreenHeader title="Table" onBack={() => nav({ name: 'tables' })} />
+        {error ? <Text style={styles.error}>{error}</Text> : <ActivityIndicator style={styles.spinner} />}
+      </View>
+    );
+  }
+
+  const isHost = table.hostId === user.id;
+  const status = table.myRequestStatus;
+  const full = table.seatsLeft <= 0 || table.status !== 'OPEN';
+
+  return (
+    <ScrollView contentContainerStyle={styles.scroll}>
+      <ScreenHeader title={table.title ?? table.category} onBack={() => nav({ name: 'tables' })} />
+      <View style={styles.card}>
+        <Text style={styles.meta}>{formatWhen(table.startAt)}</Text>
+        <Text style={styles.meta}>{table.venueName ?? table.cafe?.name ?? 'See map'}</Text>
+        <Text style={styles.meta}>
+          {table.pricePKR == null ? 'Free' : formatPKR(table.pricePKR)} · {table.seatsLeft} of{' '}
+          {table.seats} seats left
+        </Text>
+        <Text style={styles.meta}>
+          Hosted by {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
+        </Text>
+        {table.description ? (
+          <Text style={[styles.subtitle, { marginTop: 8 }]}>{table.description}</Text>
+        ) : null}
+      </View>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      {!isHost && (
+        <View style={{ gap: 8 }}>
+          {status === 'APPROVED' ? (
+            <>
+              <PrimaryButton label="Open group chat" onPress={() => nav({ name: 'tableChat', id })} />
+              <SecondaryButton label="Leave table" onPress={() => void run(() => api.leaveTable(id))} />
+            </>
+          ) : status === 'PENDING' ? (
+            <>
+              <Text style={styles.subtitle}>Request sent — waiting for the host to approve.</Text>
+              <SecondaryButton label="Cancel request" onPress={() => void run(() => api.leaveTable(id))} />
+            </>
+          ) : full ? (
+            <Text style={styles.subtitle}>This table is full.</Text>
+          ) : (
+            <PrimaryButton
+              label={busy ? 'Sending…' : 'Request to join'}
+              onPress={() => void run(() => api.requestJoinTable(id))}
+              disabled={busy}
+            />
+          )}
+        </View>
+      )}
+
+      {isHost && (
+        <View style={{ gap: 8 }}>
+          <PrimaryButton label="Open group chat" onPress={() => nav({ name: 'tableChat', id })} />
+          <Text style={styles.fieldLabel}>Join requests</Text>
+          {requests.length === 0 ? (
+            <Text style={styles.subtitle}>No pending requests.</Text>
+          ) : (
+            requests.map((r) => (
+              <View key={r.id} style={styles.groupMember}>
+                <Text style={styles.meta}>
+                  {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                </Text>
+                <View style={styles.rowGap}>
+                  <Pressable onPress={() => void run(() => api.approveTableRequest(id, r.id))}>
+                    <Text style={styles.link}>Approve</Text>
+                  </Pressable>
+                  <Pressable onPress={() => void run(() => api.declineTableRequest(id, r.id))}>
+                    <Text style={styles.link}>Decline</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      )}
+    </ScrollView>
+  );
+}
+
+function TableChatScreen({
+  id,
+  userId,
+  onBack,
+}: {
+  id: string;
+  userId: string;
+  onBack: () => void;
+}) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [member, setMember] = useState<boolean | null>(null);
+  const [body, setBody] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const load = useCallback(async () => {
+    const r = await api.tableChat(id);
+    setMember(r.member);
+    setMessages(r.messages);
+  }, [id]);
+  useEffect(() => {
+    void load().catch(() => undefined);
+    const t = setInterval(() => void load().catch(() => undefined), 6000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  async function send() {
+    const text = body.trim();
+    if (!text) return;
+    setSending(true);
+    try {
+      await api.sendTableMessage(id, text);
+      setBody('');
+      await load();
+    } catch (err) {
+      Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not send');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <View style={styles.flex}>
+      <ScreenHeader title="Group chat" onBack={onBack} />
+      {member === false ? (
+        <Text style={styles.subtitle}>Only the host and approved guests can chat here.</Text>
+      ) : (
+        <FlatList
+          data={messages}
+          keyExtractor={(m) => m.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<Text style={styles.subtitle}>No messages yet — say hi 👋</Text>}
+          renderItem={({ item: m }) => {
+            const mine = m.userId === userId;
+            return (
+              <View style={[styles.bubbleRow, { justifyContent: mine ? 'flex-end' : 'flex-start' }]}>
+                <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
+                  {!mine ? (
+                    <Text style={styles.bubbleName}>
+                      {m.firstName ?? 'Member'} {m.lastInitial ?? ''}
+                    </Text>
+                  ) : null}
+                  <Text style={mine ? styles.bubbleTextMine : styles.bubbleText}>{m.body}</Text>
+                </View>
+              </View>
+            );
+          }}
+        />
+      )}
+      {member ? (
+        <View style={styles.rowGap}>
+          <TextInput
+            style={[styles.input, { flex: 1 }]}
+            value={body}
+            onChangeText={setBody}
+            placeholder="Message the table…"
+          />
+          <Pressable style={styles.button} onPress={() => void send()} disabled={sending}>
+            <Text style={styles.buttonText}>Send</Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function CreateTableScreen({
+  onDone,
+  onBack,
+}: {
+  onDone: (id: string) => void;
+  onBack: () => void;
+}) {
+  const [venueName, setVenueName] = useState('');
+  const [seats, setSeats] = useState(6);
+  const [category, setCategory] = useState('Deep talks');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [dateStr, setDateStr] = useState('');
+  const [coord, setCoord] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function publish() {
+    if (!coord) {
+      Alert.alert('Pick a spot', 'Tap the map to set the venue location.');
+      return;
+    }
+    const when = new Date(dateStr.replace(' ', 'T'));
+    if (Number.isNaN(when.getTime())) {
+      Alert.alert('Invalid date', 'Use the format 2026-08-15 18:00');
+      return;
+    }
+    setBusy(true);
+    try {
+      const input: CreateTableInput = {
+        venueName: venueName.trim() || undefined,
+        lat: coord.latitude,
+        lng: coord.longitude,
+        startAt: when.toISOString(),
+        seats,
+        category,
+        description: description.trim() || undefined,
+        pricePKR: price.trim() ? Number(price) : undefined,
+      };
+      const t = await api.createTable(input);
+      onDone(t.id);
+    } catch (err) {
+      Alert.alert('Could not publish', err instanceof ApiError ? err.message : 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.scroll}>
+      <ScreenHeader title="Host a table" onBack={onBack} />
+      <Field label="Venue name" value={venueName} onChangeText={setVenueName} placeholder="e.g. Kohsar Coffee" />
+      <Text style={styles.fieldLabel}>Tap the map to drop a pin</Text>
+      <View style={styles.pickerMap}>
+        <MapView
+          style={{ flex: 1 }}
+          initialRegion={{
+            latitude: 33.6844,
+            longitude: 73.0479,
+            latitudeDelta: 0.15,
+            longitudeDelta: 0.15,
+          }}
+          onPress={(e) => setCoord(e.nativeEvent.coordinate)}
+        >
+          {coord ? <Marker coordinate={coord} pinColor={CORAL} /> : null}
+        </MapView>
+      </View>
+      <Field
+        label="Date & time (YYYY-MM-DD HH:mm)"
+        value={dateStr}
+        onChangeText={setDateStr}
+        placeholder="2026-08-15 18:00"
+      />
+      <NumberRow label="Seats" value={seats} min={2} max={12} onChange={setSeats} />
+      <OptionRow
+        label="Category"
+        value={category}
+        options={['Deep talks', 'Coffee & chill', 'Networking', 'Books', 'Startups'].map((c) => ({
+          value: c,
+          label: c,
+        }))}
+        onChange={setCategory}
+      />
+      <Field label="Description" value={description} onChangeText={setDescription} multiline placeholder="What's this table about?" />
+      <Field label="Price per seat (blank = free)" value={price} onChangeText={setPrice} keyboardType="numeric" placeholder="Free" />
+      <PrimaryButton label={busy ? 'Publishing…' : 'Publish table'} onPress={() => void publish()} disabled={busy} />
+    </ScrollView>
+  );
+}
+
 // ---------- small building blocks ----------
 function ScreenHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
@@ -1025,6 +1422,14 @@ const styles = StyleSheet.create({
   groupBox: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderColor: BORDER, gap: 6 },
   groupMember: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   groupHint: { color: MUTED, fontSize: 12 },
+  pickerMap: { height: 220, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: BORDER },
+  bubbleRow: { flexDirection: 'row', marginVertical: 3 },
+  bubble: { maxWidth: '80%', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
+  bubbleMine: { backgroundColor: CORAL, borderBottomRightRadius: 4 },
+  bubbleOther: { backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderBottomLeftRadius: 4 },
+  bubbleName: { color: MUTED, fontSize: 11, fontWeight: '600', marginBottom: 2 },
+  bubbleText: { color: INK, fontSize: 14 },
+  bubbleTextMine: { color: '#fff', fontSize: 14 },
   mapContainer: { flex: 1, backgroundColor: CREAM },
   mapHeader: { paddingHorizontal: 20 },
   mapWrap: { flex: 1 },
