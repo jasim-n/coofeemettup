@@ -13,7 +13,9 @@ services:
     # --prod=false so devDeps (nest, prisma, typescript) are available to build.
     buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @jrst/api build
     # Apply any new migrations, then start the compiled server.
-    startCommand: pnpm --filter @jrst/api exec prisma migrate deploy && pnpm --filter @jrst/api exec node dist/main
+    # main.js lands at dist/src/main.js (the generated Prisma client sits outside src/,
+    # so tsc keeps the src/ path in the output).
+    startCommand: pnpm --filter @jrst/api exec prisma migrate deploy && pnpm --filter @jrst/api exec node dist/src/main.js
     envVars:
       - key: NODE_ENV
         value: production
