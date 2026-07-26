@@ -12,7 +12,10 @@ This brief reframes the product around **Tables**. Read it before touching produ
 A **Table** = a hosted get-together at a venue with a limited number of seats. It replaces the
 current **Event** concept, with two big shifts:
 
-- **Anyone can host** a Table (not only admins). There's a dedicated *Create Table* flow.
+- **Hosting is permission-gated.** Only accounts with a **`host` flag** enabled can create Tables —
+  NOT every user. Regular users can only browse/join. (Flag is a per-account boolean, e.g.
+  `canHost`; how it gets granted — admin-toggled vs application — is TBD, see §5.) The *Create
+  Table* button/flow is hidden for non-hosts and the create API rejects them.
 - **Joining is approval-based** — you request to join, the host approves, then you're in (and get
   the table's chat). This replaces the current instant *join → pay* path.
 
@@ -70,7 +73,7 @@ access is gated on approval.
 
 | Area | Today | This brief |
 |---|---|---|
-| Core noun | Event (admin-created) | **Table** (user-hosted) |
+| Core noun | Event (admin-created) | **Table** (hosted only by accounts with the `host` flag) |
 | Join | instant join → pay | **request → host approval → join** |
 | Discovery | list + map | **Nearby Tables** (location) + **Discover** (search/filters) |
 | Chat | per matched group, after admin forms groups | **per-table**, gated on join approval; top-level tab |
@@ -93,4 +96,6 @@ refund, admin console.
 - **Reviews**: rate the host, the table, or both? Public or private?
 - **Categories**: fixed list or free-form?
 - Adopt the **teal + dark** system app-wide now (replacing the coral redesign), or keep light as default?
+- **Host flag**: how is it granted — admin toggles it, or users apply/get approved? Any host
+  onboarding/verification before the flag is enabled?
 - Scope order: which flow to build first (Create Table? Discover/Nearby? Approval-join?).
