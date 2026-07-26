@@ -229,6 +229,44 @@ export interface TableChatResponse {
   messages: ChatMessage[];
 }
 
+// ---- Reviews (per-table ratings → per-profile reputation) ----
+export const ReviewRole = { HOST: 'HOST', GUEST: 'GUEST' } as const;
+export type ReviewRole = (typeof ReviewRole)[keyof typeof ReviewRole];
+
+export interface CreateReviewInput {
+  subjectId: string;
+  rating: number; // 1-5
+  comment?: string;
+}
+
+export interface ReviewTarget {
+  subjectId: string;
+  name: string;
+  role: ReviewRole;
+  alreadyReviewed: boolean;
+}
+
+export interface ReviewTargetsResponse {
+  eligible: boolean;
+  happened: boolean;
+  targets: ReviewTarget[];
+}
+
+export interface ReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  role: ReviewRole;
+  createdAt: string;
+  reviewer: { firstName: string | null; lastInitial: string | null };
+}
+
+export interface UserReputation {
+  hostRating: { avg: number; count: number };
+  guestRating: { avg: number; count: number };
+  recent: ReviewItem[];
+}
+
 export interface AuthResponse {
   user: PublicUser;
   csrfToken: string;

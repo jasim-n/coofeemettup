@@ -7,18 +7,22 @@ import {
   ApiError,
   type TableDto,
   type TableJoinRequestDto,
+  type UserReputation,
 } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Stars } from '@/components/stars';
+import TableReviews from '@/components/table-reviews';
 
 export default function TableDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const [table, setTable] = useState<TableDto | null>(null);
   const [requests, setRequests] = useState<TableJoinRequestDto[]>([]);
+  const [hostRep, setHostRep] = useState<UserReputation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -27,6 +31,7 @@ export default function TableDetailPage() {
   const load = useCallback(async () => {
     const t = await api.getTable(id);
     setTable(t);
+    api.userReviews(t.hostId).then(setHostRep).catch(() => undefined);
     if (user && t.hostId === user.id) {
       setRequests(await api.tableRequests(id));
     }
@@ -91,6 +96,15 @@ export default function TableDetailPage() {
           <p className="mt-3 text-sm text-white/70">
             Hosted by {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
           </p>
+          {hostRep && hostRep.hostRating.count > 0 && (
+            <div className="mt-1 flex items-center gap-1.5">
+              <Stars value={Math.round(hostRep.hostRating.avg)} size="text-sm" />
+              <span className="text-xs text-white/70">
+                {hostRep.hostRating.avg} · {hostRep.hostRating.count} review
+                {hostRep.hostRating.count === 1 ? '' : 's'}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="bg-card space-y-5 px-6 py-5">
@@ -221,6 +235,8 @@ export default function TableDetailPage() {
               ))}
             </div>
           )}
+
+          {(isHost || status === 'APPROVED') && <TableReviews tableId={id} />}
         </div>
       </div>
     </main>

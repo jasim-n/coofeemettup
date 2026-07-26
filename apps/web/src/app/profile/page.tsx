@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import MyReviews from '@/components/my-reviews';
 
 const selectClass =
   'h-10 rounded-full border border-input bg-card/60 px-4 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25';
@@ -132,6 +133,11 @@ export default function ProfilePage() {
         <Link href="/events" className="text-muted-foreground font-semibold text-sm hover:underline">
           Meetups
         </Link>
+      </div>
+
+      {/* Reviews / reputation */}
+      <div className="mb-8">
+        <MyReviews />
       </div>
 
       {/* Identity verification */}

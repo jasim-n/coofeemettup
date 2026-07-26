@@ -230,6 +230,26 @@ model Table {
   @@index([hostId])
 }
 
+enum ReviewRole {
+  HOST
+  GUEST
+}
+
+model Review {
+  id         String     @id @default(cuid())
+  tableId    String
+  reviewerId String
+  subjectId  String // the user being rated
+  role       ReviewRole // capacity the subject served (HOST or GUEST)
+  rating     Int // 1-5
+  comment    String?
+  createdAt  DateTime   @default(now())
+
+  @@unique([tableId, reviewerId, subjectId])
+  @@index([subjectId, role])
+  @@index([tableId])
+}
+
 model TableJoinRequest {
   id            String        @id @default(cuid())
   table         Table         @relation(fields: [tableId], references: [id])

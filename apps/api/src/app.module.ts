@@ -9,6 +9,7 @@ import { EventsModule } from './events/events.module';
 import { CafesModule } from './cafes/cafes.module';
 import { ChatModule } from './chat/chat.module';
 import { TablesModule } from './tables/tables.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
@@ -31,6 +32,7 @@ import { HealthController } from './health/health.controller';
     CafesModule,
     ChatModule,
     TablesModule,
+    ReviewsModule,
     BookingsModule,
     PaymentsModule,
     AdminModule,

@@ -19,12 +19,15 @@ import type {
   MyGroup,
   NotificationsResponse,
   PendingVerification,
+  CreateReviewInput,
   PublicUser,
   ReferralInfo,
   ReportDto,
+  ReviewTargetsResponse,
   TableChatResponse,
   TableDto,
   TableJoinRequestDto,
+  UserReputation,
   UpdateCafeInput,
   UpdateEventInput,
   SubmitFeedbackInput,
@@ -406,6 +409,23 @@ export class ApiClient {
 
   sendTableMessage(id: string, body: string): Promise<{ ok: true }> {
     return this.request('POST', `/tables/${id}/chat`, { body });
+  }
+
+  // ---- reviews ----
+  tableReviewTargets(id: string): Promise<ReviewTargetsResponse> {
+    return this.request('GET', `/tables/${id}/review-targets`);
+  }
+
+  createReview(tableId: string, input: CreateReviewInput): Promise<unknown> {
+    return this.request('POST', `/tables/${tableId}/reviews`, input);
+  }
+
+  myReviews(): Promise<UserReputation> {
+    return this.request('GET', '/users/me/reviews');
+  }
+
+  userReviews(userId: string): Promise<UserReputation> {
+    return this.request('GET', `/users/${userId}/reviews`);
   }
 
   // ---- notifications ----
