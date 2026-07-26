@@ -1,0 +1,35 @@
+# Render Blueprint for the NestJS API (free tier).
+# In Render: New → Blueprint → connect this repo. Render reads this file.
+# Set DATABASE_URL, REDIS_URL, WEB_ORIGIN, API_ORIGIN in the dashboard (marked sync:false).
+services:
+  - type: web
+    name: jrst-api
+    runtime: node
+    plan: free
+    region: singapore # closest free region to Pakistan
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /api/health
+    # --prod=false so devDeps (nest, prisma, typescript) are available to build.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @jrst/api build
+    # Apply any new migrations, then start the compiled server.
+    startCommand: pnpm --filter @jrst/api exec prisma migrate deploy && pnpm --filter @jrst/api exec node dist/main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      # --- set these in the Render dashboard (Environment) ---
+      - key: DATABASE_URL # Neon pooled connection string (?sslmode=require)
+        sync: false
+      - key: REDIS_URL # Upstash rediss:// URL
+        sync: false
+      - key: WEB_ORIGIN # your Vercel URL, e.g. https://jrst.vercel.app (comma-separated for multiple)
+        sync: false
+      - key: API_ORIGIN # this service's URL, e.g. https://jrst-api.onrender.com
+        sync: false
+      # --- auto-generated secrets ---
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PAYMENTS_WEBHOOK_SECRET
+        generateValue: true

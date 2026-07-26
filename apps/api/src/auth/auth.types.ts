@@ -19,9 +19,13 @@ export const CSRF_HEADER = 'x-csrf-token';
 export const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 function baseCookie(config: ConfigService<Env, true>): CookieOptions {
+  const isProd = config.get('NODE_ENV', { infer: true }) === 'production';
+  // Prod web + API live on different domains → cookies must be SameSite=None
+  // (with Secure) to ride along on cross-site credentialed requests. Locally
+  // (same site, http) Lax is correct.
   return {
-    sameSite: 'lax',
-    secure: config.get('NODE_ENV', { infer: true }) === 'production',
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd,
     path: '/',
     maxAge: THIRTY_DAYS_MS,
   };
