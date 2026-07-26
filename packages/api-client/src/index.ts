@@ -8,6 +8,7 @@ import type {
   ChatResponse,
   CreateCafeInput,
   CreateEventInput,
+  CreateTableInput,
   DashboardMetrics,
   EventDto,
   FeedbackDto,
@@ -21,6 +22,9 @@ import type {
   PublicUser,
   ReferralInfo,
   ReportDto,
+  TableChatResponse,
+  TableDto,
+  TableJoinRequestDto,
   UpdateCafeInput,
   UpdateEventInput,
   SubmitFeedbackInput,
@@ -345,6 +349,59 @@ export class ApiClient {
 
   adminMetrics(): Promise<DashboardMetrics> {
     return this.request('GET', '/admin/metrics');
+  }
+
+  adminSetHost(userId: string, canHost: boolean): Promise<{ id: string; phone: string; canHost: boolean }> {
+    return this.request('POST', `/users/${userId}/host`, { canHost });
+  }
+
+  // ---- tables (host-created, approval-based join) ----
+  createTable(input: CreateTableInput): Promise<TableDto> {
+    return this.request('POST', '/tables', input);
+  }
+
+  browseTables(): Promise<TableDto[]> {
+    return this.request('GET', '/tables');
+  }
+
+  getTable(id: string): Promise<TableDto> {
+    return this.request('GET', `/tables/${id}`);
+  }
+
+  myHostedTables(): Promise<TableDto[]> {
+    return this.request('GET', '/tables/mine/hosting');
+  }
+
+  myJoinedTables(): Promise<TableDto[]> {
+    return this.request('GET', '/tables/mine/joined');
+  }
+
+  requestJoinTable(id: string): Promise<TableJoinRequestDto> {
+    return this.request('POST', `/tables/${id}/join`);
+  }
+
+  leaveTable(id: string): Promise<{ ok: true }> {
+    return this.request('POST', `/tables/${id}/leave`);
+  }
+
+  tableRequests(id: string): Promise<TableJoinRequestDto[]> {
+    return this.request('GET', `/tables/${id}/requests`);
+  }
+
+  approveTableRequest(id: string, reqId: string): Promise<{ ok: true }> {
+    return this.request('POST', `/tables/${id}/requests/${reqId}/approve`);
+  }
+
+  declineTableRequest(id: string, reqId: string): Promise<{ ok: true }> {
+    return this.request('POST', `/tables/${id}/requests/${reqId}/decline`);
+  }
+
+  tableChat(id: string): Promise<TableChatResponse> {
+    return this.request('GET', `/tables/${id}/chat`);
+  }
+
+  sendTableMessage(id: string, body: string): Promise<{ ok: true }> {
+    return this.request('POST', `/tables/${id}/chat`, { body });
   }
 
   // ---- notifications ----

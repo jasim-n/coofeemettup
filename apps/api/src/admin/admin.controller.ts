@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
+import { SetHostDto } from './dto/set-host.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -20,6 +21,23 @@ export class AdminController {
   @Get('events/:eventId/bookings')
   bookings(@Param('eventId') eventId: string) {
     return this.admin.listEventBookings(eventId);
+  }
+
+  @Post('users/:id/host')
+  @HttpCode(200)
+  async setHost(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SetHostDto,
+  ) {
+    const result = await this.admin.setHost(id, dto.canHost);
+    void this.audit.log({
+      actorId: user.id,
+      action: dto.canHost ? 'host.granted' : 'host.revoked',
+      targetType: 'user',
+      targetId: id,
+    });
+    return result;
   }
 
   @Get('admin/metrics')

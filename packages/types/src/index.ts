@@ -108,6 +108,7 @@ export interface PublicUser {
   id: string;
   phone: string;
   role: Role;
+  canHost: boolean;
   verificationStatus: VerificationStatus;
   reliabilityScore: number;
   firstName: string | null;
@@ -136,6 +137,79 @@ export interface ReferralInfo {
   count: number;
 }
 
+// ---- Tables (host-created, approval-based join) ----
+export const TableStatus = {
+  OPEN: 'OPEN',
+  FULL: 'FULL',
+  CLOSED: 'CLOSED',
+  CANCELLED: 'CANCELLED',
+  COMPLETED: 'COMPLETED',
+} as const;
+export type TableStatus = (typeof TableStatus)[keyof typeof TableStatus];
+
+export const JoinStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  DECLINED: 'DECLINED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type JoinStatus = (typeof JoinStatus)[keyof typeof JoinStatus];
+
+export interface TableHost {
+  id: string;
+  firstName: string | null;
+  lastInitial: string | null;
+}
+
+export interface TableDto {
+  id: string;
+  hostId: string;
+  cafeId: string | null;
+  venueName: string | null;
+  venueAddress: string | null;
+  lat: number | null;
+  lng: number | null;
+  title: string | null;
+  startAt: string;
+  seats: number;
+  seatsLeft: number;
+  category: string;
+  description: string | null;
+  rules: string | null;
+  pricePKR: number | null;
+  status: TableStatus;
+  cafe?: Cafe;
+  host?: TableHost;
+  /** The current viewer's own request status for this table, if any. */
+  myRequestStatus?: JoinStatus | null;
+}
+
+export interface CreateTableInput {
+  cafeId?: string;
+  venueName?: string;
+  venueAddress?: string;
+  lat?: number;
+  lng?: number;
+  title?: string;
+  startAt: string;
+  seats: number;
+  category: string;
+  description?: string;
+  rules?: string;
+  pricePKR?: number;
+}
+
+export interface TableJoinRequestDto {
+  id: string;
+  tableId: string;
+  userId: string;
+  status: JoinStatus;
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+  /** Present on the host's request inbox. */
+  user?: PublicUser;
+}
+
 export interface ChatMessage {
   id: string;
   userId: string;
@@ -147,6 +221,11 @@ export interface ChatMessage {
 
 export interface ChatResponse {
   groupId: string | null;
+  messages: ChatMessage[];
+}
+
+export interface TableChatResponse {
+  member: boolean;
   messages: ChatMessage[];
 }
 

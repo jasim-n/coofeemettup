@@ -12,6 +12,16 @@ const NO_SHOW_PENALTY = 10;
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async setHost(userId: string, canHost: boolean) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { canHost },
+      select: { id: true, phone: true, canHost: true },
+    });
+  }
+
   listEventBookings(eventId: string) {
     return this.prisma.booking.findMany({
       where: { eventId, paymentStatus: 'PAID' },
