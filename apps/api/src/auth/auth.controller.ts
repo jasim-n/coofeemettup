@@ -47,8 +47,12 @@ export class AuthController {
     @Body() dto: RequestOtpDto,
   ): Promise<{ ok: true; devCode?: string }> {
     const code = await this.auth.requestOtp(this.parsePhone(dto.phone));
+    // Return the code in the response for dev, or on a pilot deploy that opts in
+    // via EXPOSE_DEV_OTP (no SMS provider yet). Otherwise keep it server-side.
     const isDev = this.config.get('NODE_ENV', { infer: true }) !== 'production';
-    return isDev ? { ok: true, devCode: code } : { ok: true };
+    const exposeOtp =
+      isDev || this.config.get('EXPOSE_DEV_OTP', { infer: true }) === 'true';
+    return exposeOtp ? { ok: true, devCode: code } : { ok: true };
   }
 
   @Public()

@@ -11,6 +11,9 @@ export const envSchema = z.object({
   WEB_ORIGIN: z.string().min(1),
   PAYMENTS_WEBHOOK_SECRET: z.string().min(8).default('dev-webhook-secret'),
   API_ORIGIN: z.string().min(1).default('http://localhost:4000'),
+  // Pilot convenience: when 'true', request-otp returns the code in the response
+  // even in production (no SMS provider yet). Unset once real SMS is wired.
+  EXPOSE_DEV_OTP: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
