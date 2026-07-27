@@ -110,7 +110,7 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -298,7 +298,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {events.map((ev) => (
           <Link key={ev.id} href={`/admin/events/${ev.id}`} className="block">
             <Card className="rounded-3xl transition-all hover:-translate-y-0.5 hover:shadow-glow">

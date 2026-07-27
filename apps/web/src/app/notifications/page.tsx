@@ -38,7 +38,7 @@ export default function NotificationsPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Inbox</p>

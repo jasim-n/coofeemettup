@@ -63,7 +63,7 @@ export default function AdminDashboardPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
       <div className="mb-8">
         <p className="eyebrow text-primary">Admin console</p>
         <h1 className="display mt-1 text-4xl uppercase">Dashboard</h1>
@@ -118,7 +118,7 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="rounded-3xl shadow-soft">
               <CardHeader className="pb-2">
                 <p className="eyebrow text-primary">Overview</p>
@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
                 Feedback · {m.feedback.count} responses
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">
+            <CardContent className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-4">
               <Stat label="Avg enjoyment" value={`${m.feedback.avgEnjoyment} / 5`} />
               <Stat label="Avg NPS" value={`${m.feedback.avgNps} / 10`} />
               <Stat label="Avg cafe rating" value={`${m.feedback.avgCafeRating} / 5`} />

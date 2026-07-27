@@ -41,7 +41,7 @@ export default function AdminReportsPage() {
   const label = (u: ReportDto['reporter']) => u?.firstName ?? u?.phone ?? 'unknown';
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
       <Link
         href="/admin"
         className="text-muted-foreground text-sm font-semibold hover:underline"
@@ -55,7 +55,7 @@ export default function AdminReportsPage() {
 
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
 
-      <div className="space-y-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         {reports.length === 0 && (
           <div className="rounded-3xl border border-dashed py-10 text-center">
             <p className="text-3xl">🛡️</p>

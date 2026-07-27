@@ -65,7 +65,7 @@ export default function MeetupsPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Your bookings</p>
@@ -93,7 +93,7 @@ export default function MeetupsPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         {bookings?.map((b) => {
           const isCancelled = b.status === 'CANCELLED';
           const isWaitlisted = b.status === 'WAITLISTED';

@@ -40,7 +40,7 @@ export default function AdminActivityPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
       <Link
         href="/admin"
         className="text-muted-foreground text-sm font-semibold hover:underline"

@@ -45,7 +45,7 @@ export default function EventsPage() {
   }, [area, track]);
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Islamabad · Lahore</p>
@@ -87,7 +87,7 @@ export default function EventsPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {events?.map((ev) => {
           const t = TRACK[ev.genderTrack];
           const low = ev.seatsLeft > 0 && ev.seatsLeft <= 2;

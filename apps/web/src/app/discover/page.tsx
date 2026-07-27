@@ -60,7 +60,7 @@ export default function DiscoverPage() {
     }`;
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
       <div className="mb-5 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Find your table</p>
@@ -122,7 +122,7 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {results.map((t) => (
           <Link key={t.id} href={`/tables/${t.id}`} className="block">
             <Card className="rounded-3xl transition-all hover:-translate-y-0.5 hover:shadow-glow">

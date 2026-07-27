@@ -127,7 +127,7 @@ export default function AdminCafesPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
       <div className="mb-8">
         <p className="eyebrow text-primary">Admin console</p>
         <h1 className="display mt-1 text-4xl uppercase">Cafes</h1>
@@ -154,7 +154,7 @@ export default function AdminCafesPage() {
         </Button>
       )}
 
-      <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {cafes.length === 0 && (
           <div className="rounded-3xl border border-dashed py-10 text-center">
             <p className="text-3xl">☕</p>

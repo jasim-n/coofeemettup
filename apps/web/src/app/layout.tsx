@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
+import { DesktopNav } from "@/components/desktop-nav";
 
 const heading = Manrope({
   variable: "--font-heading",
@@ -33,7 +34,10 @@ export default function RootLayout({
       className={`${heading.variable} ${body.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <DesktopNav />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

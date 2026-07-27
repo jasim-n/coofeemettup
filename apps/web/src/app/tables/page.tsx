@@ -31,7 +31,7 @@ export default function TablesPage() {
   }, []);
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Grab a seat</p>
@@ -63,7 +63,7 @@ export default function TablesPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tables?.map((t) => {
           const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
           return (
