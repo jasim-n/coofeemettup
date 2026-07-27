@@ -52,7 +52,7 @@ export default function FeedbackPage() {
 
   if (done) {
     return (
-      <main className="mx-auto w-full max-w-md flex-1 px-6 py-20 text-center">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-20 text-center">
         <div className="rounded-3xl border border-dashed py-14">
           <p className="text-5xl">🙏</p>
           <h1 className="display mt-4 text-2xl uppercase">Thanks!</h1>
@@ -71,7 +71,7 @@ export default function FeedbackPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
       {/* header */}
       <div className="mb-8">
         <p className="eyebrow text-primary">Post-meetup</p>

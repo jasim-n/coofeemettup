@@ -71,7 +71,7 @@ export default function TableDetailPage() {
   const full = table.seatsLeft <= 0 || table.status !== 'OPEN';
 
   return (
-    <main className="mx-auto w-full max-w-lg flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
       <Link href="/tables" className="text-primary text-sm font-semibold hover:underline">
         ← All tables
       </Link>

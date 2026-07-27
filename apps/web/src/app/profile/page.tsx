@@ -123,7 +123,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
@@ -163,7 +163,7 @@ export default function ProfilePage() {
         {cnicMsg && <p className="text-xs text-green-600">{cnicMsg}</p>}
       </div>
 
-      <form onSubmit={submit} className="space-y-8">
+      <form onSubmit={submit} className="grid gap-6 lg:grid-cols-2">
         {/* Section: Basic info */}
         <section className="space-y-4">
           <p className="eyebrow text-primary">Basic info</p>
@@ -336,10 +336,10 @@ export default function ProfilePage() {
           </label>
         </section>
 
-        {status && <p className="text-sm text-green-600 font-medium">{status}</p>}
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {status && <p className="text-sm text-green-600 font-medium lg:col-span-2">{status}</p>}
+        {error && <p className="text-destructive text-sm lg:col-span-2">{error}</p>}
 
-        <Button type="submit" size="lg" className="w-full" disabled={busy}>
+        <Button type="submit" size="lg" className="w-full lg:col-span-2" disabled={busy}>
           {busy ? 'Saving…' : 'Save profile'}
         </Button>
       </form>

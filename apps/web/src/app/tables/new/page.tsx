@@ -109,7 +109,7 @@ export default function NewTablePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
       <div className="mb-6">
         <p className="eyebrow text-primary">Host a table</p>
         <h1 className="display mt-1 text-3xl">Create a table</h1>
@@ -123,8 +123,8 @@ export default function NewTablePage() {
 
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
-      <form onSubmit={publish} className="space-y-4">
-        <Section step="1" title="Choose venue">
+      <form onSubmit={publish} className="grid gap-4 lg:grid-cols-2">
+        <div className="lg:col-span-2"><Section step="1" title="Choose venue">
           <div className="space-y-1.5">
             <Label htmlFor="venueName">Venue name</Label>
             <Input
@@ -153,7 +153,7 @@ export default function NewTablePage() {
               }
             />
           </div>
-        </Section>
+        </Section></div>
 
         <Section step="2" title="Date & time">
           <Input
@@ -234,7 +234,7 @@ export default function NewTablePage() {
           </div>
         </Section>
 
-        <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
+        <Button type="submit" variant="hero" size="lg" className="w-full lg:col-span-2" disabled={busy}>
           {busy ? 'Publishing…' : 'Publish table →'}
         </Button>
       </form>

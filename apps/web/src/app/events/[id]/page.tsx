@@ -83,7 +83,7 @@ export default function EventDetailPage() {
   const full = event.seatsLeft <= 0 || event.status === 'FULL';
 
   return (
-    <main className="mx-auto w-full max-w-lg flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
       {/* back nav */}
       <Link
         href="/events"
