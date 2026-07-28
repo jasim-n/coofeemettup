@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
+import { HomeDashboard } from '@/components/home-dashboard';
 
 export default function Home() {
   const { user, loading, logout } = useAuth();
@@ -113,60 +114,62 @@ export default function Home() {
     );
   }
 
-  // ---- signed-in: app dashboard ----
+  // ---- signed-in ----
+  if (loading) {
+    return <main className="p-6 text-center text-sm text-muted-foreground">Loading…</main>;
+  }
+
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-6 py-8 md:max-w-4xl">
-      <header className="flex items-center justify-between md:hidden">
-        <Wordmark className="text-base" />
-        {user && (
+    <main className="mx-auto w-full max-w-md flex-1 px-6 py-8 md:max-w-6xl">
+      {/* Desktop: a real content dashboard (nav bar handles navigation) */}
+      <div className="hidden md:block">
+        <HomeDashboard user={user!} />
+      </div>
+
+      {/* Mobile: the tile launcher (mobile has no top nav) */}
+      <div className="md:hidden">
+        <header className="flex items-center justify-between">
+          <Wordmark className="text-base" />
           <Button variant="ghost" size="sm" onClick={() => void logout()}>
             Sign out
           </Button>
-        )}
-      </header>
+        </header>
 
-      {loading ? (
-        <p className="text-muted-foreground mt-10 text-center text-sm">Loading…</p>
-      ) : user ? (
-        <>
-          <section className="bg-ink relative mt-5 overflow-hidden rounded-3xl p-6 shadow-glow">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -top-10 -right-6 size-40 rounded-full bg-gradient-hero opacity-40 blur-2xl"
-            />
-            <p className="eyebrow text-white/60">Welcome back</p>
-            <p className="font-heading mt-1 text-2xl font-extrabold tracking-tight">
-              {user.phone}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-                {user.role.toLowerCase()}
-              </span>
-              <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-                {user.verificationStatus === 'VERIFIED' ? '✓ verified' : 'unverified'}
-              </span>
-              <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-                ⭐ {user.reliabilityScore} reliability
-              </span>
-            </div>
-          </section>
-
-          <div className="mt-4 grid grid-cols-2 gap-3 md:mt-6 md:grid-cols-4">
-            <Tile href="/tables/nearby" icon="🗺️" label="Nearby tables" wide accent />
-            <Tile href="/tables" icon="🪑" label="All tables" />
-            <Tile href="/discover" icon="🔍" label="Discover" />
-            {user.canHost && <Tile href="/tables/new" icon="✨" label="Host a table" />}
-            <Tile href="/events" icon="☕" label="Browse meetups" />
-            <Tile href="/meetups" icon="🎟️" label="My meetups" />
-            <Tile href="/notifications" icon="🔔" label="Notifications" badge={unread} />
-            <Tile href="/profile" icon="👤" label="Edit profile" />
-            <Tile href="/invite" icon="🎁" label="Invite friends" />
-            {(user.role === 'ADMIN' || user.role === 'ORGANIZER') && (
-              <Tile href="/admin" icon="⚙️" label="Admin console" />
-            )}
+        <section className="bg-ink relative mt-5 overflow-hidden rounded-3xl p-6 shadow-glow">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-10 -right-6 size-40 rounded-full bg-gradient-hero opacity-40 blur-2xl"
+          />
+          <p className="eyebrow text-white/60">Welcome back</p>
+          <p className="font-heading mt-1 text-2xl font-extrabold tracking-tight">{user!.phone}</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
+              {user!.role.toLowerCase()}
+            </span>
+            <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
+              {user!.verificationStatus === 'VERIFIED' ? '✓ verified' : 'unverified'}
+            </span>
+            <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
+              ⭐ {user!.reliabilityScore} reliability
+            </span>
           </div>
-        </>
-      ) : null}
+        </section>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Tile href="/tables/nearby" icon="🗺️" label="Nearby tables" wide accent />
+          <Tile href="/tables" icon="🪑" label="All tables" />
+          <Tile href="/discover" icon="🔍" label="Discover" />
+          {user!.canHost && <Tile href="/tables/new" icon="✨" label="Host a table" />}
+          <Tile href="/events" icon="☕" label="Browse meetups" />
+          <Tile href="/meetups" icon="🎟️" label="My meetups" />
+          <Tile href="/notifications" icon="🔔" label="Notifications" badge={unread} />
+          <Tile href="/profile" icon="👤" label="Edit profile" />
+          <Tile href="/invite" icon="🎁" label="Invite friends" />
+          {(user!.role === 'ADMIN' || user!.role === 'ORGANIZER') && (
+            <Tile href="/admin" icon="⚙️" label="Admin console" />
+          )}
+        </div>
+      </div>
     </main>
   );
 }
