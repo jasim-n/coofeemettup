@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ApiError, type PublicUser } from '@jrst/api-client';
-import { api } from '@/lib/api';
+import { api, TOKEN_KEY } from '@/lib/api';
 
 interface AuthContextValue {
   user: PublicUser | null;
@@ -55,6 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verifyOtp = useCallback(
     async (phone: string, code: string, referralCode?: string) => {
       const res = await api.verifyOtp(phone, code, referralCode);
+      // Persist the bearer token so the session survives reloads (no cookies).
+      const token = api.getAuthToken();
+      if (token) window.localStorage.setItem(TOKEN_KEY, token);
       setUser(res.user);
     },
     [],
@@ -62,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.logout();
+    window.localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }, []);
 
