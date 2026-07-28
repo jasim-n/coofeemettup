@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/spinner';
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -71,7 +72,7 @@ export default function EventDetailPage() {
   if (!event)
     return (
       <main className="mx-auto w-full max-w-lg px-6 py-16 text-center">
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>
       </main>
     );
 

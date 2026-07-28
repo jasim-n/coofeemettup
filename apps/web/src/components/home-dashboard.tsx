@@ -44,10 +44,12 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   }, []);
 
   const upcoming = tables.slice(0, 4);
-  const myActive = joined
-    .filter((t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING')
-    .slice(0, 4);
+  const active = joined.filter(
+    (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
+  );
+  const myActive = active.slice(0, 4);
   const verified = user.verificationStatus === 'VERIFIED';
+  const vibes = [...new Set(tables.map((t) => t.category))].slice(0, 6);
 
   return (
     <div className="space-y-6">
@@ -94,6 +96,29 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         </div>
       </section>
 
+      {/* stats strip */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatTile icon="🪑" value={tables.length} label="Open tables near you" />
+        <StatTile icon="🎟️" value={active.length} label="Your active meetups" />
+        <StatTile icon="⭐" value={user.reliabilityScore} label="Reliability score" />
+      </div>
+
+      {/* popular vibes */}
+      {vibes.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground mr-1 text-sm font-semibold">Popular vibes</span>
+          {vibes.map((c) => (
+            <Link
+              key={c}
+              href="/discover"
+              className="bg-card shadow-soft ring-border/60 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 transition-all hover:-translate-y-0.5 hover:shadow-glow"
+            >
+              {emojiFor(c)} {c}
+            </Link>
+          ))}
+        </div>
+      )}
+
       {/* content grid */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* main: tables near you */}
@@ -133,9 +158,12 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                         <p>🗓️ {formatDateTime(t.startAt)}</p>
                         <p>📍 {t.venueName ?? t.cafe?.name ?? 'See map'}</p>
                       </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-muted-foreground text-xs">
-                          Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
+                      <div className="mt-3 flex items-center justify-between border-t pt-3">
+                        <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                          <span className="bg-primary/10 text-primary grid size-6 place-items-center rounded-full text-[10px] font-bold">
+                            {(t.host?.firstName ?? '?').charAt(0).toUpperCase()}
+                          </span>
+                          {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
                         </span>
                         <Badge variant={t.seatsLeft <= 2 ? 'warning' : 'secondary'}>
                           {t.seatsLeft} left
@@ -232,6 +260,26 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
             </CardContent>
           </Card>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function StatTile({ icon, value, label }: { icon: string; value: number; label: string }) {
+  return (
+    <div className="bg-card shadow-soft relative overflow-hidden rounded-2xl border p-5">
+      <div
+        aria-hidden
+        className="bg-gradient-hero pointer-events-none absolute -top-8 -right-8 size-24 rounded-full opacity-15 blur-2xl"
+      />
+      <div className="relative flex items-center gap-3">
+        <span className="bg-primary/10 grid size-11 shrink-0 place-items-center rounded-2xl text-2xl">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="font-heading text-2xl font-extrabold tracking-tight">{value}</p>
+          <p className="text-muted-foreground truncate text-xs font-medium">{label}</p>
+        </div>
       </div>
     </div>
   );

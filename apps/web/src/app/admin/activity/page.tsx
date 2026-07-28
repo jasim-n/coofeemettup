@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageLoader } from '@/components/spinner';
 
 export default function AdminActivityPage() {
   const { user, loading } = useAuth();
@@ -31,7 +32,7 @@ export default function AdminActivityPage() {
     };
   }, [isAdmin]);
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!isAdmin)
     return (
       <main className="p-6 text-sm">

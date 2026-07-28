@@ -8,6 +8,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PageLoader } from '@/components/spinner';
 
 const POLL_MS = 6000;
 
@@ -53,7 +54,7 @@ export default function GroupChatPage() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!user)
     return (
       <main className="p-6 text-sm">

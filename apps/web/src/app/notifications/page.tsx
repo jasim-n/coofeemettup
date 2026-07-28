@@ -6,6 +6,7 @@ import { ApiError, type NotificationDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
+import { PageLoader } from '@/components/spinner';
 
 export default function NotificationsPage() {
   const { user, loading } = useAuth();
@@ -29,7 +30,7 @@ export default function NotificationsPage() {
     };
   }, [user]);
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!user)
     return (
       <main className="p-6 text-sm">

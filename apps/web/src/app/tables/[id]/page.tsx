@@ -16,6 +16,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Stars } from '@/components/stars';
 import TableReviews from '@/components/table-reviews';
+import { PageLoader } from '@/components/spinner';
 
 export default function TableDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,7 +66,7 @@ export default function TableDetailPage() {
   }
 
   if (error && !table) return <main className="p-6 text-destructive text-sm">{error}</main>;
-  if (!table) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (!table) return <PageLoader />;
 
   const status = table.myRequestStatus;
   const full = table.seatsLeft <= 0 || table.status !== 'OPEN';

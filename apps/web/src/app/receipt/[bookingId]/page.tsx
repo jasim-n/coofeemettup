@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
+import { PageLoader } from '@/components/spinner';
 
 export default function ReceiptPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -36,7 +37,7 @@ export default function ReceiptPage() {
     };
   }, [user, bookingId]);
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!user)
     return (
       <main className="p-6 text-sm">

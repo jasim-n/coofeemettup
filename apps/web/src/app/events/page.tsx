@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/spinner';
 
 const AREAS = ['F-6', 'F-7', 'Blue Area', 'Gulberg'];
 const TRACK: Record<string, { label: string; badge: 'brand' | 'secondary'; bar: string }> = {
@@ -79,7 +80,7 @@ export default function EventsPage() {
       </div>
 
       {error && <p className="text-destructive text-sm">{error}</p>}
-      {!events && !error && <p className="text-muted-foreground text-sm">Loading…</p>}
+      {!events && !error && <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>}
       {events && events.length === 0 && (
         <div className="rounded-3xl border border-dashed py-14 text-center">
           <p className="text-3xl">🫖</p>

@@ -9,6 +9,7 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
+import { Spinner } from '@/components/spinner';
 
 export default function TablesPage() {
   const { user } = useAuth();
@@ -53,7 +54,7 @@ export default function TablesPage() {
       </div>
 
       {error && <p className="text-destructive text-sm">{error}</p>}
-      {!tables && !error && <p className="text-muted-foreground text-sm">Loading…</p>}
+      {!tables && !error && <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>}
       {tables && tables.length === 0 && (
         <div className="rounded-3xl border border-dashed py-14 text-center">
           <p className="text-3xl">🪑</p>

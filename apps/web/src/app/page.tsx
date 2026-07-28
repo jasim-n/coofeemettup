@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
 import { HomeDashboard } from '@/components/home-dashboard';
+import { PageLoader } from '@/components/spinner';
 
 export default function Home() {
   const { user, loading, logout } = useAuth();
@@ -116,7 +117,7 @@ export default function Home() {
 
   // ---- signed-in ----
   if (loading) {
-    return <main className="p-6 text-center text-sm text-muted-foreground">Loading…</main>;
+    return <PageLoader />;
   }
 
   return (

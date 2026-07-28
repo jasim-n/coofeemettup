@@ -6,6 +6,7 @@ import { ApiError, type ReportDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
+import { PageLoader } from '@/components/spinner';
 
 export default function AdminReportsPage() {
   const { user, loading } = useAuth();
@@ -30,7 +31,7 @@ export default function AdminReportsPage() {
     };
   }, [isAdmin]);
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!isAdmin)
     return (
       <main className="p-6 text-sm">

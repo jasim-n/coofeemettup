@@ -11,12 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageLoader, Spinner } from '@/components/spinner';
 
 const LocationPicker = dynamic(() => import('@/components/location-picker'), {
   ssr: false,
   loading: () => (
     <div className="bg-muted/50 grid h-56 place-items-center rounded-2xl border text-sm text-muted-foreground">
-      Loading map…
+      <Spinner className="text-primary size-7" />
     </div>
   ),
 });
@@ -81,7 +82,7 @@ export default function EditEventPage() {
     };
   }, [isAdmin, load]);
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!isAdmin)
     return (
       <main className="p-6 text-sm">
@@ -133,7 +134,7 @@ export default function EditEventPage() {
       </div>
 
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
-      {!form && !error && <p className="text-muted-foreground text-sm">Loading…</p>}
+      {!form && !error && <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>}
 
       {form && (
         <Card className="rounded-3xl shadow-soft">

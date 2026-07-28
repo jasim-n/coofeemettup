@@ -8,6 +8,7 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/spinner';
 
 type PriceFilter = 'all' | 'free' | 'paid';
 
@@ -114,7 +115,7 @@ export default function DiscoverPage() {
       )}
 
       {error && <p className="text-destructive text-sm">{error}</p>}
-      {!tables && !error && <p className="text-muted-foreground text-sm">Loading…</p>}
+      {!tables && !error && <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>}
       {tables && results.length === 0 && (
         <div className="rounded-3xl border border-dashed py-12 text-center">
           <p className="text-3xl">🔎</p>

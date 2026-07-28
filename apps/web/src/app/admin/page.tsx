@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageLoader, Spinner } from '@/components/spinner';
 
 const selectClass =
   'h-10 rounded-full border border-input bg-card/60 px-4 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25';
@@ -21,7 +22,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker'), {
   ssr: false,
   loading: () => (
     <div className="bg-muted/50 grid h-56 place-items-center rounded-2xl border text-sm text-muted-foreground">
-      Loading map…
+      <Spinner className="text-primary size-7" />
     </div>
   ),
 });
@@ -68,8 +69,7 @@ export default function AdminPage() {
     load();
   }, [load]);
 
-  if (loading)
-    return <main className="p-6 text-sm text-muted-foreground">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!isAdmin)
     return (
       <main className="p-6 text-sm">

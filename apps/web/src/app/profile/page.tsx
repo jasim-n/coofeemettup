@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import MyReviews from '@/components/my-reviews';
+import { PageLoader } from '@/components/spinner';
 
 const selectClass =
   'h-10 rounded-full border border-input bg-card/60 px-4 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25';
@@ -58,7 +59,7 @@ export default function ProfilePage() {
     setConsent(Boolean(user.codeOfConductAt));
   }, [user]);
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!user)
     return (
       <main className="p-6 text-sm">

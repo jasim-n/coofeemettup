@@ -14,6 +14,7 @@ import { api } from '@/lib/api';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageLoader } from '@/components/spinner';
 
 export default function AdminEventPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,7 +49,7 @@ export default function AdminEventPage() {
     };
   }, [load]);
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!isAdmin)
     return (
       <main className="p-6 text-sm">

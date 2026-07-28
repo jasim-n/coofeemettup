@@ -9,6 +9,7 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PageLoader, Spinner } from '@/components/spinner';
 
 export default function MeetupsPage() {
   const { user, loading } = useAuth();
@@ -56,7 +57,7 @@ export default function MeetupsPage() {
     }
   }
 
-  if (loading) return <main className="p-6 text-muted-foreground text-sm">Loading…</main>;
+  if (loading) return <PageLoader />;
   if (!user)
     return (
       <main className="p-6 text-sm">
@@ -78,7 +79,7 @@ export default function MeetupsPage() {
 
       {error && <p className="text-destructive text-sm mb-4">{error}</p>}
       {bookings === null && !error && (
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>
       )}
       {bookings?.length === 0 && (
         <div className="rounded-3xl border border-dashed py-12 text-center">
@@ -225,7 +226,7 @@ function GroupMembers({ eventId }: { eventId: string }) {
     }
   }
 
-  if (!loaded) return <p className="text-muted-foreground mt-2 text-xs">Loading your group…</p>;
+  if (!loaded) return <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>;
   if (members.length === 0)
     return <p className="text-muted-foreground mt-2 text-xs">Group not formed yet.</p>;
 
