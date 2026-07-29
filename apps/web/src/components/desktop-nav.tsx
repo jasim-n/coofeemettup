@@ -10,7 +10,6 @@ const LINKS = [
   { href: '/tables', label: 'Tables' },
   { href: '/tables/nearby', label: 'Nearby' },
   { href: '/discover', label: 'Discover' },
-  { href: '/events', label: 'Meetups' },
   { href: '/meetups', label: 'My meetups' },
 ];
 

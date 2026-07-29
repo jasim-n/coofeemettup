@@ -131,8 +131,8 @@ export default function ProfilePage() {
           <p className="eyebrow text-primary">Account</p>
           <h1 className="display mt-1 text-3xl">Your profile</h1>
         </div>
-        <Link href="/events" className="text-muted-foreground font-semibold text-sm hover:underline">
-          Meetups
+        <Link href="/meetups" className="text-muted-foreground font-semibold text-sm hover:underline">
+          My meetups
         </Link>
       </div>
 

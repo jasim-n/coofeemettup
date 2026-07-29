@@ -161,7 +161,6 @@ export default function Home() {
           <Tile href="/tables" icon="🪑" label="All tables" />
           <Tile href="/discover" icon="🔍" label="Discover" />
           {user!.canHost && <Tile href="/tables/new" icon="✨" label="Host a table" />}
-          <Tile href="/events" icon="☕" label="Browse meetups" />
           <Tile href="/meetups" icon="🎟️" label="My meetups" />
           <Tile href="/notifications" icon="🔔" label="Notifications" badge={unread} />
           <Tile href="/profile" icon="👤" label="Edit profile" />
