@@ -10,6 +10,7 @@ import { ApiError, type TableDto } from '@jrst/api-client';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Spinner } from '@/components/spinner';
+import { Input } from '@/components/ui/input';
 
 // Free OpenStreetMap raster tiles — no token / account required.
 const OSM_STYLE: StyleSpecification = {
@@ -36,6 +37,26 @@ const CAT_EMOJI: Record<string, string> = {
 };
 const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 
+const TIMES = [
+  { key: 'morning', label: 'Morning', emoji: '🌅' },
+  { key: 'afternoon', label: 'Afternoon', emoji: '☀️' },
+  { key: 'evening', label: 'Evening', emoji: '🌙' },
+] as const;
+type TimeKey = (typeof TIMES)[number]['key'];
+
+/** Local-time bucket for an ISO timestamp. 05–11 morning · 12–16 afternoon · else evening. */
+function timeBucket(iso: string): TimeKey {
+  const h = new Date(iso).getHours();
+  if (h >= 5 && h < 12) return 'morning';
+  if (h >= 12 && h < 17) return 'afternoon';
+  return 'evening';
+}
+
+const chipCls = (active: boolean) =>
+  `rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+    active ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card hover:bg-muted'
+  }`;
+
 interface Pin {
   table: TableDto;
   lat: number;
@@ -53,6 +74,20 @@ export default function TablesMap() {
   const mapRef = useRef<MapRef | null>(null);
   const railRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [ready, setReady] = useState(false);
+
+  // filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [times, setTimes] = useState<TimeKey[]>([]);
+  const activeCount = (fromDate ? 1 : 0) + (toDate ? 1 : 0) + times.length;
+  const toggleTime = (k: TimeKey) =>
+    setTimes((ts) => (ts.includes(k) ? ts.filter((x) => x !== k) : [...ts, k]));
+  const clearFilters = () => {
+    setFromDate('');
+    setToDate('');
+    setTimes([]);
+  };
 
   useEffect(() => {
     let active = true;
@@ -88,18 +123,28 @@ export default function TablesMap() {
     return out;
   }, [tables]);
 
+  const visible = useMemo(() => {
+    return pins.filter((p) => {
+      const d = new Date(p.table.startAt);
+      if (fromDate && d < new Date(`${fromDate}T00:00:00`)) return false;
+      if (toDate && d > new Date(`${toDate}T23:59:59`)) return false;
+      if (times.length && !times.includes(timeBucket(p.table.startAt))) return false;
+      return true;
+    });
+  }, [pins, fromDate, toDate, times]);
+
   useEffect(() => {
     const m = mapRef.current;
-    if (!m || !ready || pins.length === 0) return;
-    if (pins.length === 1) {
-      m.flyTo({ center: [pins[0]!.lng, pins[0]!.lat], zoom: 13, duration: 600 });
+    if (!m || !ready || visible.length === 0) return;
+    if (visible.length === 1) {
+      m.flyTo({ center: [visible[0]!.lng, visible[0]!.lat], zoom: 13, duration: 600 });
       return;
     }
     let minLng = Infinity,
       minLat = Infinity,
       maxLng = -Infinity,
       maxLat = -Infinity;
-    for (const p of pins) {
+    for (const p of visible) {
       minLng = Math.min(minLng, p.lng);
       maxLng = Math.max(maxLng, p.lng);
       minLat = Math.min(minLat, p.lat);
@@ -112,7 +157,7 @@ export default function TablesMap() {
       ],
       { padding: 70, maxZoom: 14, duration: 600 },
     );
-  }, [pins, ready]);
+  }, [visible, ready]);
 
   const select = useCallback((p: Pin, scrollRail = false) => {
     setSelectedId(p.table.id);
@@ -135,29 +180,106 @@ export default function TablesMap() {
     );
   }, []);
 
-  const selected = pins.find((p) => p.table.id === selectedId) ?? null;
+  const selected = visible.find((p) => p.table.id === selectedId) ?? null;
 
   return (
-    <div className="flex flex-col gap-4 md:h-[74vh] md:flex-row">
+    <div className="space-y-3">
+      {/* filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setShowFilters((s) => !s)}
+          className="bg-card shadow-soft ring-border/60 hover:bg-muted flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold ring-1 transition-colors"
+        >
+          <span aria-hidden>⚙</span> Filters
+          {activeCount > 0 && (
+            <span className="bg-primary text-primary-foreground ml-0.5 grid size-4 place-items-center rounded-full text-[10px]">
+              {activeCount}
+            </span>
+          )}
+        </button>
+        {activeCount > 0 && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-muted-foreground hover:text-foreground text-xs font-semibold"
+          >
+            Clear
+          </button>
+        )}
+        <span className="text-muted-foreground ml-auto text-sm font-medium">
+          {loading ? 'Finding tables…' : `${visible.length} of ${pins.length} tables`}
+        </span>
+      </div>
+
+      {showFilters && (
+        <div className="bg-card shadow-soft ring-border/60 space-y-3 rounded-2xl p-4 ring-1">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1">
+              <span className="text-muted-foreground text-xs font-semibold">From date</span>
+              <Input
+                type="date"
+                value={fromDate}
+                max={toDate || undefined}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-muted-foreground text-xs font-semibold">To date</span>
+              <Input
+                type="date"
+                value={toDate}
+                min={fromDate || undefined}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="space-y-1.5">
+            <span className="text-muted-foreground text-xs font-semibold">Time of day</span>
+            <div className="flex flex-wrap gap-2">
+              {TIMES.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => toggleTime(t.key)}
+                  className={chipCls(times.includes(t.key))}
+                >
+                  {t.emoji} {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 md:h-[74vh] md:flex-row">
       {/* desktop list rail */}
       <aside className="hidden md:flex md:w-80 md:shrink-0 md:flex-col md:overflow-y-auto md:pr-1">
         <div className="flex items-center justify-between px-1 pb-2">
           <span className="eyebrow text-primary">
-            {loading ? 'Finding tables…' : `${pins.length} nearby`}
+            {loading ? 'Finding tables…' : `${visible.length} nearby`}
           </span>
-          <Link href="/discover" className="text-primary text-xs font-semibold hover:underline">
-            Filters →
-          </Link>
+          <button
+            type="button"
+            onClick={() => setShowFilters((s) => !s)}
+            className="text-primary text-xs font-semibold hover:underline"
+          >
+            Filters {activeCount > 0 ? `(${activeCount})` : '→'}
+          </button>
         </div>
         {loading ? (
           <div className="grid flex-1 place-items-center">
             <Spinner className="text-primary size-6" />
           </div>
-        ) : pins.length === 0 ? (
-          <p className="text-muted-foreground px-1 text-sm">No open tables nearby right now.</p>
+        ) : visible.length === 0 ? (
+          <p className="text-muted-foreground px-1 text-sm">
+            {activeCount > 0
+              ? 'No tables match these filters.'
+              : 'No open tables nearby right now.'}
+          </p>
         ) : (
           <div className="space-y-2">
-            {pins.map((p) => {
+            {visible.map((p) => {
               const t = p.table;
               const active = selectedId === t.id;
               return (
@@ -220,7 +342,7 @@ export default function TablesMap() {
           style={{ width: '100%', height: '100%' }}
         >
           <NavigationControl position="top-right" showCompass={false} />
-          {pins.map((p) => {
+          {visible.map((p) => {
             const active = selectedId === p.table.id;
             return (
               <Marker
@@ -262,7 +384,7 @@ export default function TablesMap() {
         </MapGL>
 
         <div className="glass ring-border/60 absolute left-3 top-3 rounded-full px-3 py-1.5 text-xs font-bold ring-1">
-          🪑 {pins.length} table{pins.length === 1 ? '' : 's'} nearby
+          🪑 {visible.length} table{visible.length === 1 ? '' : 's'} nearby
         </div>
         <button
           type="button"
@@ -273,6 +395,7 @@ export default function TablesMap() {
           📍
         </button>
         {error && <p className="text-destructive absolute left-3 top-14 text-sm">{error}</p>}
+      </div>
       </div>
     </div>
   );
