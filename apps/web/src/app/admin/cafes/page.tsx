@@ -132,12 +132,14 @@ export default function AdminCafesPage() {
       <div className="mb-8">
         <p className="eyebrow text-primary">Admin console</p>
         <h1 className="display mt-1 text-4xl uppercase">Cafes</h1>
-        <Link
-          href="/admin"
-          className="text-muted-foreground mt-2 inline-block text-sm font-semibold hover:underline"
-        >
-          ← Admin
-        </Link>
+        <div className="mt-2 flex gap-3 text-sm font-semibold">
+          <Link href="/admin" className="text-muted-foreground hover:underline">
+            ← Admin
+          </Link>
+          <Link href="/admin/tables" className="text-primary hover:underline">
+            Tables
+          </Link>
+        </div>
       </div>
 
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}

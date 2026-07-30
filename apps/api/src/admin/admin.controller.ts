@@ -61,6 +61,27 @@ export class AdminController {
     return this.admin.getMetrics();
   }
 
+  @Get('admin/tables')
+  listAllTables() {
+    return this.admin.listAllTables();
+  }
+
+  @Post('admin/tables/:id/cancel')
+  @HttpCode(200)
+  async cancelTable(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
+    const result = await this.admin.cancelTable(id);
+    void this.audit.log({
+      actorId: user.id,
+      action: 'table.cancelled',
+      targetType: 'table',
+      targetId: id,
+    });
+    return result;
+  }
+
   @Post('events/:eventId/groups')
   @HttpCode(201)
   async createGroup(

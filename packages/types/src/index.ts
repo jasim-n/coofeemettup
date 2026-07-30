@@ -184,6 +184,10 @@ export interface TableDto {
   myRequestStatus?: JoinStatus | null;
 }
 
+export interface AdminTableDto extends TableDto {
+  pendingRequests: number;
+}
+
 export interface CreateTableInput {
   cafeId?: string;
   venueName?: string;

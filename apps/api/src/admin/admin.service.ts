@@ -89,6 +89,31 @@ export class AdminService {
     return updated;
   }
 
+  async listAllTables() {
+    const rows = await this.prisma.table.findMany({
+      include: {
+        cafe: true,
+        host: { select: { id: true, firstName: true, lastInitial: true } },
+        _count: { select: { requests: { where: { status: 'PENDING' } } } },
+      },
+      orderBy: { startAt: 'desc' },
+    });
+    return rows.map(({ _count, ...t }) => ({
+      ...t,
+      pendingRequests: _count.requests,
+    }));
+  }
+
+  async cancelTable(id: string) {
+    const table = await this.prisma.table.findUnique({ where: { id } });
+    if (!table) throw new NotFoundException('Table not found');
+    await this.prisma.table.update({
+      where: { id },
+      data: { status: 'CANCELLED' },
+    });
+    return { ok: true as const };
+  }
+
   /**
    * Operational dashboard + the §7 Go/No-Go gate:
    * ≥40% of first-timers book a second event, plus a referral signal,

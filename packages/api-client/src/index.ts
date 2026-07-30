@@ -25,6 +25,7 @@ import type {
   ReportDto,
   ReviewTargetsResponse,
   TableChatResponse,
+  AdminTableDto,
   TableDto,
   TableJoinRequestDto,
   UserReputation,
@@ -409,6 +410,14 @@ export class ApiClient {
 
   sendTableMessage(id: string, body: string): Promise<{ ok: true }> {
     return this.request('POST', `/tables/${id}/chat`, { body });
+  }
+
+  adminListTables(): Promise<AdminTableDto[]> {
+    return this.request('GET', '/admin/tables');
+  }
+
+  adminCancelTable(id: string): Promise<{ ok: true }> {
+    return this.request('POST', `/admin/tables/${id}/cancel`);
   }
 
   // ---- reviews ----

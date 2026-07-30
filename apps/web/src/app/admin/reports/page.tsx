@@ -43,12 +43,14 @@ export default function AdminReportsPage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
-      <Link
-        href="/admin"
-        className="text-muted-foreground text-sm font-semibold hover:underline"
-      >
-        ← Admin
-      </Link>
+      <div className="flex gap-3 text-sm font-semibold">
+        <Link href="/admin" className="text-muted-foreground hover:underline">
+          ← Admin
+        </Link>
+        <Link href="/admin/tables" className="text-primary hover:underline">
+          Tables
+        </Link>
+      </div>
       <div className="mt-3 mb-8">
         <p className="eyebrow text-primary">Safety &amp; trust</p>
         <h1 className="display mt-1 text-4xl uppercase">Reports</h1>
