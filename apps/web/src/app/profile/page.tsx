@@ -326,7 +326,10 @@ export default function ProfilePage() {
             />
             OK to appear in event group photos
           </label>
-          <label className="flex items-center gap-3 text-sm cursor-pointer">
+          <label
+            id="code-of-conduct"
+            className="flex scroll-mt-24 items-center gap-3 text-sm cursor-pointer"
+          >
             <input
               type="checkbox"
               checked={consent}

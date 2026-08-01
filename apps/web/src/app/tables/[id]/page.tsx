@@ -172,6 +172,18 @@ export default function TableDetailPage() {
                 <div className="rounded-2xl bg-muted px-4 py-3 text-sm font-medium">
                   This table is full.
                 </div>
+              ) : user && !user.codeOfConductAt ? (
+                <>
+                  <div className="bg-secondary rounded-2xl px-4 py-3 text-sm font-medium">
+                    Before you can join, please accept the Community Code of Conduct in your profile.
+                  </div>
+                  <Link
+                    href="/profile#code-of-conduct"
+                    className={buttonVariants({ variant: 'hero', size: 'lg', className: 'w-full' })}
+                  >
+                    Accept in profile →
+                  </Link>
+                </>
               ) : (
                 <Button
                   variant="hero"
