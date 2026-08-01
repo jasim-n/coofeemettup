@@ -17,6 +17,8 @@ import { PageLoader } from '@/components/spinner';
 const selectClass =
   'h-10 rounded-full border border-input bg-card/60 px-4 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25';
 
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 const INTENT_LABELS: Record<string, string> = {
   MAKE_FRIENDS: 'Make new friends',
   MEET_OUTSIDE_BUBBLE: 'Meet people outside my bubble',
@@ -74,6 +76,15 @@ export default function ProfilePage() {
         setForm((f) => ({ ...f, [key]: e.target.value })),
     };
   }
+
+  const selectedDays = new Set(parseList(form.availability ?? ''));
+  const toggleDay = (d: string) =>
+    setForm((f) => {
+      const set = new Set(parseList(f.availability ?? ''));
+      if (set.has(d)) set.delete(d);
+      else set.add(d);
+      return { ...f, availability: DAYS.filter((x) => set.has(x)).join(', ') };
+    });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -197,7 +208,6 @@ export default function ProfilePage() {
                 <option value="">—</option>
                 <option value="WOMAN">Woman</option>
                 <option value="MAN">Man</option>
-                <option value="UNDISCLOSED">Prefer not to say</option>
               </select>
             </div>
           </div>
@@ -233,8 +243,20 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="availability">When are you free?</Label>
-            <Input id="availability" placeholder="Sat afternoon, Sun afternoon" {...field('availability')} />
+            <Label>What days are you available?</Label>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
+              {DAYS.map((d) => (
+                <label key={d} className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedDays.has(d)}
+                    onChange={() => toggleDay(d)}
+                    className="accent-primary"
+                  />
+                  {d}
+                </label>
+              ))}
+            </div>
           </div>
         </section>
 
