@@ -119,6 +119,14 @@ export default function LoginPage() {
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
                 {busy ? 'Sending…' : 'Send code →'}
               </Button>
+              <button
+                type="button"
+                onClick={() => setPhone('03001112222')}
+                className="bg-secondary text-secondary-foreground w-full rounded-2xl px-4 py-2.5 text-center text-xs transition-[filter] hover:brightness-95"
+              >
+                Testing? Tap to use admin:{' '}
+                <span className="font-mono font-bold">03001112222</span>
+              </button>
             </form>
           ) : (
             <form onSubmit={handleVerify} className="space-y-4">
