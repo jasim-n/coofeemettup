@@ -14,6 +14,7 @@ import { randomBytes } from 'node:crypto';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { toPublicUser } from '../users/user.serializer';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { Public } from './decorators/public.decorator';
@@ -87,7 +88,7 @@ export class AuthController {
     const user = await this.users.findById(current.id);
     if (!user) throw new UnauthorizedException();
     const csrfToken = this.issueCsrf(res);
-    return { user, csrfToken };
+    return { user: toPublicUser(user), csrfToken };
   }
 
   @Post('logout')

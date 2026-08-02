@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateTableDto } from './dto/create-table.dto';
+import { toPublicUser } from '../users/user.serializer';
 
 const HOST_SELECT = { id: true, firstName: true, lastInitial: true };
 
@@ -180,7 +181,10 @@ export class TablesService {
       where: { id: { in: reqs.map((r) => r.userId) } },
     });
     const byId = new Map(users.map((u) => [u.id, u]));
-    return reqs.map((r) => ({ ...r, user: byId.get(r.userId) ?? null }));
+    return reqs.map((r) => {
+      const u = byId.get(r.userId);
+      return { ...r, user: u ? toPublicUser(u) : null };
+    });
   }
 
   async approve(userId: string, tableId: string, requestId: string) {
