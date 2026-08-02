@@ -100,7 +100,7 @@ export default function MeetupsPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">You’re part of</p>
-          <h1 className="display mt-1 text-3xl">My meetups</h1>
+          <h1 className="display mt-1 text-3xl">Your Tables</h1>
         </div>
         <Link href="/tables" className="text-primary text-sm font-semibold hover:underline">
           Find a table →
