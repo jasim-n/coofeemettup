@@ -170,6 +170,28 @@ export class TablesService {
     return table;
   }
 
+  /** Host inbox: all PENDING join requests across every table this user hosts. */
+  async myRequests(userId: string) {
+    const tables = await this.prisma.table.findMany({
+      where: { hostId: userId },
+      select: { id: true, title: true, category: true, startAt: true, venueName: true },
+    });
+    if (tables.length === 0) return [];
+    const tableById = new Map(tables.map((t) => [t.id, t]));
+    const reqs = await this.prisma.tableJoinRequest.findMany({
+      where: { tableId: { in: tables.map((t) => t.id) }, status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+    });
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: reqs.map((r) => r.userId) } },
+    });
+    const userById = new Map(users.map((u) => [u.id, u]));
+    return reqs.map((r) => {
+      const u = userById.get(r.userId);
+      return { ...r, user: u ? toPublicUser(u) : null, table: tableById.get(r.tableId) ?? null };
+    });
+  }
+
   /** The host's pending request inbox (each with the requester's profile). */
   async listRequests(userId: string, tableId: string) {
     await this.assertHost(tableId, userId);

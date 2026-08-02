@@ -213,6 +213,14 @@ export interface TableJoinRequestDto {
   createdAt: string;
   /** Present on the host's request inbox. */
   user?: PublicUser;
+  /** Present on the host request inbox — the table this request is for. */
+  table?: {
+    id: string;
+    title: string | null;
+    category: string;
+    startAt: string;
+    venueName: string | null;
+  } | null;
 }
 
 export interface ChatMessage {

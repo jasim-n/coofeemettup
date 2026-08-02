@@ -30,6 +30,11 @@ export class TablesController {
     return this.tables.mineJoined(user.id);
   }
 
+  @Get('mine/requests')
+  mineRequests(@CurrentUser() user: AuthUser) {
+    return this.tables.myRequests(user.id);
+  }
+
   @Get(':id')
   findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.tables.findOne(user.id, id);

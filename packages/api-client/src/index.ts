@@ -392,6 +392,10 @@ export class ApiClient {
     return this.request('POST', `/tables/${id}/leave`);
   }
 
+  myTableRequests(): Promise<TableJoinRequestDto[]> {
+    return this.request('GET', '/tables/mine/requests');
+  }
+
   tableRequests(id: string): Promise<TableJoinRequestDto[]> {
     return this.request('GET', `/tables/${id}/requests`);
   }

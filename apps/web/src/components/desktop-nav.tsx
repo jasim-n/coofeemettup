@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
+import { api } from '@/lib/api';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
 
@@ -21,6 +23,23 @@ const LINKS = [
 export function DesktopNav() {
   const { user, loading, logout } = useAuth();
   const pathname = usePathname();
+  const [reqCount, setReqCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.canHost) return;
+    let active = true;
+    void (async () => {
+      try {
+        const data = await api.myTableRequests();
+        if (active) setReqCount(data.length);
+      } catch {
+        /* badge is best-effort */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   if (loading || !user) return null;
   const isAdmin = user.role === 'ADMIN' || user.role === 'ORGANIZER';
@@ -47,6 +66,24 @@ export function DesktopNav() {
             </Link>
           );
         })}
+
+        {user.canHost && (
+          <Link
+            href="/requests"
+            className={`relative rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+              pathname === '/requests'
+                ? 'bg-secondary text-secondary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
+            Requests
+            {reqCount > 0 && (
+              <span className="bg-primary text-primary-foreground absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none">
+                {reqCount}
+              </span>
+            )}
+          </Link>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           {user.canHost && (
