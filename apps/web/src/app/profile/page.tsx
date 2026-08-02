@@ -52,6 +52,7 @@ export default function ProfilePage() {
       interests: user.interests.join(', '),
       lifeStage: user.lifeStage ?? '',
       socialEnergy: user.socialEnergy ?? '',
+      occupation: user.occupation ?? '',
       newcomerStatus: user.newcomerStatus ?? '',
       beveragePref: user.beveragePref ?? '',
       accessibilityNeeds: user.accessibilityNeeds ?? '',
@@ -103,6 +104,7 @@ export default function ProfilePage() {
       interests: parseList(form.interests ?? ''),
       lifeStage: (form.lifeStage || undefined) as UpdateProfileInput['lifeStage'],
       socialEnergy: (form.socialEnergy || undefined) as UpdateProfileInput['socialEnergy'],
+      occupation: form.occupation || undefined,
       intents: intents as UpdateProfileInput['intents'],
       newcomerStatus: form.newcomerStatus || undefined,
       beveragePref: (form.beveragePref || undefined) as UpdateProfileInput['beveragePref'],
@@ -267,6 +269,15 @@ export default function ProfilePage() {
           <div className="space-y-1.5">
             <Label htmlFor="interests">Interests</Label>
             <Input id="interests" placeholder="Books, Startups, Film" {...field('interests')} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="occupation">What do you do?</Label>
+            <Input
+              id="occupation"
+              placeholder="Software engineer, Teacher, Student…"
+              {...field('occupation')}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

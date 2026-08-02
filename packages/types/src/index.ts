@@ -126,6 +126,7 @@ export interface PublicUser {
   newcomerStatus: string | null;
   beveragePref: BeveragePref | null;
   accessibilityNeeds: string | null;
+  occupation: string | null;
   photoConsent: boolean;
   codeOfConductAt: string | null;
   createdAt: string;
@@ -382,6 +383,7 @@ export interface UpdateProfileInput {
   newcomerStatus?: string;
   beveragePref?: BeveragePref;
   accessibilityNeeds?: string;
+  occupation?: string;
   photoConsent?: boolean;
   agreeCodeOfConduct?: boolean;
 }

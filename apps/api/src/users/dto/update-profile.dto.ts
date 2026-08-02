@@ -30,6 +30,7 @@ export class UpdateProfileDto {
   @IsOptional() @IsString() newcomerStatus?: string;
   @IsOptional() @IsEnum(BeveragePref) beveragePref?: BeveragePref;
   @IsOptional() @IsString() accessibilityNeeds?: string;
+  @IsOptional() @IsString() occupation?: string;
   @IsOptional() @IsBoolean() photoConsent?: boolean;
   @IsOptional() @IsBoolean() agreeCodeOfConduct?: boolean;
 }
