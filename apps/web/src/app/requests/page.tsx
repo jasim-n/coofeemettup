@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ApiError, type TableJoinRequestDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
+import { useRequestsBadge } from '@/components/requests-badge';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 
 export default function RequestsPage() {
   const { user, loading } = useAuth();
+  const { refresh: refreshBadge } = useRequestsBadge();
   const [reqs, setReqs] = useState<TableJoinRequestDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -31,6 +33,8 @@ export default function RequestsPage() {
   async function refresh() {
     if (!user) return;
     setReqs(await api.myTableRequests());
+    // Keep the nav badge count in sync after an approve/decline.
+    refreshBadge();
   }
 
   useEffect(() => {

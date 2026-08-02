@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
-import { api } from '@/lib/api';
+import { useRequestsBadge } from '@/components/requests-badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
 
@@ -23,23 +22,7 @@ const LINKS = [
 export function DesktopNav() {
   const { user, loading, logout } = useAuth();
   const pathname = usePathname();
-  const [reqCount, setReqCount] = useState(0);
-
-  useEffect(() => {
-    if (!user?.canHost) return;
-    let active = true;
-    void (async () => {
-      try {
-        const data = await api.myTableRequests();
-        if (active) setReqCount(data.length);
-      } catch {
-        /* badge is best-effort */
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [user]);
+  const { count: reqCount } = useRequestsBadge();
 
   if (loading || !user) return null;
   const isAdmin = user.role === 'ADMIN' || user.role === 'ORGANIZER';

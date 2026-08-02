@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
+import { RequestsBadgeProvider } from "@/components/requests-badge";
 import { DesktopNav } from "@/components/desktop-nav";
 
 const heading = Manrope({
@@ -35,8 +36,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <DesktopNav />
-          {children}
+          <RequestsBadgeProvider>
+            <DesktopNav />
+            {children}
+          </RequestsBadgeProvider>
         </AuthProvider>
       </body>
     </html>
