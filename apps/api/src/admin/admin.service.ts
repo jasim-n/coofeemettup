@@ -4,13 +4,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TablesService } from '../tables/tables.service';
 import type { AttendanceStatus } from '../../generated/prisma/client';
 
 const NO_SHOW_PENALTY = 10;
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tables: TablesService,
+  ) {}
 
   async setHost(userId: string, canHost: boolean) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -112,6 +116,24 @@ export class AdminService {
       data: { status: 'CANCELLED' },
     });
     return { ok: true as const };
+  }
+
+  async listTableRequests(tableId: string) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    return this.tables.listRequests(table.hostId, tableId);
+  }
+
+  async approveRequest(tableId: string, requestId: string) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    return this.tables.approve(table.hostId, tableId, requestId);
+  }
+
+  async declineRequest(tableId: string, requestId: string) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    return this.tables.decline(table.hostId, tableId, requestId);
   }
 
   /**
