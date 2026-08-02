@@ -420,18 +420,6 @@ export class ApiClient {
     return this.request('POST', `/admin/tables/${id}/cancel`);
   }
 
-  adminTableRequests(tableId: string): Promise<TableJoinRequestDto[]> {
-    return this.request('GET', `/admin/tables/${tableId}/requests`);
-  }
-
-  adminApproveRequest(tableId: string, reqId: string): Promise<{ ok: true }> {
-    return this.request('POST', `/admin/tables/${tableId}/requests/${reqId}/approve`);
-  }
-
-  adminDeclineRequest(tableId: string, reqId: string): Promise<{ ok: true }> {
-    return this.request('POST', `/admin/tables/${tableId}/requests/${reqId}/decline`);
-  }
-
   // ---- reviews ----
   tableReviewTargets(id: string): Promise<ReviewTargetsResponse> {
     return this.request('GET', `/tables/${id}/review-targets`);

@@ -82,45 +82,6 @@ export class AdminController {
     return result;
   }
 
-  @Get('admin/tables/:id/requests')
-  requests(@Param('id') id: string) {
-    return this.admin.listTableRequests(id);
-  }
-
-  @Post('admin/tables/:id/requests/:reqId/approve')
-  @HttpCode(200)
-  async approveRequest(
-    @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
-    @Param('reqId') reqId: string,
-  ) {
-    const r = await this.admin.approveRequest(id, reqId);
-    void this.audit.log({
-      actorId: user.id,
-      action: 'table.request.approved',
-      targetType: 'table',
-      targetId: id,
-    });
-    return r;
-  }
-
-  @Post('admin/tables/:id/requests/:reqId/decline')
-  @HttpCode(200)
-  async declineRequest(
-    @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
-    @Param('reqId') reqId: string,
-  ) {
-    const r = await this.admin.declineRequest(id, reqId);
-    void this.audit.log({
-      actorId: user.id,
-      action: 'table.request.declined',
-      targetType: 'table',
-      targetId: id,
-    });
-    return r;
-  }
-
   @Post('events/:eventId/groups')
   @HttpCode(201)
   async createGroup(
