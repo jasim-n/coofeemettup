@@ -1,3 +1,4 @@
+// Entry: dist/src/main.js (see nest-cli.json entryFile).
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
