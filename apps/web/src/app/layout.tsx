@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Manrope, Poppins } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { RequestsBadgeProvider } from "@/components/requests-badge";
 import { DesktopNav } from "@/components/desktop-nav";
 
-const heading = Manrope({
+// Design System v2.0 — Poppins across the whole product (headings + body).
+const heading = Poppins({
   variable: "--font-heading",
   subsets: ["latin"],
   weight: ["600", "700", "800"],
