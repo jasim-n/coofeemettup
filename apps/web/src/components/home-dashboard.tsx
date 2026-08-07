@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { type PublicUser, type TableDto } from '@jrst/api-client';
+import { type NotificationDto, type PublicUser, type TableDto } from '@jrst/api-client';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
-import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Cover } from '@/components/cover-image';
 import { Badge } from '@/components/ui/badge';
 
 const CAT_EMOJI: Record<string, string> = {
@@ -19,20 +18,34 @@ const CAT_EMOJI: Record<string, string> = {
   'Board games': '🎲',
 };
 const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
+const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
 
-/** Desktop-only content dashboard (rendered inside a `hidden md:block` wrapper). */
+function ago(iso: string, now: number) {
+  const s = Math.max(0, (now - new Date(iso).getTime()) / 1000);
+  if (s < 3600) return `${Math.max(1, Math.floor(s / 60))}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+/** Desktop content dashboard — Design System v2.0 home. */
 export function HomeDashboard({ user }: { user: PublicUser }) {
   const [tables, setTables] = useState<TableDto[]>([]);
   const [joined, setJoined] = useState<TableDto[]>([]);
+  const [activity, setActivity] = useState<NotificationDto[]>([]);
 
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
-        const [t, j] = await Promise.all([api.browseTables(), api.myJoinedTables()]);
+        const [t, j, n] = await Promise.all([
+          api.browseTables(),
+          api.myJoinedTables(),
+          api.notifications().catch(() => ({ items: [] as NotificationDto[], unread: 0 })),
+        ]);
         if (active) {
           setTables(t);
           setJoined(j);
+          setActivity(n.items.slice(0, 3));
         }
       } catch {
         /* non-fatal on the dashboard */
@@ -47,83 +60,95 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   const active = joined.filter(
     (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
   );
-  const myActive = active.slice(0, 4);
+  const next = active[0] ?? null;
   const verified = user.verificationStatus === 'VERIFIED';
   const vibes = [...new Set(tables.map((t) => t.category))].slice(0, 6);
+  const name = user.firstName ?? user.phone;
+
+  // eslint-disable-next-line react-hooks/purity -- one-time clock read for greeting + relative timestamps
+  const now = Date.now();
+  const hour = new Date(now).getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="space-y-6">
-      {/* welcome band */}
-      <section className="bg-ink relative overflow-hidden rounded-3xl px-8 py-7 shadow-glow">
-        <div
-          aria-hidden
-          className="bg-gradient-hero pointer-events-none absolute -top-16 -right-10 size-64 rounded-full opacity-40 blur-3xl"
-        />
-        <div className="relative flex items-center justify-between gap-6">
-          <div>
-            <p className="eyebrow text-white/60">Welcome back</p>
-            <p className="font-heading mt-1 text-3xl font-extrabold tracking-tight text-white">
-              {user.firstName ? `Hi, ${user.firstName}` : user.phone}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-                {user.role.toLowerCase()}
-              </span>
-              <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-                {verified ? '✓ verified' : 'unverified'}
-              </span>
-              <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-                ⭐ {user.reliabilityScore} reliability
-              </span>
+    <div className="grid gap-6 lg:grid-cols-3">
+      {/* ---------- main column ---------- */}
+      <div className="space-y-6 lg:col-span-2">
+        {/* hero band */}
+        <section className="bg-ink relative overflow-hidden rounded-3xl p-8 shadow-glow">
+          <div
+            aria-hidden
+            className="bg-gradient-hero pointer-events-none absolute -top-20 -right-16 size-72 rounded-full opacity-30 blur-3xl"
+          />
+          <div className="relative grid items-center gap-6 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-white/70">{greeting} 👋</p>
+              <h1 className="font-heading mt-1 text-4xl font-extrabold tracking-tight text-white">
+                {name}
+              </h1>
+              <p className="mt-3 max-w-sm leading-relaxed text-white/70">
+                Find meaningful conversations, one coffee at a time.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/tables/nearby"
+                  className="text-ink rounded-full bg-white px-5 py-2.5 text-sm font-bold transition-transform hover:-translate-y-0.5"
+                >
+                  Find a Table →
+                </Link>
+                <Link
+                  href="/discover"
+                  className="rounded-full px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/30 transition-colors hover:bg-white/10"
+                >
+                  Explore tables
+                </Link>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <Cover
+                category="Coffee & chill"
+                className="shadow-glow h-44 w-full rounded-2xl object-cover ring-1 ring-white/10"
+              />
             </div>
           </div>
-          <div className="flex shrink-0 flex-col gap-2">
-            <Link
-              href="/tables/nearby"
-              className={buttonVariants({ variant: 'hero', size: 'lg' })}
-            >
-              Find a table near you →
-            </Link>
-            {user.canHost && (
-              <Link
-                href="/tables/new"
-                className="rounded-full py-2 text-center text-sm font-semibold text-white/80 ring-1 ring-white/25 transition-colors hover:bg-white/10"
-              >
-                + Host a table
-              </Link>
-            )}
+          {/* stats row */}
+          <div className="relative mt-7 grid grid-cols-3 gap-3 border-t border-white/10 pt-5">
+            <HeroStat icon="📍" value={String(tables.length)} label="Tables nearby" />
+            <HeroStat
+              icon="🗓️"
+              value={next ? emojiFor(next.category) + ' ' + (next.title ?? next.category) : 'None yet'}
+              label={next ? formatDateTime(next.startAt) : 'Next meetup'}
+              truncate
+            />
+            <HeroStat icon="⭐" value={String(user.reliabilityScore)} label="Reliability score" />
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* stats strip */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile icon="🪑" value={tables.length} label="Open tables near you" />
-        <StatTile icon="🎟️" value={active.length} label="Your active meetups" />
-        <StatTile icon="⭐" value={user.reliabilityScore} label="Reliability score" />
-      </div>
+        {/* popular vibes */}
+        {vibes.length > 0 && (
+          <div>
+            <p className="font-heading mb-2 text-sm font-bold">Popular vibes</p>
+            <div className="flex flex-wrap gap-2">
+              {vibes.map((c, i) => (
+                <Link
+                  key={c}
+                  href="/discover"
+                  className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ring-1 transition-all hover:-translate-y-0.5 ${
+                    i === 0
+                      ? 'bg-primary text-primary-foreground ring-transparent'
+                      : 'bg-card ring-border/60 hover:shadow-soft'
+                  }`}
+                >
+                  {emojiFor(c)} {c}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* popular vibes */}
-      {vibes.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground mr-1 text-sm font-semibold">Popular vibes</span>
-          {vibes.map((c) => (
-            <Link
-              key={c}
-              href="/discover"
-              className="bg-card shadow-soft ring-border/60 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 transition-all hover:-translate-y-0.5 hover:shadow-glow"
-            >
-              {emojiFor(c)} {c}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* content grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* main: tables near you */}
-        <div className="space-y-3 lg:col-span-2">
-          <div className="flex items-baseline justify-between">
+        {/* tables near you */}
+        <div>
+          <div className="mb-3 flex items-baseline justify-between">
             <h2 className="font-heading text-xl font-bold tracking-tight">Tables near you</h2>
             <Link href="/tables" className="text-primary text-sm font-semibold hover:underline">
               See all →
@@ -133,154 +158,218 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
             <div className="rounded-3xl border border-dashed py-12 text-center">
               <p className="text-3xl">🪑</p>
               <p className="text-muted-foreground mt-2 text-sm">
-                No open tables right now — check the{' '}
+                No open tables right now — check{' '}
                 <Link href="/discover" className="text-primary font-semibold hover:underline">
                   Discover
-                </Link>{' '}
-                page.
+                </Link>
+                .
               </p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {upcoming.map((t) => (
-                <Link key={t.id} href={`/tables/${t.id}`} className="block">
-                  <Card className="h-full transition-all hover:-translate-y-0.5 hover:shadow-glow">
-                    <CardContent className="py-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-heading text-base font-bold tracking-tight">
-                          {emojiFor(t.category)} {t.title ?? t.category}
-                        </h3>
-                        <Badge variant={t.pricePKR == null ? 'secondary' : 'brand'}>
-                          {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
-                        </Badge>
-                      </div>
-                      <div className="text-muted-foreground mt-2 space-y-1 text-sm">
-                        <p>🗓️ {formatDateTime(t.startAt)}</p>
-                        <p>📍 {t.venueName ?? t.cafe?.name ?? 'See map'}</p>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between border-t pt-3">
-                        <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                          <span className="bg-primary/10 text-primary grid size-6 place-items-center rounded-full text-[10px] font-bold">
-                            {(t.host?.firstName ?? '?').charAt(0).toUpperCase()}
-                          </span>
-                          {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
-                        </span>
-                        <Badge variant={t.seatsLeft <= 2 ? 'warning' : 'secondary'}>
-                          {t.seatsLeft} left
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <TableCoverCard key={t.id} t={t} />
               ))}
             </div>
           )}
         </div>
+      </div>
 
-        {/* aside */}
-        <aside className="space-y-4">
-          <Card>
-            <CardContent className="space-y-3 py-5">
-              <div className="flex items-baseline justify-between">
-                <h2 className="font-heading font-bold tracking-tight">Your meetups</h2>
-                <Link href="/meetups" className="text-primary text-xs font-semibold hover:underline">
-                  View all →
-                </Link>
+      {/* ---------- right rail ---------- */}
+      <aside className="space-y-4">
+        {/* profile card */}
+        <div className="bg-card shadow-soft rounded-3xl border p-5">
+          <div className="flex items-center gap-3">
+            <span className="bg-primary/10 text-primary font-heading grid size-14 place-items-center rounded-full text-xl font-bold">
+              {initial(name)}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="font-heading truncate font-bold">{name}</p>
+                {verified && <Badge variant="success">Verified ✓</Badge>}
               </div>
-              {myActive.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  You haven’t joined a table yet.{' '}
-                  <Link href="/tables" className="text-primary font-semibold hover:underline">
-                    Browse tables →
-                  </Link>
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {myActive.map((t) => (
-                    <li key={t.id}>
-                      <Link
-                        href={`/tables/${t.id}`}
-                        className="flex items-center justify-between gap-2 rounded-2xl border px-3 py-2 text-sm transition-colors hover:bg-muted"
-                      >
-                        <span className="truncate font-medium">
-                          {emojiFor(t.category)} {t.title ?? t.category}
-                        </span>
-                        <Badge variant={t.myRequestStatus === 'APPROVED' ? 'success' : 'warning'}>
-                          {t.myRequestStatus === 'APPROVED' ? 'in' : 'pending'}
-                        </Badge>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+              <p className="text-muted-foreground text-sm">
+                ⭐ <span className="text-foreground font-semibold">{user.reliabilityScore}</span>{' '}
+                Reliability
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/profile"
+            className="text-primary mt-3 inline-block text-sm font-semibold hover:underline"
+          >
+            View profile →
+          </Link>
+        </div>
 
-          {user.canHost ? (
-            <Card className="bg-gradient-ember overflow-hidden text-white shadow-glow ring-0">
-              <CardContent className="space-y-2 py-5">
-                <p className="font-heading text-lg font-bold tracking-tight">Got a table in mind?</p>
-                <p className="text-sm text-white/80">
-                  Pick a spot, set the seats, and let people request to join.
+        {/* upcoming meetup */}
+        {next && (
+          <div className="bg-card shadow-soft rounded-3xl border p-5">
+            <p className="text-muted-foreground mb-2 text-sm font-semibold">Upcoming meetup</p>
+            <Link
+              href={`/tables/${next.id}`}
+              className="hover:bg-muted -mx-2 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"
+            >
+              <span className="bg-secondary grid size-11 shrink-0 place-items-center rounded-2xl text-lg">
+                {emojiFor(next.category)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-heading truncate font-bold tracking-tight">
+                  {next.title ?? next.category}
                 </p>
-                <Link
-                  href="/tables/new"
-                  className="mt-1 inline-block rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition-transform hover:-translate-y-0.5"
-                >
-                  Host a table →
-                </Link>
-              </CardContent>
-            </Card>
-          ) : !verified ? (
-            <Card>
-              <CardContent className="space-y-2 py-5">
+                <p className="text-muted-foreground truncate text-xs">
+                  {formatDateTime(next.startAt)}
+                </p>
+                <p className="text-muted-foreground truncate text-xs">
+                  📍 {next.venueName ?? next.cafe?.name ?? 'See map'}
+                </p>
+              </div>
+              <span className="text-muted-foreground">→</span>
+            </Link>
+          </div>
+        )}
+
+        {/* invite friends */}
+        <div className="bg-secondary rounded-3xl p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-heading text-secondary-foreground font-bold tracking-tight">
+                Invite friends
+              </p>
+              <p className="text-secondary-foreground/80 mt-1 text-sm">
+                Better tables with people you know.
+              </p>
+              <Link
+                href="/invite"
+                className="text-primary mt-3 inline-block text-sm font-bold hover:underline"
+              >
+                Invite now →
+              </Link>
+            </div>
+            <span className="text-3xl">🎁</span>
+          </div>
+        </div>
+
+        {/* recent activity */}
+        {activity.length > 0 && (
+          <div className="bg-card shadow-soft rounded-3xl border p-5">
+            <div className="mb-2 flex items-baseline justify-between">
+              <p className="font-heading font-bold tracking-tight">Recent activity</p>
+              <Link
+                href="/notifications"
+                className="text-primary text-xs font-semibold hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+            <ul className="space-y-3">
+              {activity.map((n) => (
+                <li key={n.id} className="flex items-start gap-3">
+                  <span className="bg-primary/10 mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-sm">
+                    🔔
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{n.title}</p>
+                    <p className="text-muted-foreground text-xs">{ago(n.createdAt, now)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* verify identity */}
+        {!verified && (
+          <div className="bg-card shadow-soft rounded-3xl border p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
                 <p className="font-heading font-bold tracking-tight">Verify your identity</p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground mt-1 text-sm">
                   Verified members build trust and get into tables faster.
                 </p>
                 <Link
                   href="/profile"
-                  className={buttonVariants({ variant: 'outline', size: 'sm', className: 'mt-1' })}
+                  className="bg-primary text-primary-foreground mt-3 inline-block rounded-full px-4 py-2 text-sm font-semibold transition-transform hover:-translate-y-0.5"
                 >
                   Verify now
                 </Link>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card>
-            <CardContent className="flex items-center justify-between gap-2 py-4">
-              <div>
-                <p className="font-heading text-sm font-bold tracking-tight">🎁 Invite friends</p>
-                <p className="text-muted-foreground text-xs">Better tables with people you know.</p>
               </div>
-              <Link href="/invite" className="text-primary text-sm font-semibold hover:underline">
-                Invite →
-              </Link>
-            </CardContent>
-          </Card>
-        </aside>
+              <span className="text-3xl">🛡️</span>
+            </div>
+          </div>
+        )}
+      </aside>
+    </div>
+  );
+}
+
+function HeroStat({
+  icon,
+  value,
+  label,
+  truncate,
+}: {
+  icon: string;
+  value: string;
+  label: string;
+  truncate?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 text-white">
+      <span className="glass-dark grid size-9 shrink-0 place-items-center rounded-xl text-base">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className={`font-heading text-sm font-bold ${truncate ? 'truncate' : ''}`}>{value}</p>
+        <p className="truncate text-xs text-white/60">{label}</p>
       </div>
     </div>
   );
 }
 
-function StatTile({ icon, value, label }: { icon: string; value: number; label: string }) {
+function TableCoverCard({ t }: { t: TableDto }) {
+  const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
   return (
-    <div className="bg-card shadow-soft relative overflow-hidden rounded-2xl border p-5">
-      <div
-        aria-hidden
-        className="bg-gradient-hero pointer-events-none absolute -top-8 -right-8 size-24 rounded-full opacity-15 blur-2xl"
-      />
-      <div className="relative flex items-center gap-3">
-        <span className="bg-primary/10 grid size-11 shrink-0 place-items-center rounded-2xl text-2xl">
-          {icon}
+    <Link
+      href={`/tables/${t.id}`}
+      className="bg-card shadow-soft ring-border/60 group block overflow-hidden rounded-3xl ring-1 transition-all hover:-translate-y-0.5 hover:shadow-glow"
+    >
+      <div className="relative h-40">
+        <Cover
+          category={t.category}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+        <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
+          {emojiFor(t.category)} {t.category}
         </span>
-        <div className="min-w-0">
-          <p className="font-heading text-2xl font-extrabold tracking-tight">{value}</p>
-          <p className="text-muted-foreground truncate text-xs font-medium">{label}</p>
+        <span className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white/90 text-sm shadow-sm">
+          🤍
+        </span>
+      </div>
+      <div className="p-4">
+        <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>
+        <p className="text-muted-foreground mt-1 text-sm">
+          📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+        </p>
+        <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
+          <span className="bg-primary/10 text-primary grid size-6 place-items-center rounded-full text-[10px] font-bold">
+            {initial(t.host?.firstName)}
+          </span>
+          Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+          <Badge variant={low ? 'warning' : 'secondary'}>
+            {t.seatsLeft > 0 ? `${t.seatsLeft} seats left` : 'Full'}
+          </Badge>
+          <span className="font-heading text-primary font-extrabold">
+            {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
+          </span>
+        </div>
+        <div className="bg-primary text-primary-foreground mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110">
+          Join Table
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
