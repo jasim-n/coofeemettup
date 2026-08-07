@@ -10,6 +10,7 @@ import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { PageLoader } from '@/components/spinner';
 import { Badge } from '@/components/ui/badge';
+import { SaveButton } from '@/components/save-button';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
 
@@ -167,14 +168,7 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
           {dayLabel(t.startAt)}
         </span>
         {/* heart */}
-        <button
-          type="button"
-          onClick={(e) => e.preventDefault()}
-          className="absolute right-3 top-3 grid size-7 place-items-center rounded-full bg-white/90 text-sm shadow-sm transition-transform hover:scale-110"
-          aria-label="Save"
-        >
-          <i className="fa-regular fa-heart text-xs" />
-        </button>
+        <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
       <div className="p-4">
         <p className="text-muted-foreground mb-0.5 text-xs font-semibold">
@@ -308,14 +302,7 @@ function SuggestedRow({ t }: { t: TableDto }) {
           {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
         </p>
       </div>
-      <button
-        type="button"
-        onClick={(e) => e.preventDefault()}
-        aria-label="Save"
-        className="text-muted-foreground shrink-0 hover:text-foreground"
-      >
-        <i className="fa-regular fa-heart text-sm" />
-      </button>
+      <SaveButton tableId={t.id} saved={t.saved} className="shrink-0" />
     </Link>
   );
 }

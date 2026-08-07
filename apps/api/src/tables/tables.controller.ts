@@ -16,8 +16,8 @@ export class TablesController {
   }
 
   @Get()
-  browse() {
-    return this.tables.browse();
+  browse(@CurrentUser() user: AuthUser) {
+    return this.tables.browse(user.id);
   }
 
   @Get('mine/hosting')
@@ -35,6 +35,11 @@ export class TablesController {
     return this.tables.myRequests(user.id);
   }
 
+  @Get('mine/saved')
+  mineSaved(@CurrentUser() user: AuthUser) {
+    return this.tables.mineSaved(user.id);
+  }
+
   @Get(':id')
   findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.tables.findOne(user.id, id);
@@ -50,6 +55,12 @@ export class TablesController {
   @HttpCode(200)
   leave(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.tables.leave(user.id, id);
+  }
+
+  @Post(':id/save')
+  @HttpCode(200)
+  toggleSave(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.tables.toggleSave(user.id, id);
   }
 
   @Get(':id/requests')

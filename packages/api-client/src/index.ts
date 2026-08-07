@@ -416,6 +416,14 @@ export class ApiClient {
     return this.request('POST', `/tables/${id}/chat`, { body });
   }
 
+  saveTable(id: string): Promise<{ saved: boolean }> {
+    return this.request('POST', `/tables/${id}/save`);
+  }
+
+  mySavedTables(): Promise<TableDto[]> {
+    return this.request('GET', '/tables/mine/saved');
+  }
+
   adminListTables(): Promise<AdminTableDto[]> {
     return this.request('GET', '/admin/tables');
   }

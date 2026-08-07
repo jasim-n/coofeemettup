@@ -13,6 +13,7 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
+import { SaveButton } from '@/components/save-button';
 
 /* ─── types ──────────────────────────────────────────────────────────── */
 
@@ -221,14 +222,7 @@ function TableListRow({ t }: { t: TableDto }) {
       </div>
 
       {/* save */}
-      <button
-        type="button"
-        onClick={(e) => e.preventDefault()}
-        className="text-muted-foreground hover:text-primary self-start pt-1 text-sm transition-colors"
-        aria-label="Save"
-      >
-        🤍
-      </button>
+      <SaveButton tableId={t.id} saved={t.saved} className="self-start mt-0.5 shrink-0" />
     </Link>
   );
 }
@@ -250,14 +244,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
         <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
           {emojiFor(t.category)} {t.category}
         </span>
-        <button
-          type="button"
-          onClick={(e) => e.preventDefault()}
-          className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white/90 text-sm shadow-sm transition-transform hover:scale-110"
-          aria-label="Save"
-        >
-          🤍
-        </button>
+        <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
       <div className="p-4">
         <h3 className="font-heading line-clamp-1 text-base font-bold tracking-tight">
@@ -425,14 +412,7 @@ function MightLike({ tables }: { tables: TableDto[] }) {
                       <p className="text-primary text-xs font-semibold">{going} going</p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => e.preventDefault()}
-                    className="text-muted-foreground shrink-0 text-sm"
-                    aria-label="Save"
-                  >
-                    🤍
-                  </button>
+                  <SaveButton tableId={t.id} saved={t.saved} className="shrink-0" />
                 </Link>
               </li>
             );

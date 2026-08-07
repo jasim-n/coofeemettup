@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Stars } from '@/components/stars';
 import TableReviews from '@/components/table-reviews';
 import { PageLoader } from '@/components/spinner';
+import { SaveButton } from '@/components/save-button';
 
 const CAT_EMOJI: Record<string, string> = {
   'Deep talks': '💬',
@@ -103,9 +104,7 @@ export default function TableDetailPage() {
             <span className="glass ring-border/40 absolute left-4 top-4 rounded-full px-3 py-1.5 text-xs font-bold ring-1">
               {table.seatsLeft > 0 ? `${table.seatsLeft} seats left` : 'Full'}
             </span>
-            <span className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-white/90 text-base shadow-sm">
-              🤍
-            </span>
+            <SaveButton tableId={table.id} saved={table.saved} className="absolute right-4 top-4" />
           </div>
 
           {/* title block */}

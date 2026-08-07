@@ -76,12 +76,22 @@ export class TablesService {
   }
 
   // ---------- discovery ----------
-  browse() {
-    return this.prisma.table.findMany({
+  private async savedSet(userId: string): Promise<Set<string>> {
+    const u = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { savedTableIds: true },
+    });
+    return new Set(u?.savedTableIds ?? []);
+  }
+
+  async browse(userId: string) {
+    const tables = await this.prisma.table.findMany({
       where: { status: 'OPEN' },
       include: { cafe: true, host: { select: HOST_SELECT } },
       orderBy: { startAt: 'asc' },
     });
+    const saved = await this.savedSet(userId);
+    return tables.map((t) => ({ ...t, saved: saved.has(t.id) }));
   }
 
   async findOne(userId: string, id: string) {
@@ -93,7 +103,11 @@ export class TablesService {
     const mine = await this.prisma.tableJoinRequest.findUnique({
       where: { tableId_userId: { tableId: id, userId } },
     });
-    return { ...table, myRequestStatus: mine?.status ?? null };
+    return {
+      ...table,
+      myRequestStatus: mine?.status ?? null,
+      saved: (await this.savedSet(userId)).has(id),
+    };
   }
 
   async mineJoined(userId: string) {
@@ -104,7 +118,45 @@ export class TablesService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    return reqs.map((r) => ({ ...r.table, myRequestStatus: r.status }));
+    const saved = await this.savedSet(userId);
+    return reqs.map((r) => ({
+      ...r.table,
+      myRequestStatus: r.status,
+      saved: saved.has(r.table.id),
+    }));
+  }
+
+  async toggleSave(userId: string, tableId: string) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    const u = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { savedTableIds: true },
+    });
+    const current = u?.savedTableIds ?? [];
+    const isSaved = current.includes(tableId);
+    const next = isSaved
+      ? current.filter((id) => id !== tableId)
+      : [...current, tableId];
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { savedTableIds: next },
+    });
+    return { saved: !isSaved };
+  }
+
+  async mineSaved(userId: string) {
+    const u = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { savedTableIds: true },
+    });
+    const ids = u?.savedTableIds ?? [];
+    const tables = await this.prisma.table.findMany({
+      where: { id: { in: ids } },
+      include: { cafe: true, host: { select: HOST_SELECT } },
+      orderBy: { startAt: 'asc' },
+    });
+    return tables.map((t) => ({ ...t, saved: true }));
   }
 
   // ---------- join lifecycle ----------

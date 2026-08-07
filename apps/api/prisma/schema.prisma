@@ -156,6 +156,7 @@ model User {
   codeOfConductAt    DateTime?
 
   blockedUserIds     String[]
+  savedTableIds      String[]
 
   // Referrals — each user has a shareable code; new signups may carry one.
   referralCode       String?            @unique

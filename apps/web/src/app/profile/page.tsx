@@ -406,7 +406,7 @@ export default function ProfilePage() {
     { id: 'overview', icon: 'fa-user', label: 'Overview' },
     { href: '/meetups', icon: 'fa-calendar-days', label: 'My Meetups' },
     { id: 'reviews', icon: 'fa-star', label: 'Reviews & Ratings' },
-    { href: '/tables', icon: 'fa-bookmark', label: 'Saved Tables' },
+    { href: '/saved', icon: 'fa-bookmark', label: 'Saved Tables' },
     { id: 'overview', icon: 'fa-user-group', label: 'Connections' },
     { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity' },
     { href: '/requests', icon: 'fa-envelope-open', label: 'Invitations' },

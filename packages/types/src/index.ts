@@ -183,6 +183,8 @@ export interface TableDto {
   host?: TableHost;
   /** The current viewer's own request status for this table, if any. */
   myRequestStatus?: JoinStatus | null;
+  /** Whether the current viewer has saved/bookmarked this table. */
+  saved?: boolean;
 }
 
 export interface AdminTableDto extends TableDto {

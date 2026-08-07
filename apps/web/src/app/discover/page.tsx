@@ -9,6 +9,7 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
+import { SaveButton } from '@/components/save-button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/spinner';
 
@@ -104,14 +105,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
         <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
           {emojiFor(t.category)} {t.category}
         </span>
-        <button
-          type="button"
-          onClick={(e) => e.preventDefault()}
-          className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white/90 text-sm shadow-sm transition-transform hover:scale-110"
-          aria-label="Save"
-        >
-          🤍
-        </button>
+        <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
       <div className="p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>

@@ -166,7 +166,7 @@ export function DesktopNav() {
                   title="Invitations"
                   sub="Requests & invites"
                 />
-                <MenuItem href="/tables" icon="fa-bookmark" title="Saved" sub="Browse & saved tables" />
+                <MenuItem href="/saved" icon="fa-bookmark" title="Saved" sub="Browse & saved tables" />
                 <MenuItem href="/profile" icon="fa-gear" title="Settings" sub="Account & preferences" />
                 {isAdmin && (
                   <MenuItem href="/admin" icon="fa-shield-halved" title="Admin" sub="Console & moderation" />
