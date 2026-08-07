@@ -3,14 +3,32 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ApiError, type TableDto } from '@jrst/api-client';
+import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
-import { formatPKR } from '@/lib/format';
+import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
+import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/spinner';
 
-type PriceFilter = 'all' | 'free' | 'paid';
+/* ─── types ──────────────────────────────────────────────────────── */
+
+type PriceTier = 'any' | 'free' | 'under200' | '200to500' | 'above500';
+type WhenFilter = 'anytime' | 'today' | 'week' | 'weekend' | 'custom';
+
+/* ─── helpers ────────────────────────────────────────────────────── */
+
+const CAT_ICON: Record<string, string> = {
+  'Deep talks': 'fa-comments',
+  'Coffee & chill': 'fa-mug-hot',
+  Networking: 'fa-handshake',
+  Books: 'fa-book',
+  Startups: 'fa-rocket',
+  'Language exchange': 'fa-language',
+  'Board games': 'fa-chess',
+};
+const iconFor = (c: string) => CAT_ICON[c] ?? 'fa-mug-saucer';
 
 const CAT_EMOJI: Record<string, string> = {
   'Deep talks': '💬',
@@ -22,7 +40,53 @@ const CAT_EMOJI: Record<string, string> = {
   'Board games': '🎲',
 };
 const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
-const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
+
+const CITIES = ['Islamabad', 'Lahore', 'Karachi', 'Rawalpindi'] as const;
+
+const NOW = Date.now();
+
+function matchesPrice(t: TableDto, tier: PriceTier): boolean {
+  if (tier === 'any') return true;
+  if (tier === 'free') return t.pricePKR == null || t.pricePKR === 0;
+  if (tier === 'under200') return t.pricePKR != null && t.pricePKR > 0 && t.pricePKR < 200;
+  if (tier === '200to500') return t.pricePKR != null && t.pricePKR >= 200 && t.pricePKR <= 500;
+  if (tier === 'above500') return t.pricePKR != null && t.pricePKR > 500;
+  return true;
+}
+
+function matchesWhen(t: TableDto, when: WhenFilter, customDate: string): boolean {
+  const start = new Date(t.startAt).getTime();
+  if (when === 'anytime') return true;
+  if (when === 'today') {
+    const todayStart = new Date(NOW).setHours(0, 0, 0, 0);
+    const todayEnd = todayStart + 86400_000;
+    return start >= todayStart && start < todayEnd;
+  }
+  if (when === 'week') {
+    return start >= NOW && start <= NOW + 7 * 86400_000;
+  }
+  if (when === 'weekend') {
+    if (start < NOW) return false;
+    const day = new Date(start).getDay();
+    return day === 0 || day === 6;
+  }
+  if (when === 'custom' && customDate) {
+    const from = new Date(customDate).setHours(0, 0, 0, 0);
+    const to = from + 86400_000;
+    return start >= from && start < to;
+  }
+  return true;
+}
+
+function cityCount(tables: TableDto[], city: string): number {
+  const lc = city.toLowerCase();
+  return tables.filter((t) => {
+    const hay = `${t.venueName ?? ''} ${t.cafe?.name ?? ''}`.toLowerCase();
+    return hay.includes(lc);
+  }).length;
+}
+
+/* ─── TableCoverCard ─────────────────────────────────────────────── */
 
 function TableCoverCard({ t }: { t: TableDto }) {
   const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
@@ -40,9 +104,14 @@ function TableCoverCard({ t }: { t: TableDto }) {
         <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
           {emojiFor(t.category)} {t.category}
         </span>
-        <span className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white/90 text-sm shadow-sm">
+        <button
+          type="button"
+          onClick={(e) => e.preventDefault()}
+          className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white/90 text-sm shadow-sm transition-transform hover:scale-110"
+          aria-label="Save"
+        >
           🤍
-        </span>
+        </button>
       </div>
       <div className="p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>
@@ -50,9 +119,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
           📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
         </p>
         <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
-          <span className="bg-primary/10 text-primary grid size-6 place-items-center rounded-full text-[10px] font-bold">
-            {initial(t.host?.firstName)}
-          </span>
+          <Avatar name={t.host?.firstName ?? 'H'} size={22} />
           Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
         </div>
         <div className="mt-3 flex items-center justify-between">
@@ -71,19 +138,35 @@ function TableCoverCard({ t }: { t: TableDto }) {
   );
 }
 
+/* ─── page ───────────────────────────────────────────────────────── */
+
 export default function DiscoverPage() {
+  const { user } = useAuth();
+
   const [tables, setTables] = useState<TableDto[] | null>(null);
+  const [myJoined, setMyJoined] = useState<TableDto[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // filters
   const [q, setQ] = useState('');
-  const [category, setCategory] = useState<string>('');
-  const [price, setPrice] = useState<PriceFilter>('all');
+  const [category, setCategory] = useState('');
+  const [priceTier, setPriceTier] = useState<PriceTier>('any');
+  const [when, setWhen] = useState<WhenFilter>('anytime');
+  const [customDate, setCustomDate] = useState('');
 
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
-        const list = await api.browseTables();
-        if (active) setTables(list);
+        const browsePromise = api.browseTables();
+        const joinedPromise = user
+          ? api.myJoinedTables().catch(() => [] as TableDto[])
+          : Promise.resolve([] as TableDto[]);
+        const [list, joined] = await Promise.all([browsePromise, joinedPromise]);
+        if (active) {
+          setTables(list);
+          setMyJoined(joined);
+        }
       } catch (err) {
         if (active) setError(err instanceof ApiError ? err.message : 'Failed to load tables');
       }
@@ -91,7 +174,7 @@ export default function DiscoverPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user]);
 
   const categories = useMemo(
     () => [...new Set((tables ?? []).map((t) => t.category))].sort(),
@@ -102,147 +185,304 @@ export default function DiscoverPage() {
     const needle = q.trim().toLowerCase();
     return (tables ?? []).filter((t) => {
       if (category && t.category !== category) return false;
-      if (price === 'free' && t.pricePKR != null) return false;
-      if (price === 'paid' && t.pricePKR == null) return false;
+      if (!matchesPrice(t, priceTier)) return false;
+      if (!matchesWhen(t, when, customDate)) return false;
       if (needle) {
-        const hay = `${t.title ?? ''} ${t.category} ${t.venueName ?? ''} ${
-          t.cafe?.name ?? ''
-        } ${t.description ?? ''}`.toLowerCase();
+        const hay =
+          `${t.title ?? ''} ${t.category} ${t.venueName ?? ''} ${t.cafe?.name ?? ''} ${t.description ?? ''}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [tables, q, category, price]);
+  }, [tables, q, category, priceTier, when, customDate]);
+
+  // split into recommended (first 4) + more
+  const recommended = results.slice(0, 4);
+  const more = results.slice(4);
+
+  // top categories by table count
+  const catCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const t of tables ?? []) {
+      counts[t.category] = (counts[t.category] ?? 0) + 1;
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+  }, [tables]);
+
+  // upcoming joined tables (future, APPROVED or PENDING)
+  const upcomingJoined = useMemo(
+    () =>
+      myJoined
+        .filter(
+          (t) =>
+            (t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING') &&
+            new Date(t.startAt).getTime() > NOW,
+        )
+        .slice(0, 2),
+    [myJoined],
+  );
 
   const resetFilters = () => {
     setQ('');
     setCategory('');
-    setPrice('all');
+    setPriceTier('any');
+    setWhen('anytime');
+    setCustomDate('');
   };
 
-  const priceBtn = (val: PriceFilter, label: string) => (
-    <button
-      key={val}
-      type="button"
-      onClick={() => setPrice(val)}
-      className={`flex-1 rounded-full border py-1.5 text-sm font-semibold transition-colors ${
-        price === val
-          ? 'bg-primary text-primary-foreground border-transparent'
-          : 'bg-card hover:bg-muted'
-      }`}
-    >
-      {label}
-    </button>
-  );
+  const openCount = tables?.length ?? 0;
+
+  /* ── price tier labels ─────────────────────────────────────────── */
+  const PRICE_TIERS: { id: PriceTier; label: string }[] = [
+    { id: 'any', label: 'Any Price' },
+    { id: 'free', label: 'Free' },
+    { id: 'under200', label: 'Under PKR 200' },
+    { id: '200to500', label: 'PKR 200–500' },
+    { id: 'above500', label: 'Above PKR 500' },
+  ];
+
+  /* ── when labels ───────────────────────────────────────────────── */
+  const WHEN_OPTS: { id: WhenFilter; label: string }[] = [
+    { id: 'anytime', label: 'Anytime' },
+    { id: 'today', label: 'Today' },
+    { id: 'week', label: 'This Week' },
+    { id: 'weekend', label: 'This Weekend' },
+    { id: 'custom', label: 'Custom Range' },
+  ];
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-      <div className="lg:grid lg:grid-cols-[260px_1fr] lg:gap-6">
-        {/* ── LEFT FILTER RAIL ── */}
-        <aside className="mb-6 lg:mb-0 lg:self-start lg:sticky lg:top-24">
-          <div className="bg-card shadow-soft rounded-3xl border p-5">
-            {/* heading + reset */}
-            <div className="mb-4 flex items-center justify-between">
-              <p className="font-heading font-bold tracking-tight">Filters</p>
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="text-primary text-xs font-semibold hover:underline"
-              >
-                Reset
-              </button>
-            </div>
+    <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+      <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
+        {/* ── LEFT RAIL ─────────────────────────────────────────────── */}
+        <aside className="bg-card shadow-soft rounded-3xl border p-5 lg:sticky lg:top-24 lg:self-start">
+          {/* heading + clear */}
+          <div className="mb-5 flex items-center justify-between">
+            <p className="font-heading font-bold tracking-tight">Filters</p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-primary text-xs font-semibold hover:underline"
+            >
+              Clear all
+            </button>
+          </div>
 
-            {/* search */}
-            <div className="mb-5">
-              <p className="text-muted-foreground mb-1.5 text-xs font-semibold uppercase tracking-widest">
-                Search
-              </p>
-              <Input
-                placeholder="🔍 Tables, topics, venues…"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-              />
-            </div>
+          {/* search */}
+          <div className="mb-5">
+            <Input
+              placeholder="🔍 Tables, topics, venues…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
 
-            {/* vibes / categories */}
-            <div className="mb-5">
-              <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
-                Vibes / Topics
-              </p>
-              <ul className="space-y-1">
-                <li>
+          {/* VIBES / TOPICS */}
+          <div className="mb-5">
+            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
+              Vibes / Topics
+            </p>
+            <ul className="space-y-0.5">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setCategory('')}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                    category === ''
+                      ? 'bg-secondary text-primary'
+                      : 'hover:bg-muted text-foreground'
+                  }`}
+                >
+                  <i className="fa-solid fa-grip w-4 text-center" />
+                  All Vibes
+                </button>
+              </li>
+              {categories.map((c) => (
+                <li key={c}>
                   <button
                     type="button"
-                    onClick={() => setCategory('')}
-                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-                      category === ''
-                        ? 'bg-secondary text-secondary-foreground'
-                        : 'hover:bg-muted'
+                    onClick={() => setCategory(category === c ? '' : c)}
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                      category === c
+                        ? 'bg-secondary text-primary'
+                        : 'hover:bg-muted text-foreground'
                     }`}
                   >
-                    <span>✨</span> All Vibes
+                    <i className={`fa-solid ${iconFor(c)} w-4 text-center`} />
+                    {c}
                   </button>
                 </li>
-                {categories.map((c) => (
-                  <li key={c}>
-                    <button
-                      type="button"
-                      onClick={() => setCategory(category === c ? '' : c)}
-                      className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-                        category === c
-                          ? 'bg-secondary text-secondary-foreground'
-                          : 'hover:bg-muted'
-                      }`}
-                    >
-                      <span>{emojiFor(c)}</span>
-                      {c}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+              ))}
+            </ul>
+          </div>
 
-            {/* price */}
-            <div>
-              <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
-                Price
+          {/* WHEN */}
+          <div className="mb-5">
+            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
+              When
+            </p>
+            <ul className="space-y-0.5">
+              {WHEN_OPTS.map((opt) => (
+                <li key={opt.id}>
+                  <button
+                    type="button"
+                    onClick={() => setWhen(opt.id)}
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
+                      when === opt.id
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'hover:bg-muted text-foreground'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block size-3.5 rounded-full border-2 shrink-0 ${
+                        when === opt.id
+                          ? 'border-primary bg-primary'
+                          : 'border-muted-foreground/40'
+                      }`}
+                    />
+                    {opt.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {when === 'custom' && (
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => setCustomDate(e.target.value)}
+                className="border-border focus:ring-primary mt-2 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              />
+            )}
+          </div>
+
+          {/* DISTANCE */}
+          <div className="mb-5">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">
+                Distance
               </p>
-              <div className="flex gap-2">
-                {priceBtn('all', 'All')}
-                {priceBtn('free', 'Free')}
-                {priceBtn('paid', 'Paid')}
-              </div>
+              <span className="text-xs font-semibold">25 km</span>
             </div>
+            <input
+              type="range"
+              min={0}
+              max={50}
+              defaultValue={25}
+              className="accent-primary w-full"
+            />
+            <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
+              <span>0 km</span>
+              <span>50 km</span>
+            </div>
+          </div>
+
+          {/* PRICE RANGE */}
+          <div>
+            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
+              Price Range
+            </p>
+            <ul className="space-y-0.5">
+              {PRICE_TIERS.map(({ id, label }) => (
+                <li key={id}>
+                  <button
+                    type="button"
+                    onClick={() => setPriceTier(id)}
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
+                      priceTier === id
+                        ? 'bg-primary text-primary-foreground font-semibold'
+                        : 'hover:bg-muted text-foreground'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </aside>
 
-        {/* ── MAIN AREA ── */}
-        <div className="min-w-0">
-          {/* hero banner */}
-          <section className="bg-ink relative mb-6 overflow-hidden rounded-3xl p-6 shadow-glow">
+        {/* ── MAIN ──────────────────────────────────────────────────── */}
+        <div className="min-w-0 space-y-8">
+          {/* HERO */}
+          <section className="bg-ink relative overflow-hidden rounded-3xl p-8 text-white shadow-glow">
+            {/* right-side cover image at low opacity */}
+            <div className="absolute inset-y-0 right-0 w-1/2 overflow-hidden">
+              <Cover
+                category="Coffee & chill"
+                className="h-full w-full object-cover opacity-20"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/60 to-transparent" />
+            </div>
+            {/* blur blob */}
             <div
               aria-hidden
               className="bg-gradient-hero pointer-events-none absolute -top-20 -right-16 size-72 rounded-full opacity-30 blur-3xl"
             />
             <div className="relative">
-              <p className="eyebrow text-white/60">Explore</p>
-              <h1 className="font-heading mt-1 text-3xl font-extrabold tracking-tight text-white">
-                Discover conversations that matter
-              </h1>
-              <p className="mt-2 max-w-lg text-sm leading-relaxed text-white/70">
-                Find like-minded people and join interesting tables.
+              <p className="eyebrow text-white/60">✨ Explore &amp; Connect</p>
+              <h2 className="display font-heading mt-2 text-3xl font-extrabold tracking-tight">
+                Discover conversations{' '}
+                <span className="text-primary">that matter</span>
+              </h2>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-white/70">
+                Find like-minded people, join interesting tables and make meaningful connections.
               </p>
               {tables && (
-                <p className="mt-4 text-sm font-semibold text-white/50">
-                  {results.length} {results.length === 1 ? 'table' : 'tables'}
-                </p>
+                <span className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/20">
+                  <span className="bg-primary inline-block size-2 rounded-full" />
+                  {openCount} Active now
+                </span>
               )}
             </div>
           </section>
 
-          {/* states */}
-          {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+          {/* TOP CATEGORIES */}
+          {catCounts.length > 0 && (
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-heading text-xl font-bold tracking-tight">Top categories</h2>
+                <Link href="/discover" className="text-primary text-sm font-semibold hover:underline">
+                  View all
+                </Link>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {catCounts.map(([cat, count]) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(category === cat ? '' : cat)}
+                    className={`flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-soft ${
+                      category === cat
+                        ? 'bg-primary text-primary-foreground border-transparent shadow-glow'
+                        : 'bg-card border-border/60'
+                    }`}
+                  >
+                    <span
+                      className={`grid size-8 shrink-0 place-items-center rounded-xl text-sm ${
+                        category === cat ? 'bg-white/20' : 'bg-primary/10'
+                      }`}
+                    >
+                      <i className={`fa-solid ${iconFor(cat)} ${category === cat ? 'text-white' : 'text-primary'}`} />
+                    </span>
+                    <span className="flex flex-col items-start leading-tight">
+                      <span>{cat}</span>
+                      <span
+                        className={`text-[10px] font-normal ${
+                          category === cat ? 'text-white/70' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {count} {count === 1 ? 'table' : 'tables'}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* loading / error / empty */}
+          {error && <p className="text-destructive text-sm">{error}</p>}
           {!tables && !error && (
             <div className="flex justify-center py-16">
               <Spinner className="text-primary size-6" />
@@ -251,7 +491,7 @@ export default function DiscoverPage() {
           {tables && results.length === 0 && (
             <div className="rounded-3xl border border-dashed py-16 text-center">
               <p className="text-3xl">🔎</p>
-              <p className="text-muted-foreground mt-2 text-sm">No tables match your search.</p>
+              <p className="text-muted-foreground mt-2 text-sm">No tables match your filters.</p>
               <button
                 type="button"
                 onClick={resetFilters}
@@ -262,15 +502,185 @@ export default function DiscoverPage() {
             </div>
           )}
 
-          {/* cover-card grid */}
-          {results.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {results.map((t) => (
-                <TableCoverCard key={t.id} t={t} />
-              ))}
-            </div>
+          {/* RECOMMENDED FOR YOU */}
+          {recommended.length > 0 && (
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-heading text-xl font-bold tracking-tight">
+                  Recommended for you
+                </h2>
+                <Link href="/discover" className="text-primary text-sm font-semibold hover:underline">
+                  See all
+                </Link>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {recommended.map((t) => (
+                  <TableCoverCard key={t.id} t={t} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* MORE TABLES YOU MIGHT LIKE */}
+          {more.length > 0 && (
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-heading text-xl font-bold tracking-tight">
+                  More tables you might like
+                </h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {more.map((t) => (
+                  <TableCoverCard key={t.id} t={t} />
+                ))}
+              </div>
+            </section>
           )}
         </div>
+
+        {/* ── RIGHT RAIL ────────────────────────────────────────────── */}
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          {/* TRENDING NOW */}
+          <div className="bg-card shadow-soft rounded-3xl border p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-heading font-bold tracking-tight">🔥 Trending now</p>
+              <Link href="/discover" className="text-primary text-xs font-semibold hover:underline">
+                View all
+              </Link>
+            </div>
+            {catCounts.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Loading…</p>
+            ) : (
+              <ul className="space-y-2">
+                {catCounts.slice(0, 5).map(([cat, count], i) => (
+                  <li key={cat}>
+                    <button
+                      type="button"
+                      onClick={() => setCategory(category === cat ? '' : cat)}
+                      className="hover:bg-muted -mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-2xl px-2 py-2 text-left transition-colors"
+                    >
+                      <span className="bg-primary/10 grid size-8 shrink-0 place-items-center rounded-xl">
+                        <i className={`fa-solid ${iconFor(cat)} text-primary text-xs`} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{cat}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {count} {count === 1 ? 'table' : 'tables'}
+                        </p>
+                      </div>
+                      <span className="text-muted-foreground text-xs font-bold">#{i + 1}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* SUGGESTED FOR YOU (stub) */}
+          <div className="bg-card shadow-soft rounded-3xl border p-5">
+            <div className="mb-1 flex items-center justify-between">
+              <p className="font-heading font-bold tracking-tight">Suggested for you</p>
+            </div>
+            <p className="text-muted-foreground mb-4 text-xs">Based on your interests</p>
+            {/* placeholder rows */}
+            <ul className="space-y-3">
+              {[
+                { name: 'Aisha M.', role: 'Loves deep talks' },
+                { name: 'Bilal K.', role: 'Startup enthusiast' },
+              ].map(({ name, role }) => (
+                <li key={name} className="flex items-center gap-3">
+                  <Avatar name={name} size={34} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">{name}</p>
+                    <p className="text-muted-foreground truncate text-xs">{role}</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled
+                    className="border-border text-muted-foreground cursor-not-allowed rounded-full border px-3 py-1 text-xs font-semibold opacity-50"
+                  >
+                    Connect
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="text-muted-foreground mt-4 rounded-2xl border border-dashed py-3 text-center text-xs">
+              Connect with people you meet at tables — coming soon.
+            </p>
+          </div>
+
+          {/* YOUR UPCOMING */}
+          <div className="bg-card shadow-soft rounded-3xl border p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-heading font-bold tracking-tight">Your upcoming</p>
+              <Link href="/meetups" className="text-primary text-xs font-semibold hover:underline">
+                View all
+              </Link>
+            </div>
+            {upcomingJoined.length === 0 ? (
+              <div className="rounded-2xl border border-dashed py-5 text-center">
+                <p className="text-muted-foreground text-xs">No upcoming tables yet.</p>
+                <Link
+                  href="/discover"
+                  className="text-primary mt-1 block text-xs font-semibold hover:underline"
+                >
+                  Find a table →
+                </Link>
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {upcomingJoined.map((t) => (
+                  <li key={t.id}>
+                    <Link
+                      href={`/tables/${t.id}`}
+                      className="hover:bg-muted -mx-2 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"
+                    >
+                      <span className="bg-secondary grid size-9 shrink-0 place-items-center rounded-xl text-base">
+                        {emojiFor(t.category)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-heading truncate text-sm font-bold">
+                          {t.title ?? t.category}
+                        </p>
+                        <p className="text-muted-foreground truncate text-xs">
+                          {formatDateTime(t.startAt)}
+                        </p>
+                        <p className="text-muted-foreground truncate text-xs">
+                          📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+                        </p>
+                      </div>
+                      <span className="text-muted-foreground shrink-0">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* POPULAR CITIES */}
+          <div className="bg-card shadow-soft rounded-3xl border p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-heading font-bold tracking-tight">Popular cities</p>
+              <span className="text-muted-foreground text-xs">View all</span>
+            </div>
+            <ul className="space-y-2">
+              {CITIES.map((city) => (
+                <li key={city} className="flex items-center gap-3">
+                  <span className="bg-primary/10 grid size-8 shrink-0 place-items-center rounded-xl">
+                    <i className="fa-solid fa-city text-primary text-xs" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">{city}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {cityCount(tables ?? [], city)}{' '}
+                      {cityCount(tables ?? [], city) === 1 ? 'table' : 'tables'}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
       </div>
     </main>
   );
