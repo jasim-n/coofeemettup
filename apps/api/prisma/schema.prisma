@@ -167,6 +167,8 @@ model User {
   reportsMade        Report[]           @relation("ReportsMade")
   reportsAgainst     Report[]           @relation("ReportsAgainst")
   hostedTables       Table[]            @relation("HostedTables")
+  connectionsSent    Connection[]       @relation("ConnRequester")
+  connectionsReceived Connection[]      @relation("ConnAddressee")
 
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -201,6 +203,12 @@ enum JoinStatus {
   APPROVED
   DECLINED
   CANCELLED
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }
 
 model Table {
@@ -402,4 +410,19 @@ model Report {
   createdAt    DateTime @default(now())
 
   @@index([subjectId])
+}
+
+model Connection {
+  id           String           @id @default(cuid())
+  requester    User             @relation("ConnRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterId  String
+  addressee    User             @relation("ConnAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  addresseeId  String
+  status       ConnectionStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+  @@index([requesterId])
 }

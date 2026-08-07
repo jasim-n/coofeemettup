@@ -241,6 +241,7 @@ export default function ProfilePage() {
   const [myHostedTables, setMyHostedTables] = useState<TableDto[]>([]);
   const [myJoinedTables, setMyJoinedTables] = useState<TableDto[]>([]);
   const [myReviewsData, setMyReviewsData] = useState<UserReputation | null>(null);
+  const [connectionsCount, setConnectionsCount] = useState<number | null>(null);
 
   // Tab for overview section
   const [overviewTab, setOverviewTab] = useState<'about' | 'achievements' | 'reviews' | 'activity'>('about');
@@ -276,15 +277,17 @@ export default function ProfilePage() {
     let active = true;
     void (async () => {
       try {
-        const [hosted, joined, reviews] = await Promise.all([
+        const [hosted, joined, reviews, conns] = await Promise.all([
           user.canHost ? api.myHostedTables() : Promise.resolve([] as TableDto[]),
           api.myJoinedTables(),
           api.myReviews() as Promise<UserReputation>,
+          api.myConnections().catch(() => [] as import('@jrst/api-client').PublicUser[]),
         ]);
         if (!active) return;
         setMyHostedTables(hosted);
         setMyJoinedTables(joined);
         setMyReviewsData(reviews);
+        setConnectionsCount(conns.length);
       } catch {
         // best-effort
       }
@@ -407,7 +410,7 @@ export default function ProfilePage() {
     { href: '/meetups', icon: 'fa-calendar-days', label: 'My Meetups' },
     { id: 'reviews', icon: 'fa-star', label: 'Reviews & Ratings' },
     { href: '/saved', icon: 'fa-bookmark', label: 'Saved Tables' },
-    { id: 'overview', icon: 'fa-user-group', label: 'Connections' },
+    { href: '/connections', icon: 'fa-user-group', label: 'Connections' },
     { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity' },
     { href: '/requests', icon: 'fa-envelope-open', label: 'Invitations' },
     { id: 'identity', icon: 'fa-shield-halved', label: 'Identity Verification' },
@@ -557,7 +560,7 @@ export default function ProfilePage() {
                     { icon: '🫖', label: 'Hosted', value: myHostedTables.length },
                     { icon: '👥', label: 'Joined', value: activeJoinedCount },
                     { icon: '⭐', label: 'Reliability', value: user.reliabilityScore },
-                    { icon: '❤️', label: 'Connections', value: '—' },
+                    { icon: '❤️', label: 'Connections', value: connectionsCount ?? '—' },
                     { icon: '🏅', label: 'Avg Rating', value: avgRating },
                   ].map(({ icon, label, value }) => (
                     <div
@@ -1107,14 +1110,12 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              disabled
-              className="w-full rounded-full border py-2 text-xs font-semibold text-muted-foreground opacity-50 cursor-not-allowed"
+            <Link
+              href="/connections"
+              className="block w-full rounded-full border border-primary/40 py-2 text-center text-xs font-semibold text-primary hover:bg-secondary transition-colors"
             >
               Manage Connections
-            </button>
-            <p className="text-muted-foreground text-[10px] text-center">Coming soon</p>
+            </Link>
           </div>
         </aside>
       </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ApiError, type TableDto } from '@jrst/api-client';
+import { ApiError, type SuggestedPerson, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { SaveButton } from '@/components/save-button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/spinner';
+import { ConnectButton } from '@/components/connect-button';
 
 /* ─── types ──────────────────────────────────────────────────────── */
 
@@ -139,6 +140,7 @@ export default function DiscoverPage() {
 
   const [tables, setTables] = useState<TableDto[] | null>(null);
   const [myJoined, setMyJoined] = useState<TableDto[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestedPerson[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // filters
@@ -156,10 +158,14 @@ export default function DiscoverPage() {
         const joinedPromise = user
           ? api.myJoinedTables().catch(() => [] as TableDto[])
           : Promise.resolve([] as TableDto[]);
-        const [list, joined] = await Promise.all([browsePromise, joinedPromise]);
+        const suggestionsPromise = user
+          ? api.connectionSuggestions().catch(() => [] as SuggestedPerson[])
+          : Promise.resolve([] as SuggestedPerson[]);
+        const [list, joined, suggs] = await Promise.all([browsePromise, joinedPromise, suggestionsPromise]);
         if (active) {
           setTables(list);
           setMyJoined(joined);
+          setSuggestions(suggs);
         }
       } catch (err) {
         if (active) setError(err instanceof ApiError ? err.message : 'Failed to load tables');
@@ -570,38 +576,35 @@ export default function DiscoverPage() {
             )}
           </div>
 
-          {/* SUGGESTED FOR YOU (stub) */}
-          <div className="bg-card shadow-soft rounded-3xl border p-5">
-            <div className="mb-1 flex items-center justify-between">
-              <p className="font-heading font-bold tracking-tight">Suggested for you</p>
+          {/* SUGGESTED FOR YOU */}
+          {suggestions.length > 0 && (
+            <div className="bg-card shadow-soft rounded-3xl border p-5">
+              <div className="mb-1 flex items-center justify-between">
+                <p className="font-heading font-bold tracking-tight">Suggested for you</p>
+                <Link href="/connections" className="text-primary text-xs font-semibold hover:underline">
+                  View all
+                </Link>
+              </div>
+              <p className="text-muted-foreground mb-4 text-xs">Based on your interests</p>
+              <ul className="space-y-3">
+                {suggestions.slice(0, 3).map(({ user: u, mutuals }) => {
+                  const name = `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
+                  return (
+                    <li key={u.id} className="flex items-center gap-3">
+                      <Avatar name={name} size={34} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold truncate">{name}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}
+                        </p>
+                      </div>
+                      <ConnectButton userId={u.id} size="xs" />
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-            <p className="text-muted-foreground mb-4 text-xs">Based on your interests</p>
-            {/* placeholder rows */}
-            <ul className="space-y-3">
-              {[
-                { name: 'Aisha M.', role: 'Loves deep talks' },
-                { name: 'Bilal K.', role: 'Startup enthusiast' },
-              ].map(({ name, role }) => (
-                <li key={name} className="flex items-center gap-3">
-                  <Avatar name={name} size={34} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold">{name}</p>
-                    <p className="text-muted-foreground truncate text-xs">{role}</p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled
-                    className="border-border text-muted-foreground cursor-not-allowed rounded-full border px-3 py-1 text-xs font-semibold opacity-50"
-                  >
-                    Connect
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <p className="text-muted-foreground mt-4 rounded-2xl border border-dashed py-3 text-center text-xs">
-              Connect with people you meet at tables — coming soon.
-            </p>
-          </div>
+          )}
 
           {/* YOUR UPCOMING */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">

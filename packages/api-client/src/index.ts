@@ -6,6 +6,8 @@ import type {
   BookingWithUser,
   Cafe,
   ChatResponse,
+  ConnectionRequestDto,
+  ConnectionState,
   CreateCafeInput,
   CreateEventInput,
   CreateTableInput,
@@ -24,6 +26,7 @@ import type {
   ReferralInfo,
   ReportDto,
   ReviewTargetsResponse,
+  SuggestedPerson,
   TableChatResponse,
   AdminTableDto,
   TableDto,
@@ -447,6 +450,35 @@ export class ApiClient {
 
   userReviews(userId: string): Promise<UserReputation> {
     return this.request('GET', `/users/${userId}/reviews`);
+  }
+
+  // ---- connections (social graph) ----
+  myConnections(): Promise<PublicUser[]> {
+    return this.request('GET', '/connections/mine');
+  }
+
+  connectionRequests(): Promise<ConnectionRequestDto[]> {
+    return this.request('GET', '/connections/requests');
+  }
+
+  connectionSuggestions(): Promise<SuggestedPerson[]> {
+    return this.request('GET', '/connections/suggestions');
+  }
+
+  requestConnection(userId: string): Promise<{ status: ConnectionState }> {
+    return this.request('POST', `/connections/${userId}/request`);
+  }
+
+  acceptConnection(userId: string): Promise<{ status: ConnectionState }> {
+    return this.request('POST', `/connections/${userId}/accept`);
+  }
+
+  declineConnection(userId: string): Promise<{ status: ConnectionState }> {
+    return this.request('POST', `/connections/${userId}/decline`);
+  }
+
+  removeConnection(userId: string): Promise<{ status: ConnectionState }> {
+    return this.request('DELETE', `/connections/${userId}`);
   }
 
   // ---- notifications ----

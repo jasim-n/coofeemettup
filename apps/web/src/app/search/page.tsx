@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { type TableDto } from '@jrst/api-client';
+import { type SuggestedPerson, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
+import { ConnectButton } from '@/components/connect-button';
 
 /* ─── types ──────────────────────────────────────────────────────────── */
 
@@ -423,45 +424,35 @@ function MightLike({ tables }: { tables: TableDto[] }) {
   );
 }
 
-/* ─── right rail: people you may know (stub) ─────────────────────────── */
+/* ─── right rail: people you may know (real) ─────────────────────────── */
 
-const STUB_PEOPLE = [
-  { id: '1', initials: 'M', mutuals: 3 },
-  { id: '2', initials: 'A', mutuals: 1 },
-  { id: '3', initials: 'S', mutuals: 2 },
-  { id: '4', initials: 'R', mutuals: 5 },
-];
-
-function PeopleYouMayKnow() {
+function PeopleYouMayKnow({ suggestions }: { suggestions: SuggestedPerson[] }) {
+  if (suggestions.length === 0) return null;
   return (
     <div className="bg-card shadow-soft rounded-3xl border p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="font-heading font-bold tracking-tight">People you may know</p>
-        <span className="text-muted-foreground text-xs">View all</span>
+        <Link href="/connections" className="text-primary text-xs font-semibold hover:underline">
+          View all
+        </Link>
       </div>
       <ul className="space-y-3">
-        {STUB_PEOPLE.map((p) => (
-          <li key={p.id} className="flex items-center gap-3">
-            <Avatar name={`Member ${p.initials}`} size={36} />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Member</p>
-              <p className="text-muted-foreground text-xs">{p.mutuals} mutual{p.mutuals !== 1 ? 's' : ''}</p>
-            </div>
-            <button
-              type="button"
-              disabled
-              className="border-border text-muted-foreground cursor-not-allowed rounded-full border px-3 py-1 text-xs font-semibold opacity-50"
-              aria-label="Connect"
-            >
-              <i className="fa-solid fa-user-plus mr-1" />
-              Connect
-            </button>
-          </li>
-        ))}
+        {suggestions.slice(0, 4).map(({ user: u, mutuals }) => {
+          const name = `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
+          return (
+            <li key={u.id} className="flex items-center gap-3">
+              <Avatar name={name} size={36} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold truncate">{name}</p>
+                <p className="text-muted-foreground text-xs">
+                  {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}
+                </p>
+              </div>
+              <ConnectButton userId={u.id} size="xs" />
+            </li>
+          );
+        })}
       </ul>
-      <p className="text-muted-foreground mt-4 rounded-2xl border border-dashed py-3 text-center text-xs">
-        Connections based on shared tables — coming soon.
-      </p>
     </div>
   );
 }
@@ -688,6 +679,7 @@ function SearchInner() {
   const params = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
   const [tables, setTables] = useState<TableDto[] | null>(null);
+  const [suggestions, setSuggestions] = useState<SuggestedPerson[]>([]);
 
   // filter state
   const [location, setLocation] = useState('Islamabad, Pakistan');
@@ -718,8 +710,15 @@ function SearchInner() {
     let active = true;
     void (async () => {
       try {
-        const list = await api.browseTables();
-        if (active) setTables(list);
+        const tablesPromise = api.browseTables();
+        const suggestionsPromise = user
+          ? api.connectionSuggestions().catch(() => [] as SuggestedPerson[])
+          : Promise.resolve([] as SuggestedPerson[]);
+        const [list, suggs] = await Promise.all([tablesPromise, suggestionsPromise]);
+        if (active) {
+          setTables(list);
+          setSuggestions(suggs);
+        }
       } catch {
         if (active) setTables([]);
       }
@@ -885,7 +884,7 @@ function SearchInner() {
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <MapPreview results={results} />
           <MightLike tables={tables ?? []} />
-          <PeopleYouMayKnow />
+          <PeopleYouMayKnow suggestions={suggestions} />
         </aside>
       </div>
     </main>

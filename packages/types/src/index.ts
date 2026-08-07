@@ -545,3 +545,17 @@ export interface MatchGenerateResult {
   unassigned: string[];
   groups: GroupSuggestion[];
 }
+
+// ---- Connections (social graph) ----
+export type ConnectionState = 'none' | 'pending_sent' | 'pending_received' | 'connected';
+
+export interface ConnectionRequestDto {
+  id: string;
+  user: PublicUser;
+  createdAt: string;
+}
+
+export interface SuggestedPerson {
+  user: PublicUser;
+  mutuals: number;
+}
