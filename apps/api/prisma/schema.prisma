@@ -169,6 +169,8 @@ model User {
   hostedTables       Table[]            @relation("HostedTables")
   connectionsSent    Connection[]       @relation("ConnRequester")
   connectionsReceived Connection[]      @relation("ConnAddressee")
+  dmSent             DirectMessage[]    @relation("DmSender")
+  dmReceived         DirectMessage[]    @relation("DmRecipient")
 
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -425,4 +427,18 @@ model Connection {
   @@unique([requesterId, addresseeId])
   @@index([addresseeId])
   @@index([requesterId])
+}
+
+model DirectMessage {
+  id           String    @id @default(cuid())
+  sender       User      @relation("DmSender", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId     String
+  recipient    User      @relation("DmRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId  String
+  body         String
+  readAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([senderId, recipientId])
+  @@index([recipientId, senderId])
 }

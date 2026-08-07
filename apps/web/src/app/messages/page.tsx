@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ApiError, type ChatMessage, type TableDto } from '@jrst/api-client';
+import {
+  ApiError,
+  type ChatMessage,
+  type DmMessage,
+  type DmThread,
+  type PublicUser,
+  type TableDto,
+} from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Cover } from '@/components/cover-image';
@@ -16,49 +23,119 @@ function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' });
 }
 
+// ---- Unified conversation model ----
+type DmConvo = {
+  kind: 'dm';
+  key: string;
+  userId: string;
+  name: string;
+  last: string;
+  time: string;
+  unread: number;
+};
+
+type GroupConvo = {
+  kind: 'group';
+  key: string;
+  table: TableDto;
+  name: string;
+  last: string;
+  time: string;
+  unread: number;
+};
+
+type Convo = DmConvo | GroupConvo;
+
+type TabFilter = 'All' | 'Unread' | 'Groups';
+
 export default function MessagesPage() {
   const { user, loading } = useAuth();
 
-  const [conversations, setConversations] = useState<TableDto[]>([]);
+  // ---- unified convo list ----
+  const [convos, setConvos] = useState<Convo[]>([]);
+  const [connections, setConnections] = useState<PublicUser[]>([]);
   const [convoLoading, setConvoLoading] = useState(true);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [member, setMember] = useState<boolean | null>(null);
-  const [chatLoading, setChatLoading] = useState(false);
+  // ---- selection ----
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
+  // ---- DM thread state ----
+  const [dmMsgs, setDmMsgs] = useState<DmMessage[]>([]);
+
+  // ---- group thread state ----
+  const [groupChat, setGroupChat] = useState<{ member: boolean; messages: ChatMessage[] } | null>(
+    null,
+  );
+
+  // ---- shared loading / send state ----
+  const [chatLoading, setChatLoading] = useState(false);
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
+  // ---- search + tab ----
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<TabFilter>('All');
+
+  // ---- new-message picker ----
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ---- load conversations ----
+  // ---- load all convos + connections ----
   useEffect(() => {
     if (!user) return;
     let active = true;
     void (async () => {
       try {
-        const [joined, hosted] = await Promise.all([
+        const [threads, joined, hosted, conns] = await Promise.all([
+          api.dmThreads(),
           api.myJoinedTables(),
           user.canHost ? api.myHostedTables() : Promise.resolve([] as TableDto[]),
+          api.myConnections(),
         ]);
         if (!active) return;
-        const approved = joined.filter((t) => t.myRequestStatus === 'APPROVED');
+
+        // build DM convos
+        const dmConvos: DmConvo[] = threads.map((t: DmThread) => ({
+          kind: 'dm',
+          key: `dm:${t.user.id}`,
+          userId: t.user.id,
+          name: `${t.user.firstName ?? 'Member'} ${t.user.lastInitial ?? ''}`.trim(),
+          last: t.lastMessage,
+          time: t.lastAt,
+          unread: t.unread,
+        }));
+
+        // build group convos (deduped)
+        const approvedJoined = joined.filter((t) => t.myRequestStatus === 'APPROVED');
         const seen = new Set<string>();
-        const merged: TableDto[] = [];
-        for (const t of [...hosted, ...approved]) {
+        const groupConvos: GroupConvo[] = [];
+        for (const t of [...hosted, ...approvedJoined]) {
           if (!seen.has(t.id)) {
             seen.add(t.id);
-            merged.push(t);
+            groupConvos.push({
+              kind: 'group',
+              key: `group:${t.id}`,
+              table: t,
+              name: t.title ?? t.category,
+              last: 'Group chat',
+              time: t.startAt,
+              unread: 0,
+            });
           }
         }
-        setConversations(merged);
-        if (merged.length > 0 && !selectedId) {
-          setSelectedId(merged[0]!.id);
+
+        // merge + sort by time desc
+        const all: Convo[] = [...dmConvos, ...groupConvos].sort(
+          (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
+        );
+
+        setConvos(all);
+        setConnections(conns);
+        if (all.length > 0 && !selectedKey) {
+          setSelectedKey(all[0]!.key);
         }
       } finally {
         if (active) setConvoLoading(false);
@@ -70,47 +147,49 @@ export default function MessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // ---- load + poll chat for selected table ----
+  // ---- load + poll selected thread ----
   useEffect(() => {
-    if (!selectedId || !user) return;
+    if (!selectedKey || !user) return;
 
     let active = true;
 
-    async function fetchChat(initial?: boolean) {
-      if (!selectedId) return;
+    async function fetchThread(initial?: boolean) {
       if (initial) {
         setChatLoading(true);
-        setMessages([]);
-        setMember(null);
+        setDmMsgs([]);
+        setGroupChat(null);
         setSendError(null);
       }
       try {
-        const res = await api.tableChat(selectedId);
-        if (active) {
-          setMember(res.member);
-          setMessages(res.messages);
+        if (selectedKey?.startsWith('dm:')) {
+          const uid = selectedKey.slice(3);
+          const msgs = await api.dmThread(uid);
+          if (active) setDmMsgs(msgs);
+        } else if (selectedKey?.startsWith('group:')) {
+          const tid = selectedKey.slice(6);
+          const res = await api.tableChat(tid);
+          if (active) setGroupChat(res);
         }
       } finally {
         if (initial && active) setChatLoading(false);
       }
     }
 
-    void fetchChat(true);
-
+    void fetchThread(true);
     if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(() => void fetchChat().catch(() => undefined), POLL_MS);
+    pollRef.current = setInterval(() => void fetchThread().catch(() => undefined), POLL_MS);
 
     return () => {
       active = false;
       if (pollRef.current) clearInterval(pollRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+  }, [selectedKey]);
 
   // ---- scroll to bottom on new messages ----
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+  }, [dmMsgs.length, groupChat?.messages.length]);
 
   if (loading) return <PageLoader />;
   if (!user)
@@ -124,17 +203,27 @@ export default function MessagesPage() {
       </main>
     );
 
+  // ---- send ----
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const text = body.trim();
-    if (!text || !selectedId) return;
+    if (!text || !selectedKey) return;
     setSending(true);
     setSendError(null);
     try {
-      await api.sendTableMessage(selectedId, text);
-      setBody('');
-      const res = await api.tableChat(selectedId);
-      setMessages(res.messages);
+      if (selectedKey.startsWith('dm:')) {
+        const uid = selectedKey.slice(3);
+        await api.sendDm(uid, text);
+        setBody('');
+        const msgs = await api.dmThread(uid);
+        setDmMsgs(msgs);
+      } else if (selectedKey.startsWith('group:')) {
+        const tid = selectedKey.slice(6);
+        await api.sendTableMessage(tid, text);
+        setBody('');
+        const res = await api.tableChat(tid);
+        setGroupChat(res);
+      }
     } catch (err) {
       setSendError(err instanceof ApiError ? err.message : 'Could not send');
     } finally {
@@ -142,41 +231,95 @@ export default function MessagesPage() {
     }
   }
 
-  const filtered = search.trim()
-    ? conversations.filter((t) =>
-        (t.title ?? t.category).toLowerCase().includes(search.toLowerCase()),
-      )
-    : conversations;
+  // ---- derived ----
+  const selected = convos.find((c) => c.key === selectedKey) ?? null;
 
-  const selected = conversations.find((t) => t.id === selectedId) ?? null;
-  const memberCount = selected ? selected.seats - selected.seatsLeft + 1 : 0;
-  const venue = selected
-    ? (selected.venueName ?? selected.cafe?.name ?? selected.venueAddress ?? 'TBD')
-    : '';
+  const filtered = convos.filter((c) => {
+    const matchSearch = search.trim()
+      ? c.name.toLowerCase().includes(search.toLowerCase())
+      : true;
+    const matchTab =
+      activeTab === 'All' ||
+      (activeTab === 'Unread' && c.unread > 0) ||
+      (activeTab === 'Groups' && c.kind === 'group');
+    return matchSearch && matchTab;
+  });
 
-  // stub presence: collect up to 5 distinct hosts
-  const presenceHosts = Array.from(
-    new Map(
-      conversations
-        .filter((t) => t.host?.firstName)
-        .map((t) => [t.hostId, t.host!]),
-    ).values(),
-  ).slice(0, 5);
+  const groupConvos = convos.filter((c): c is GroupConvo => c.kind === 'group');
+
+  // presence: connections + group hosts (stub — no real presence data)
+  const presencePool: PublicUser[] = connections.slice(0, 5);
 
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-4">
       <div className="grid gap-4 lg:h-[calc(100dvh-6rem)] lg:grid-cols-[330px_1fr_300px]">
+
         {/* ========== LEFT — conversations panel ========== */}
         <aside className="bg-card shadow-soft flex flex-col overflow-hidden rounded-3xl border">
           {/* header */}
           <div className="flex items-center justify-between border-b px-4 py-3">
             <h1 className="font-heading text-lg font-bold tracking-tight">Messages</h1>
-            <button
-              className="text-muted-foreground hover:text-primary grid size-8 place-items-center rounded-xl transition-colors"
-              aria-label="Compose"
-            >
-              <i className="fa-solid fa-pen-to-square" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setPickerOpen((v) => !v)}
+                className="text-muted-foreground hover:text-primary grid size-8 place-items-center rounded-xl transition-colors"
+                aria-label="New message"
+              >
+                <i className="fa-solid fa-pen-to-square" />
+              </button>
+              {/* new-message picker */}
+              {pickerOpen && (
+                <div className="bg-card shadow-soft absolute right-0 top-10 z-20 w-64 overflow-hidden rounded-2xl border">
+                  <div className="border-b px-3 py-2.5">
+                    <p className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">
+                      New Message
+                    </p>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {connections.length === 0 ? (
+                      <div className="px-4 py-5 text-center text-sm">
+                        <p className="text-muted-foreground mb-2">Connect with people first</p>
+                        <Link
+                          href="/connections"
+                          onClick={() => setPickerOpen(false)}
+                          className="bg-primary text-primary-foreground rounded-full px-3 py-1.5 text-xs font-semibold"
+                        >
+                          Find connections
+                        </Link>
+                      </div>
+                    ) : (
+                      <ul>
+                        {connections.map((person) => {
+                          const name =
+                            `${person.firstName ?? 'Member'} ${person.lastInitial ?? ''}`.trim();
+                          return (
+                            <li key={person.id}>
+                              <button
+                                onClick={() => {
+                                  setSelectedKey(`dm:${person.id}`);
+                                  setPickerOpen(false);
+                                }}
+                                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+                              >
+                                <Avatar name={name} size={32} />
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-semibold">{name}</p>
+                                  {person.city && (
+                                    <p className="text-muted-foreground truncate text-xs">
+                                      {person.city}
+                                    </p>
+                                  )}
+                                </div>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* search */}
@@ -192,19 +335,20 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* tabs (visual only — All is active) */}
+          {/* tabs */}
           <div className="flex gap-1 border-b px-4 pb-2">
             {(['All', 'Unread', 'Groups'] as const).map((tab) => (
-              <span
+              <button
                 key={tab}
+                onClick={() => setActiveTab(tab)}
                 className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                  tab === 'All'
+                  activeTab === tab
                     ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground cursor-pointer'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab}
-              </span>
+              </button>
             ))}
           </div>
 
@@ -222,7 +366,7 @@ export default function MessagesPage() {
                   <div className="px-6">
                     <i className="fa-regular fa-comment-dots mb-3 block text-2xl" />
                     <p className="mb-2 font-medium">No conversations yet</p>
-                    <p className="mb-4 text-xs">Join a table to start chatting</p>
+                    <p className="mb-4 text-xs">Join a table or connect with people</p>
                     <Link
                       href="/tables"
                       className="bg-primary text-primary-foreground rounded-full px-4 py-2 text-xs font-semibold"
@@ -233,29 +377,37 @@ export default function MessagesPage() {
                 )}
               </div>
             ) : (
-              <ul className="divide-y">
-                {filtered.map((t) => {
-                  const isSelected = t.id === selectedId;
-                  const subtitle =
-                    t.venueName ?? t.cafe?.name ?? `${t.seats - t.seatsLeft} members`;
+              <ul className="divide-y" onClick={() => setPickerOpen(false)}>
+                {filtered.map((c) => {
+                  const isSelected = c.key === selectedKey;
                   return (
-                    <li key={t.id}>
+                    <li key={c.key}>
                       <button
-                        onClick={() => setSelectedId(t.id)}
+                        onClick={() => setSelectedKey(c.key)}
                         className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
-                          isSelected ? 'border-primary bg-secondary/40 border-l-2' : 'border-l-2 border-transparent'
+                          isSelected
+                            ? 'border-primary bg-secondary/40 border-l-2'
+                            : 'border-l-2 border-transparent'
                         }`}
                       >
-                        <Avatar name={t.title ?? t.category} size={42} />
+                        <Avatar name={c.name} size={42} />
                         <div className="min-w-0 flex-1">
                           <p className="font-heading truncate text-sm font-bold tracking-tight">
-                            {t.title ?? t.category}
+                            {c.name}
                           </p>
-                          <p className="text-muted-foreground truncate text-xs">{subtitle}</p>
+                          <p className="text-muted-foreground truncate text-xs">
+                            {c.kind === 'dm' ? c.last || 'Say hello 👋' : 'Group chat'}
+                          </p>
                         </div>
-                        {/* stub: unread dot */}
                         <div className="flex shrink-0 flex-col items-end gap-1">
-                          <span className="text-muted-foreground text-[10px]"></span>
+                          <span className="text-muted-foreground text-[10px]">
+                            {c.time ? fmtTime(c.time) : ''}
+                          </span>
+                          {c.unread > 0 && (
+                            <span className="bg-primary text-primary-foreground flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold">
+                              {c.unread}
+                            </span>
+                          )}
                         </div>
                       </button>
                     </li>
@@ -265,7 +417,7 @@ export default function MessagesPage() {
             )}
           </div>
 
-          {/* archived button */}
+          {/* archived */}
           <div className="border-t px-4 py-3">
             <button className="text-muted-foreground w-full text-center text-xs font-medium hover:underline">
               View archived chats
@@ -275,53 +427,68 @@ export default function MessagesPage() {
 
         {/* ========== CENTER — thread ========== */}
         {selected ? (
-          <section className="bg-card shadow-soft flex flex-col overflow-hidden rounded-3xl border">
+          <section
+            className="bg-card shadow-soft flex flex-col overflow-hidden rounded-3xl border"
+            onClick={() => setPickerOpen(false)}
+          >
             {/* thread header */}
             <div className="flex items-center gap-3 border-b px-4 py-3">
-              <Avatar name={selected.title ?? selected.category} size={38} />
-              <div className="flex-1 min-w-0">
-                <p className="font-heading truncate font-bold tracking-tight">
-                  {selected.title ?? selected.category}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Group · {memberCount} member{memberCount === 1 ? '' : 's'}{' '}
-                  <span className="text-primary font-semibold">● Active</span>
-                </p>
+              <Avatar name={selected.name} size={38} />
+              <div className="min-w-0 flex-1">
+                <p className="font-heading truncate font-bold tracking-tight">{selected.name}</p>
+                {selected.kind === 'dm' ? (
+                  <p className="text-muted-foreground text-xs">
+                    <span className="text-primary font-semibold">● Online</span>
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    Group · {selected.table.seats - selected.table.seatsLeft + 1} member
+                    {selected.table.seats - selected.table.seatsLeft + 1 === 1 ? '' : 's'}
+                  </p>
+                )}
               </div>
-              <Link
-                href={`/tables/${selected.id}`}
-                className="text-muted-foreground hover:text-primary shrink-0 text-xs font-semibold transition-colors"
-              >
-                <i className="fa-solid fa-arrow-up-right-from-square" />
-              </Link>
+              {selected.kind === 'group' && (
+                <Link
+                  href={`/tables/${selected.table.id}`}
+                  className="text-muted-foreground hover:text-primary shrink-0 text-xs font-semibold transition-colors"
+                >
+                  <i className="fa-solid fa-arrow-up-right-from-square" />
+                </Link>
+              )}
             </div>
 
-            {/* meetup context card */}
-            <div className="border-b px-4 py-3">
-              <div className="bg-muted/50 flex items-center gap-3 rounded-2xl p-3">
-                <Cover
-                  category={selected.category}
-                  className="h-16 w-24 shrink-0 rounded-xl object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="font-heading truncate text-sm font-bold tracking-tight">
-                    {selected.title ?? selected.category}
-                  </p>
-                  <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                    📍 {venue}
-                  </p>
-                  <p className="text-muted-foreground truncate text-xs">
-                    🗓️ {formatDateTime(selected.startAt)}
-                  </p>
+            {/* meetup context card — group only */}
+            {selected.kind === 'group' && (
+              <div className="border-b px-4 py-3">
+                <div className="bg-muted/50 flex items-center gap-3 rounded-2xl p-3">
+                  <Cover
+                    category={selected.table.category}
+                    className="h-16 w-24 shrink-0 rounded-xl object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-heading truncate text-sm font-bold tracking-tight">
+                      {selected.table.title ?? selected.table.category}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                      📍{' '}
+                      {selected.table.venueName ??
+                        selected.table.cafe?.name ??
+                        selected.table.venueAddress ??
+                        'TBD'}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      🗓️ {formatDateTime(selected.table.startAt)}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/tables/${selected.table.id}`}
+                    className="bg-primary text-primary-foreground shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-transform hover:-translate-y-0.5"
+                  >
+                    View Meetup
+                  </Link>
                 </div>
-                <Link
-                  href={`/tables/${selected.id}`}
-                  className="bg-primary text-primary-foreground shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-transform hover:-translate-y-0.5"
-                >
-                  View Meetup
-                </Link>
               </div>
-            </div>
+            )}
 
             {/* messages area */}
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -329,11 +496,62 @@ export default function MessagesPage() {
                 <div className="text-muted-foreground grid h-full place-items-center text-sm">
                   <span>Loading messages…</span>
                 </div>
-              ) : member === false ? (
+              ) : selected.kind === 'dm' ? (
+                /* ---- DM bubbles ---- */
+                dmMsgs.length === 0 ? (
+                  <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
+                    <p>No messages yet — say hi! 👋</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 py-2">
+                      <div className="bg-border h-px flex-1" />
+                      <span className="text-muted-foreground text-xs font-semibold">Today</span>
+                      <div className="bg-border h-px flex-1" />
+                    </div>
+                    {dmMsgs.map((m) => {
+                      const mine = m.senderId === user.id;
+                      return (
+                        <div
+                          key={m.id}
+                          className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}
+                        >
+                          {!mine && (
+                            <Avatar name={selected.name} size={28} className="mb-0.5 shrink-0" />
+                          )}
+                          <div
+                            className={`flex max-w-[72%] flex-col ${mine ? 'items-end' : 'items-start'}`}
+                          >
+                            <div
+                              className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                                mine
+                                  ? 'bg-secondary text-secondary-foreground rounded-br-md'
+                                  : 'bg-muted text-foreground rounded-bl-md'
+                              }`}
+                            >
+                              {m.body}
+                            </div>
+                            <div className="text-muted-foreground/70 mt-0.5 flex items-center gap-1 px-1 text-[10px]">
+                              <span>{fmtTime(m.createdAt)}</span>
+                              {mine && m.readAt && (
+                                <i className="fa-solid fa-check-double text-primary" />
+                              )}
+                              {mine && !m.readAt && (
+                                <i className="fa-solid fa-check text-muted-foreground/50" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )
+              ) : /* ---- Group bubbles ---- */
+              groupChat === null || groupChat.member === false ? (
                 <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
                   <p>💬 Only the host and approved guests can chat here.</p>
                 </div>
-              ) : messages.length === 0 ? (
+              ) : groupChat.messages.length === 0 ? (
                 <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
                   <p>No messages yet — say hi! 👋</p>
                 </div>
@@ -344,7 +562,7 @@ export default function MessagesPage() {
                     <span className="text-muted-foreground text-xs font-semibold">Today</span>
                     <div className="bg-border h-px flex-1" />
                   </div>
-                  {messages.map((m) => {
+                  {groupChat.messages.map((m) => {
                     const mine = m.userId === user.id;
                     return (
                       <div
@@ -389,14 +607,9 @@ export default function MessagesPage() {
             </div>
 
             {/* composer */}
-            {member && (
-              <form
-                onSubmit={(e) => void send(e)}
-                className="border-t px-4 py-3"
-              >
-                {sendError && (
-                  <p className="text-destructive mb-2 text-xs">{sendError}</p>
-                )}
+            {selected.kind === 'dm' || (selected.kind === 'group' && groupChat?.member) ? (
+              <form onSubmit={(e) => void send(e)} className="border-t px-4 py-3">
+                {sendError && <p className="text-destructive mb-2 text-xs">{sendError}</p>}
                 <div className="bg-muted flex items-center gap-2 rounded-2xl px-3 py-2">
                   <button
                     type="button"
@@ -436,32 +649,41 @@ export default function MessagesPage() {
                   </button>
                 </div>
               </form>
-            )}
+            ) : selected.kind === 'group' && groupChat?.member === false ? (
+              <div className="border-t px-4 py-3 text-center text-xs text-muted-foreground">
+                You must be an approved member to send messages.
+              </div>
+            ) : null}
           </section>
         ) : (
-          <section className="bg-card shadow-soft grid place-items-center rounded-3xl border">
+          <section
+            className="bg-card shadow-soft grid place-items-center rounded-3xl border"
+            onClick={() => setPickerOpen(false)}
+          >
             <div className="text-muted-foreground text-center">
               <i className="fa-regular fa-comment-dots mb-3 block text-4xl" />
               <p className="font-heading font-bold tracking-tight">Select a conversation</p>
-              <p className="mt-1 text-sm">Pick a table chat from the left to get started</p>
+              <p className="mt-1 text-sm">Pick a chat from the left to get started</p>
             </div>
           </section>
         )}
 
         {/* ========== RIGHT RAIL ========== */}
-        <aside className="space-y-4 overflow-y-auto">
+        <aside className="space-y-4 overflow-y-auto" onClick={() => setPickerOpen(false)}>
           {/* active now (presence stub) */}
-          {presenceHosts.length > 0 && (
+          {presencePool.length > 0 && (
             <div className="bg-card shadow-soft rounded-3xl border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="font-heading text-sm font-bold tracking-tight">Active now</p>
-                <button className="text-primary text-xs font-semibold hover:underline">See all</button>
+                <button className="text-primary text-xs font-semibold hover:underline">
+                  See all
+                </button>
               </div>
               <div className="flex gap-2">
-                {presenceHosts.map((host) => (
+                {presencePool.map((person) => (
                   <Avatar
-                    key={host.id}
-                    name={host.firstName ?? 'Host'}
+                    key={person.id}
+                    name={`${person.firstName ?? 'M'} ${person.lastInitial ?? ''}`.trim()}
                     size={36}
                     online
                   />
@@ -471,29 +693,33 @@ export default function MessagesPage() {
           )}
 
           {/* group chats */}
-          {conversations.length > 0 && (
+          {groupConvos.length > 0 && (
             <div className="bg-card shadow-soft rounded-3xl border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="font-heading text-sm font-bold tracking-tight">Group chats</p>
-                <button className="text-primary text-xs font-semibold hover:underline">See all</button>
+                <button
+                  onClick={() => setActiveTab('Groups')}
+                  className="text-primary text-xs font-semibold hover:underline"
+                >
+                  See all
+                </button>
               </div>
               <ul className="space-y-2">
-                {conversations.slice(0, 6).map((t) => (
-                  <li key={t.id}>
+                {groupConvos.slice(0, 6).map((c) => (
+                  <li key={c.key}>
                     <button
-                      onClick={() => setSelectedId(t.id)}
+                      onClick={() => setSelectedKey(c.key)}
                       className="flex w-full items-center gap-2 rounded-xl p-1.5 text-left transition-colors hover:bg-muted/50"
                     >
-                      <Avatar name={t.title ?? t.category} size={30} />
+                      <Avatar name={c.name} size={30} />
                       <div className="min-w-0 flex-1">
                         <p className="font-heading truncate text-xs font-bold tracking-tight">
-                          {t.title ?? t.category}
+                          {c.name}
                         </p>
                         <p className="text-muted-foreground truncate text-[10px]">
-                          {formatDateTime(t.startAt)}
+                          {formatDateTime(c.table.startAt)}
                         </p>
                       </div>
-                      {/* stub unread dot */}
                     </button>
                   </li>
                 ))}
@@ -506,7 +732,10 @@ export default function MessagesPage() {
             <p className="font-heading mb-3 text-sm font-bold tracking-tight">Quick actions</p>
             <ul className="space-y-1">
               <li>
-                <button className="text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-xl p-2 text-sm transition-colors hover:bg-muted/50">
+                <button
+                  onClick={() => setPickerOpen((v) => !v)}
+                  className="text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-xl p-2 text-sm transition-colors hover:bg-muted/50"
+                >
                   <span className="bg-primary/10 text-primary grid size-7 place-items-center rounded-lg">
                     <i className="fa-solid fa-comment text-xs" />
                   </span>

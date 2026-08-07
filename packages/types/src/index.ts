@@ -559,3 +559,20 @@ export interface SuggestedPerson {
   user: PublicUser;
   mutuals: number;
 }
+
+// ---- Direct messages ----
+export interface DmMessage {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  createdAt: string;
+  readAt: string | null;
+}
+
+export interface DmThread {
+  user: PublicUser;
+  lastMessage: string;
+  lastAt: string;
+  unread: number;
+}

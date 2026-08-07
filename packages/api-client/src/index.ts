@@ -12,6 +12,8 @@ import type {
   CreateEventInput,
   CreateTableInput,
   DashboardMetrics,
+  DmMessage,
+  DmThread,
   EventDto,
   FeedbackDto,
   GenderTrack,
@@ -479,6 +481,19 @@ export class ApiClient {
 
   removeConnection(userId: string): Promise<{ status: ConnectionState }> {
     return this.request('DELETE', `/connections/${userId}`);
+  }
+
+  // ---- direct messages ----
+  dmThreads(): Promise<DmThread[]> {
+    return this.request('GET', '/dm/threads');
+  }
+
+  dmThread(userId: string): Promise<DmMessage[]> {
+    return this.request('GET', `/dm/${userId}`);
+  }
+
+  sendDm(userId: string, body: string): Promise<DmMessage> {
+    return this.request('POST', `/dm/${userId}`, { body });
   }
 
   // ---- notifications ----
