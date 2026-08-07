@@ -10,9 +10,10 @@ tracks the **stubbed features** whose backend isn't built yet.
 - **Connections** ✅ — request/accept/decline/remove, `/connections` page, wired into Explore/Search/Profile (Connection model + module)
 - **People you may know / Suggestions** ✅ — real suggestions + Connect in Explore/Search/Connections (mutuals still 0 until mutual-count computed)
 
+- **1:1 Direct Messages** ✅ — DirectMessage model + dm module; Messages hub unified (DMs + group chats + new-message from connections)
+
 ## Social graph (remaining)
-2. **1:1 Direct Messages** — DMs between users (group chat already real; Connections now exist to gate DMs). *Large.*
-   - mutual-friends count (currently 0) is a small add on top of Connections.
+- **mutual-friends count** (currently 0 in suggestions/connections). *Small.*
 
 ## Meetup / social extras
 4. **Invitations** — invite to a table + Accept/Maybe (nav "Invitations" currently → /requests). *Medium.*
