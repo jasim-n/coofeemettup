@@ -161,7 +161,7 @@ export function DesktopNav() {
                 <MenuItem href="/profile" icon="fa-user" title="View Profile" sub="See your public profile" />
                 <MenuItem href="/meetups" icon="fa-calendar-days" title="My Meetups" sub="Manage your meetups" />
                 <MenuItem
-                  href="/requests"
+                  href="/invites"
                   icon="fa-user-group"
                   title="Invitations"
                   sub="Requests & invites"

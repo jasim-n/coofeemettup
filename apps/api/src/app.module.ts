@@ -21,6 +21,7 @@ import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { DmModule } from './dm/dm.module';
+import { InvitesModule } from './invites/invites.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -46,6 +47,7 @@ import { HealthController } from './health/health.controller';
     NotificationsModule,
     ConnectionsModule,
     DmModule,
+    InvitesModule,
   ],
   controllers: [HealthController],
 })

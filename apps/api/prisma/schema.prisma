@@ -171,6 +171,8 @@ model User {
   connectionsReceived Connection[]      @relation("ConnAddressee")
   dmSent             DirectMessage[]    @relation("DmSender")
   dmReceived         DirectMessage[]    @relation("DmRecipient")
+  invitesSent        TableInvite[]      @relation("InvitesSent")
+  invitesReceived    TableInvite[]      @relation("InvitesReceived")
 
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -213,6 +215,13 @@ enum ConnectionStatus {
   DECLINED
 }
 
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  MAYBE
+}
+
 model Table {
   id           String             @id @default(cuid())
   host         User               @relation("HostedTables", fields: [hostId], references: [id])
@@ -234,6 +243,7 @@ model Table {
   status       TableStatus        @default(OPEN)
 
   requests     TableJoinRequest[]
+  invites      TableInvite[]
 
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
@@ -441,4 +451,21 @@ model DirectMessage {
 
   @@index([senderId, recipientId])
   @@index([recipientId, senderId])
+}
+
+model TableInvite {
+  id          String       @id @default(cuid())
+  table       Table        @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  tableId     String
+  inviter     User         @relation("InvitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
+  inviterId   String
+  invitee     User         @relation("InvitesReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
+  inviteeId   String
+  status      InviteStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([tableId, inviteeId])
+  @@index([inviteeId])
+  @@index([tableId])
 }

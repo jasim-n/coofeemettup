@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ApiError, type TableDto } from '@jrst/api-client';
+import { ApiError, type InviteDto, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
@@ -10,6 +10,7 @@ import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { PageLoader } from '@/components/spinner';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { SaveButton } from '@/components/save-button';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
@@ -24,6 +25,9 @@ const CAT_ICON: Record<string, string> = {
   'Board games': 'fa-chess',
 };
 const iconFor = (c: string) => CAT_ICON[c] ?? 'fa-mug-saucer';
+
+const personName = (u: { firstName?: string | null; lastInitial?: string | null }) =>
+  `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
 
 const CAT_EMOJI: Record<string, string> = {
   'Deep talks': '💬',
@@ -309,13 +313,7 @@ function SuggestedRow({ t }: { t: TableDto }) {
 
 /* ─── tabs ──────────────────────────────────────────────────────── */
 
-const TABS: { id: TabId; label: string; badge?: number }[] = [
-  { id: 'upcoming', label: 'Upcoming' },
-  { id: 'my', label: 'My Meetups' },
-  { id: 'invitations', label: 'Invitations', badge: 0 },
-  { id: 'past', label: 'Past' },
-  { id: 'saved', label: 'Saved' },
-];
+// TABS is derived inside the component to get the live invite count.
 
 /* ─── main page ─────────────────────────────────────────────────── */
 
@@ -324,6 +322,8 @@ export default function MeetupsPage() {
 
   const [browse, setBrowse] = useState<TableDto[]>([]);
   const [joined, setJoined] = useState<TableDto[]>([]);
+  const [invites, setInvites] = useState<InviteDto[]>([]);
+  const [inviteBusy, setInviteBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // filters
@@ -346,6 +346,22 @@ export default function MeetupsPage() {
         }
       } catch (err) {
         if (active) setError(err instanceof ApiError ? err.message : 'Failed to load meetups');
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    void (async () => {
+      try {
+        const data = await api.myInvites();
+        if (active) setInvites(data);
+      } catch {
+        /* best-effort */
       }
     })();
     return () => {
@@ -404,10 +420,34 @@ export default function MeetupsPage() {
       </main>
     );
 
+  const TABS: { id: TabId; label: string; badge?: number }[] = [
+    { id: 'upcoming', label: 'Upcoming' },
+    { id: 'my', label: 'My Meetups' },
+    { id: 'invitations', label: 'Invitations', badge: invites.length },
+    { id: 'past', label: 'Past' },
+    { id: 'saved', label: 'Saved' },
+  ];
+
   function clearFilters() {
     setWhen('all');
     setCategory('');
     setFromDate('');
+  }
+
+  async function handleInviteAction(
+    id: string,
+    action: 'accept' | 'maybe',
+  ) {
+    setInviteBusy(id);
+    try {
+      if (action === 'accept') await api.acceptInvite(id);
+      else await api.maybeInvite(id);
+      setInvites((prev) => prev.filter((inv) => inv.id !== id));
+    } catch {
+      /* best-effort */
+    } finally {
+      setInviteBusy(null);
+    }
   }
 
   return (
@@ -656,12 +696,66 @@ export default function MeetupsPage() {
 
           {/* ── INVITATIONS TAB ──────────────────────────────────── */}
           {tab === 'invitations' && (
-            <div className="rounded-3xl border border-dashed py-16 text-center">
-              <p className="text-4xl">📨</p>
-              <p className="font-heading mt-3 font-bold">No invitations yet</p>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Invites to join tables will show here.
-              </p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-lg font-bold tracking-tight">Invitations</h2>
+                <Link href="/invites" className="text-primary text-sm font-semibold hover:underline">
+                  View all →
+                </Link>
+              </div>
+              {invites.length === 0 ? (
+                <div className="rounded-3xl border border-dashed py-16 text-center">
+                  <i className="fa-regular fa-envelope-open text-muted-foreground mb-3 text-4xl" />
+                  <p className="font-heading mt-2 font-bold">No invitations yet</p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    Invites to join tables will show here.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {invites.map((inv) => (
+                    <div key={inv.id} className="bg-card shadow-soft ring-border/60 overflow-hidden rounded-3xl ring-1">
+                      <div className="relative h-32">
+                        <Cover category={inv.table.category} className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <Link
+                          href={`/tables/${inv.table.id}`}
+                          className="font-heading block truncate text-sm font-bold tracking-tight hover:underline"
+                        >
+                          {emojiFor(inv.table.category)} {inv.table.title ?? inv.table.category}
+                        </Link>
+                        <p className="text-muted-foreground text-xs">🗓️ {formatDateTime(inv.table.startAt)}</p>
+                        <div className="flex items-center gap-1.5">
+                          <Avatar name={personName(inv.inviter)} size={18} />
+                          <span className="text-muted-foreground text-xs">
+                            Invited by <span className="text-foreground font-semibold">{personName(inv.inviter)}</span>
+                          </span>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <Button
+                            size="xs"
+                            disabled={inviteBusy === inv.id}
+                            onClick={() => void handleInviteAction(inv.id, 'accept')}
+                            className="flex-1"
+                          >
+                            {inviteBusy === inv.id ? '…' : 'Accept'}
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            disabled={inviteBusy === inv.id}
+                            onClick={() => void handleInviteAction(inv.id, 'maybe')}
+                          >
+                            Maybe
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -716,17 +810,65 @@ export default function MeetupsPage() {
           <div className="bg-card shadow-soft rounded-3xl border p-5">
             <div className="mb-3 flex items-center justify-between">
               <p className="font-heading font-bold tracking-tight">Your invitations</p>
-              <Link
-                href="/meetups"
-                className="text-primary text-xs font-semibold hover:underline"
-                onClick={() => setTab('invitations')}
-              >
+              <Link href="/invites" className="text-primary text-xs font-semibold hover:underline">
                 View all
               </Link>
             </div>
-            <div className="rounded-2xl border border-dashed py-6 text-center">
-              <p className="text-muted-foreground text-sm">No invitations yet</p>
-            </div>
+            {invites.length === 0 ? (
+              <div className="rounded-2xl border border-dashed py-6 text-center">
+                <p className="text-muted-foreground text-sm">No invitations yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {invites.slice(0, 2).map((inv) => (
+                  <div key={inv.id} className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="ring-border/40 h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-1">
+                        <Cover category={inv.table.category} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/tables/${inv.table.id}`}
+                          className="font-heading block truncate text-xs font-bold hover:underline"
+                        >
+                          {inv.table.title ?? inv.table.category}
+                        </Link>
+                        <div className="flex items-center gap-1">
+                          <Avatar name={personName(inv.inviter)} size={14} />
+                          <span className="text-muted-foreground truncate text-[11px]">
+                            {personName(inv.inviter)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button
+                        size="xs"
+                        disabled={inviteBusy === inv.id}
+                        onClick={() => void handleInviteAction(inv.id, 'accept')}
+                        className="flex-1 text-[11px]"
+                      >
+                        {inviteBusy === inv.id ? '…' : 'Accept'}
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        disabled={inviteBusy === inv.id}
+                        onClick={() => void handleInviteAction(inv.id, 'maybe')}
+                        className="text-[11px]"
+                      >
+                        Maybe
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {invites.length > 2 && (
+                  <Link href="/invites" className="text-primary block text-center text-xs font-semibold hover:underline pt-1">
+                    +{invites.length - 2} more →
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Host your own meetup */}

@@ -412,7 +412,7 @@ export default function ProfilePage() {
     { href: '/saved', icon: 'fa-bookmark', label: 'Saved Tables' },
     { href: '/connections', icon: 'fa-user-group', label: 'Connections' },
     { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity' },
-    { href: '/requests', icon: 'fa-envelope-open', label: 'Invitations' },
+    { href: '/invites', icon: 'fa-envelope-open', label: 'Invitations' },
     { id: 'identity', icon: 'fa-shield-halved', label: 'Identity Verification' },
     { id: 'settings', icon: 'fa-gear', label: 'Account Settings' },
   ];

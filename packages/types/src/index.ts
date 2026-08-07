@@ -546,6 +546,17 @@ export interface MatchGenerateResult {
   groups: GroupSuggestion[];
 }
 
+// ---- Table invitations ----
+export type InviteStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'MAYBE';
+
+export interface InviteDto {
+  id: string;
+  table: { id: string; title: string | null; category: string; startAt: string; venueName: string | null };
+  inviter: PublicUser;
+  status: InviteStatus;
+  createdAt: string;
+}
+
 // ---- Connections (social graph) ----
 export type ConnectionState = 'none' | 'pending_sent' | 'pending_received' | 'connected';
 

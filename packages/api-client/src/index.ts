@@ -38,6 +38,7 @@ import type {
   UpdateEventInput,
   SubmitFeedbackInput,
   UpdateProfileInput,
+  InviteDto,
 } from '@jrst/types';
 
 export * from '@jrst/types';
@@ -494,6 +495,27 @@ export class ApiClient {
 
   sendDm(userId: string, body: string): Promise<DmMessage> {
     return this.request('POST', `/dm/${userId}`, { body });
+  }
+
+  // ---- table invitations ----
+  inviteToTable(tableId: string, userId: string): Promise<InviteDto> {
+    return this.request('POST', '/invites', { tableId, userId });
+  }
+
+  myInvites(): Promise<InviteDto[]> {
+    return this.request('GET', '/invites/mine');
+  }
+
+  acceptInvite(id: string): Promise<{ ok: true }> {
+    return this.request('POST', `/invites/${id}/accept`);
+  }
+
+  declineInvite(id: string): Promise<{ ok: true }> {
+    return this.request('POST', `/invites/${id}/decline`);
+  }
+
+  maybeInvite(id: string): Promise<{ ok: true }> {
+    return this.request('POST', `/invites/${id}/maybe`);
   }
 
   // ---- notifications ----

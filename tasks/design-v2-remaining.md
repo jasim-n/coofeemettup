@@ -11,12 +11,12 @@ tracks the **stubbed features** whose backend isn't built yet.
 - **People you may know / Suggestions** ✅ — real suggestions + Connect in Explore/Search/Connections (mutuals still 0 until mutual-count computed)
 
 - **1:1 Direct Messages** ✅ — DirectMessage model + dm module; Messages hub unified (DMs + group chats + new-message from connections)
+- **Invitations** ✅ — TableInvite model + invites module; host invites a connection from the table page; `/invites` + Meetups rail/tab (Accept → seat-claim join, Maybe, Decline); dropdown/profile "Invitations" → `/invites`
 
 ## Social graph (remaining)
 - **mutual-friends count** (currently 0 in suggestions/connections). *Small.*
 
 ## Meetup / social extras
-4. **Invitations** — invite to a table + Accept/Maybe (nav "Invitations" currently → /requests). *Medium.*
 5. **Presence — "Active now" / online dots** — heartbeat/realtime. *Medium.*
 6. **Reactions (❤️) + unread counts** in Messages. *Small–medium.*
 7. **Full calendar** page ("View full calendar"). *Small–medium.*

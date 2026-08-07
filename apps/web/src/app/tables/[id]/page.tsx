@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   ApiError,
+  type PublicUser,
   type TableDto,
   type TableJoinRequestDto,
   type UserReputation,
@@ -13,6 +14,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
+import { Avatar } from '@/components/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Stars } from '@/components/stars';
@@ -38,6 +40,8 @@ export default function TableDetailPage() {
   const [table, setTable] = useState<TableDto | null>(null);
   const [requests, setRequests] = useState<TableJoinRequestDto[]>([]);
   const [hostRep, setHostRep] = useState<UserReputation | null>(null);
+  const [connections, setConnections] = useState<PublicUser[]>([]);
+  const [invited, setInvited] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -66,6 +70,23 @@ export default function TableDetailPage() {
     };
   }, [load]);
 
+  // Load connections for invite picker (host only)
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    void (async () => {
+      try {
+        const data = await api.myConnections();
+        if (active) setConnections(data);
+      } catch {
+        /* best-effort */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
   async function run(action: () => Promise<unknown>) {
     setError(null);
     setBusy(true);
@@ -78,6 +99,19 @@ export default function TableDetailPage() {
       setBusy(false);
     }
   }
+
+  async function sendInvite(connectionId: string) {
+    if (!table) return;
+    try {
+      await api.inviteToTable(table.id, connectionId);
+      setInvited((prev) => new Set(prev).add(connectionId));
+    } catch {
+      /* best-effort */
+    }
+  }
+
+  const personName = (u: PublicUser) =>
+    `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
 
   if (error && !table) return <main className="p-6 text-destructive text-sm">{error}</main>;
   if (!table) return <PageLoader />;
@@ -234,6 +268,46 @@ export default function TableDetailPage() {
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* invite people (host only) */}
+          {isHost && (
+            <section className="bg-card shadow-soft rounded-3xl border p-6">
+              <h2 className="font-heading mb-3 text-lg font-bold tracking-tight">Invite people</h2>
+              {connections.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  Connect with people to invite them.{' '}
+                  <Link href="/connections" className="text-primary font-semibold hover:underline">
+                    Find connections →
+                  </Link>
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {connections.map((conn) => {
+                    const alreadyInvited = invited.has(conn.id);
+                    return (
+                      <div
+                        key={conn.id}
+                        className="flex items-center justify-between gap-3 rounded-2xl border p-3"
+                      >
+                        <span className="flex items-center gap-2 text-sm font-medium">
+                          <Avatar name={personName(conn)} size={32} />
+                          {personName(conn)}
+                        </span>
+                        <Button
+                          size="xs"
+                          variant={alreadyInvited ? 'secondary' : 'default'}
+                          disabled={alreadyInvited}
+                          onClick={() => void sendInvite(conn.id)}
+                        >
+                          {alreadyInvited ? 'Invited ✓' : 'Invite'}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           )}
 
