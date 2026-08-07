@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { RequestsBadgeProvider } from "@/components/requests-badge";

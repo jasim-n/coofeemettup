@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Spinner } from '@/components/spinner';
 import { Input } from '@/components/ui/input';
+import { Cover } from '@/components/cover-image';
 
 // Free OpenStreetMap raster tiles — no token / account required.
 const OSM_STYLE: StyleSpecification = {
@@ -80,6 +81,7 @@ export default function TablesMap() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [times, setTimes] = useState<TimeKey[]>([]);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'few' | 'full'>('all');
   const activeCount = (fromDate ? 1 : 0) + (toDate ? 1 : 0) + times.length;
   const toggleTime = (k: TimeKey) =>
     setTimes((ts) => (ts.includes(k) ? ts.filter((x) => x !== k) : [...ts, k]));
@@ -87,6 +89,7 @@ export default function TablesMap() {
     setFromDate('');
     setToDate('');
     setTimes([]);
+    setStatusFilter('all');
   };
 
   useEffect(() => {
@@ -129,9 +132,13 @@ export default function TablesMap() {
       if (fromDate && d < new Date(`${fromDate}T00:00:00`)) return false;
       if (toDate && d > new Date(`${toDate}T23:59:59`)) return false;
       if (times.length && !times.includes(timeBucket(p.table.startAt))) return false;
+      const seats = p.table.seatsLeft;
+      if (statusFilter === 'available' && seats <= 2) return false;
+      if (statusFilter === 'few' && (seats <= 0 || seats > 2)) return false;
+      if (statusFilter === 'full' && seats > 0) return false;
       return true;
     });
-  }, [pins, fromDate, toDate, times]);
+  }, [pins, fromDate, toDate, times, statusFilter]);
 
   useEffect(() => {
     const m = mapRef.current;
@@ -181,6 +188,7 @@ export default function TablesMap() {
   }, []);
 
   const selected = visible.find((p) => p.table.id === selectedId) ?? null;
+  const totalSeatsOpen = visible.reduce((sum, p) => sum + Math.max(0, p.table.seatsLeft), 0);
 
   return (
     <div className="space-y-3">
@@ -254,8 +262,9 @@ export default function TablesMap() {
 
       <div className="flex flex-col gap-4 md:h-[74vh] md:flex-row">
       {/* desktop list rail */}
-      <aside className="hidden md:flex md:w-80 md:shrink-0 md:flex-col md:overflow-y-auto md:pr-1">
-        <div className="flex items-center justify-between px-1 pb-2">
+      <aside className="hidden md:flex md:w-80 md:shrink-0 md:flex-col md:gap-2 md:overflow-y-auto md:pr-1">
+        {/* header row */}
+        <div className="flex items-center justify-between px-1 pb-1">
           <span className="eyebrow text-primary">
             {loading ? 'Finding tables…' : `${visible.length} nearby`}
           </span>
@@ -267,13 +276,47 @@ export default function TablesMap() {
             Filters {activeCount > 0 ? `(${activeCount})` : '→'}
           </button>
         </div>
+
+        {/* summary line */}
+        {!loading && visible.length > 0 && (
+          <p className="text-muted-foreground px-1 text-xs">
+            {visible.length} table{visible.length === 1 ? '' : 's'} · {totalSeatsOpen} seat{totalSeatsOpen === 1 ? '' : 's'} open
+          </p>
+        )}
+
+        {/* status filter pills */}
+        <div className="flex flex-wrap gap-1.5 px-1 pb-1">
+          {(
+            [
+              { key: 'all', label: 'All' },
+              { key: 'available', label: 'Available' },
+              { key: 'few', label: 'Few left' },
+              { key: 'full', label: 'Full' },
+            ] as const
+          ).map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setStatusFilter(s.key)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                statusFilter === s.key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card ring-border/60 hover:bg-muted ring-1'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* list body */}
         {loading ? (
           <div className="grid flex-1 place-items-center">
             <Spinner className="text-primary size-6" />
           </div>
         ) : visible.length === 0 ? (
           <p className="text-muted-foreground px-1 text-sm">
-            {activeCount > 0
+            {activeCount > 0 || statusFilter !== 'all'
               ? 'No tables match these filters.'
               : 'No open tables nearby right now.'}
           </p>
@@ -294,31 +337,41 @@ export default function TablesMap() {
                     active ? 'ring-primary shadow-glow' : 'ring-border/60 shadow-soft'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-heading text-sm font-bold tracking-tight">
-                      {emojiFor(t.category)} {t.title ?? t.category}
-                    </p>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        t.pricePKR == null
-                          ? 'bg-secondary text-secondary-foreground'
-                          : 'bg-primary text-primary-foreground'
-                      }`}
-                    >
-                      {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground mt-1 text-xs">📍 {p.name}</p>
-                  <p className="text-muted-foreground text-xs">🗓️ {formatDateTime(t.startAt)}</p>
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <span className="text-muted-foreground text-xs">🪑 {t.seatsLeft} left</span>
-                    <Link
-                      href={`/tables/${t.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-primary text-xs font-semibold hover:underline"
-                    >
-                      View →
-                    </Link>
+                  <div className="flex items-start gap-3">
+                    {/* thumbnail */}
+                    <Cover
+                      category={t.category}
+                      className="h-16 w-20 shrink-0 rounded-xl object-cover"
+                    />
+                    {/* text block */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="font-heading text-sm font-bold leading-tight tracking-tight">
+                          {emojiFor(t.category)} {t.title ?? t.category}
+                        </p>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            t.pricePKR == null
+                              ? 'bg-secondary text-secondary-foreground'
+                              : 'bg-primary text-primary-foreground'
+                          }`}
+                        >
+                          {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground mt-0.5 truncate text-xs">📍 {p.name}</p>
+                      <p className="text-muted-foreground truncate text-xs">🗓️ {formatDateTime(t.startAt)}</p>
+                      <div className="mt-1 flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">🪑 {t.seatsLeft} left</span>
+                        <Link
+                          href={`/tables/${t.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-primary text-xs font-semibold hover:underline"
+                        >
+                          View →
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </button>
               );
