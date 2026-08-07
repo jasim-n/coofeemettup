@@ -7,11 +7,12 @@ tracks the **stubbed features** whose backend isn't built yet.
 - All 9 screens: nav+dropdown, Home, Explore, Nearby, Meetups, Search, Table detail, Profile, Messages
 - **Saved** — bookmark tables end-to-end (hearts + `/saved` + `savedTableIds`)
 - Messages does real **group chat** over table chat
+- **Connections** ✅ — request/accept/decline/remove, `/connections` page, wired into Explore/Search/Profile (Connection model + module)
+- **People you may know / Suggestions** ✅ — real suggestions + Connect in Explore/Search/Connections (mutuals still 0 until mutual-count computed)
 
-## Social graph (build in order)
-1. **Connections** — request/accept/decline, mutual-friends, Connections page, wire "Connect" (Explore/Search/Profile). *Medium–large.* → unlocks 2, 3.  ⬅️ IN PROGRESS
-2. **1:1 Direct Messages** — DMs between users (group chat already real). *Large.* Needs #1.
-3. **People you may know / Suggested people** — real suggestions via mutuals. *Small* after #1.
+## Social graph (remaining)
+2. **1:1 Direct Messages** — DMs between users (group chat already real; Connections now exist to gate DMs). *Large.*
+   - mutual-friends count (currently 0) is a small add on top of Connections.
 
 ## Meetup / social extras
 4. **Invitations** — invite to a table + Accept/Maybe (nav "Invitations" currently → /requests). *Medium.*
