@@ -61,7 +61,7 @@ export function DesktopNav() {
 
   function search(e: React.FormEvent) {
     e.preventDefault();
-    router.push(q.trim() ? `/discover?q=${encodeURIComponent(q.trim())}` : '/discover');
+    router.push(q.trim() ? `/search?q=${encodeURIComponent(q.trim())}` : '/search');
   }
 
   return (
