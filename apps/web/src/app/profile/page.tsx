@@ -6,13 +6,17 @@ import Link from 'next/link';
 import { ApiError, Intent, type TableDto, type UserReputation, type UpdateProfileInput } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
-import { parseList } from '@/lib/format';
+import { parseList, formatDateTime } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import MyReviews from '@/components/my-reviews';
 import { PageLoader } from '@/components/spinner';
+import { Cover } from '@/components/cover-image';
+import { Avatar } from '@/components/avatar';
+
+/* ─── constants ─────────────────────────────────────────────────── */
 
 const selectClass =
   'h-10 rounded-full border border-input bg-card/60 px-4 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25';
@@ -27,42 +31,63 @@ const INTENT_LABELS: Record<string, string> = {
   PRACTICE_ENGLISH: 'Practice English',
 };
 
-interface ProfileStats {
-  hosted: number;
-  joined: number;
-  avgRating: number;
-}
+const INTEREST_ICON: Record<string, string> = {
+  Books: 'fa-book',
+  Startups: 'fa-rocket',
+  Networking: 'fa-handshake',
+  Film: 'fa-film',
+  Coffee: 'fa-mug-hot',
+  Travel: 'fa-plane',
+  Music: 'fa-music',
+  Tech: 'fa-microchip',
+  Food: 'fa-utensils',
+  Sports: 'fa-futbol',
+  Art: 'fa-palette',
+  Politics: 'fa-landmark',
+};
+
+/* ─── section type ──────────────────────────────────────────────── */
+
+type Section = 'overview' | 'settings' | 'reviews' | 'identity';
+
+/* ─── helpers ───────────────────────────────────────────────────── */
 
 function formatJoinDate(createdAt: string): string {
   return new Date(createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
+function splitScore(total: number): [number, number, number, number] {
+  const base = Math.floor(total / 4);
+  const rem = total - base * 4;
+  return [base + (rem > 0 ? 1 : 0), base + (rem > 1 ? 1 : 0), base + (rem > 2 ? 1 : 0), base];
+}
+
+/* ─── ReliabilityGauge (original) ──────────────────────────────── */
+
 function ReliabilityGauge({ score }: { score: number }) {
   const clampedScore = Math.min(100, Math.max(0, score));
   const deg = clampedScore * 3.6;
   return (
-    <div className="rounded-3xl border bg-card p-5 shadow-soft flex flex-col items-center gap-3">
-      <p className="eyebrow text-primary">Reliability</p>
+    <div
+      className="relative flex items-center justify-center rounded-full"
+      style={{
+        width: 88,
+        height: 88,
+        background: `conic-gradient(var(--primary) ${deg}deg, var(--muted) 0deg)`,
+      }}
+    >
       <div
-        className="relative flex items-center justify-center rounded-full"
-        style={{
-          width: 112,
-          height: 112,
-          background: `conic-gradient(var(--primary) ${deg}deg, var(--muted) 0deg)`,
-        }}
+        className="absolute flex flex-col items-center justify-center rounded-full bg-card"
+        style={{ width: 64, height: 64 }}
       >
-        <div className="absolute flex flex-col items-center justify-center rounded-full bg-card"
-          style={{ width: 80, height: 80 }}>
-          <span className="font-heading text-2xl font-extrabold leading-none">{clampedScore}</span>
-          <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wide mt-0.5">/ 100</span>
-        </div>
+        <span className="font-heading text-xl font-extrabold leading-none">{clampedScore}</span>
+        <span className="text-muted-foreground text-[9px] font-semibold uppercase tracking-wide mt-0.5">/ 100</span>
       </div>
-      <p className="text-muted-foreground text-xs text-center">
-        Based on attendance &amp; punctuality
-      </p>
     </div>
   );
 }
+
+/* ─── IdentityCard (original, reusable) ─────────────────────────── */
 
 function IdentityCard({
   verificationStatus,
@@ -83,6 +108,7 @@ function IdentityCard({
       {/* Phone — always verified (phone-auth) */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <i className="fa-solid fa-phone text-muted-foreground text-xs" />
           <span className="text-sm font-medium">Phone number</span>
         </div>
         <span className="flex items-center gap-1 text-xs font-semibold text-primary">
@@ -93,9 +119,23 @@ function IdentityCard({
 
       <div className="h-px bg-border" />
 
+      {/* Email — stub */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <i className="fa-solid fa-envelope text-muted-foreground text-xs" />
+          <span className="text-sm font-medium">Email address</span>
+        </div>
+        <span className="text-xs font-semibold text-muted-foreground">Not added</span>
+      </div>
+
+      <div className="h-px bg-border" />
+
       {/* Government ID */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">Government ID</span>
+        <div className="flex items-center gap-2">
+          <i className="fa-solid fa-id-card text-muted-foreground text-xs" />
+          <span className="text-sm font-medium">Government ID</span>
+        </div>
         {isVerified ? (
           <span className="flex items-center gap-1 text-xs font-semibold text-primary">
             <span className="size-4 rounded-full bg-primary/10 flex items-center justify-center text-[10px]">✓</span>
@@ -124,18 +164,88 @@ function IdentityCard({
   );
 }
 
+/* ─── MeetupCoverCard (profile context) ────────────────────────── */
+
+function MeetupCoverCard({ t }: { t: TableDto }) {
+  return (
+    <Link
+      href={`/tables/${t.id}`}
+      className="bg-card shadow-soft ring-border/60 group block overflow-hidden rounded-3xl ring-1 transition-all hover:-translate-y-0.5 hover:shadow-glow"
+    >
+      <div className="relative h-32">
+        <Cover
+          category={t.category}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+      </div>
+      <div className="p-3">
+        <p className="font-heading truncate text-sm font-bold">{t.title ?? t.category}</p>
+        <p className="text-muted-foreground truncate text-xs">📍 {t.venueName ?? t.cafe?.name ?? 'See map'}</p>
+        <p className="text-muted-foreground text-xs">🗓️ {formatDateTime(t.startAt)}</p>
+        <p className="text-muted-foreground text-xs">{t.seatsLeft} seats left</p>
+      </div>
+    </Link>
+  );
+}
+
+/* ─── HostedMeetupRow ───────────────────────────────────────────── */
+
+function HostedMeetupRow({ t }: { t: TableDto }) {
+  const filled = t.seats - t.seatsLeft;
+  return (
+    <div className="flex items-center gap-3 py-3 border-b border-border/60 last:border-0">
+      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1 ring-border/40">
+        <Cover category={t.category} className="h-full w-full object-cover" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-heading truncate text-sm font-bold">{t.title ?? t.category}</p>
+        <p className="text-muted-foreground truncate text-xs">
+          📍 {t.venueName ?? t.cafe?.name ?? 'See map'} · {formatDateTime(t.startAt)}
+        </p>
+        <p className="text-muted-foreground text-xs">{filled}/{t.seats} seats filled</p>
+      </div>
+      <Link
+        href={`/tables/${t.id}`}
+        className="shrink-0 rounded-full border border-border px-3 py-1 text-xs font-semibold hover:border-primary/40 hover:bg-muted transition-colors"
+      >
+        ⋮
+      </Link>
+    </div>
+  );
+}
+
+/* ─── main page ─────────────────────────────────────────────────── */
+
 export default function ProfilePage() {
   const { user, loading, refresh } = useAuth();
+
+  // Section state — hash-init so #code-of-conduct deep-link from table page still works
+  const [section, setSection] = useState<Section>(() =>
+    typeof window !== 'undefined' && window.location.hash === '#code-of-conduct'
+      ? 'settings'
+      : 'overview',
+  );
+
+  // Form state
   const [form, setForm] = useState<Record<string, string>>({});
   const [intents, setIntents] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
   const [photo, setPhoto] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [formStatus, setFormStatus] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [cnicMsg, setCnicMsg] = useState<string | null>(null);
-  const [stats, setStats] = useState<ProfileStats>({ hosted: 0, joined: 0, avgRating: 0 });
 
+  // Stats
+  const [myHostedTables, setMyHostedTables] = useState<TableDto[]>([]);
+  const [myJoinedTables, setMyJoinedTables] = useState<TableDto[]>([]);
+  const [myReviewsData, setMyReviewsData] = useState<UserReputation | null>(null);
+
+  // Tab for overview section
+  const [overviewTab, setOverviewTab] = useState<'about' | 'achievements' | 'reviews' | 'activity'>('about');
+
+  /* form hydration (original, deps [user]) */
   useEffect(() => {
     if (!user) return;
     setForm({
@@ -160,6 +270,7 @@ export default function ProfilePage() {
     setConsent(Boolean(user.codeOfConductAt));
   }, [user]);
 
+  /* stats useEffect (original) */
   useEffect(() => {
     if (!user) return;
     let active = true;
@@ -171,16 +282,11 @@ export default function ProfilePage() {
           api.myReviews() as Promise<UserReputation>,
         ]);
         if (!active) return;
-        const joinedCount = joined.filter(
-          (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
-        ).length;
-        setStats({
-          hosted: hosted.length,
-          joined: joinedCount,
-          avgRating: reviews.hostRating.count > 0 ? reviews.hostRating.avg : 0,
-        });
+        setMyHostedTables(hosted);
+        setMyJoinedTables(joined);
+        setMyReviewsData(reviews);
       } catch {
-        // best-effort, defaults remain 0
+        // best-effort
       }
     })();
     return () => {
@@ -196,6 +302,33 @@ export default function ProfilePage() {
       </main>
     );
 
+  /* derived */
+  const displayName = user.firstName ?? user.phone;
+  const joinDate = formatJoinDate(user.createdAt);
+  // eslint-disable-next-line react-hooks/purity -- one-time clock read for filtering upcoming meetups
+  const now = Date.now();
+  const activeJoinedCount = myJoinedTables.filter(
+    (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
+  ).length;
+  const upcomingJoined = myJoinedTables
+    .filter(
+      (t) =>
+        (t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING') &&
+        new Date(t.startAt).getTime() >= now,
+    )
+    .slice(0, 3);
+  const avgRating =
+    myReviewsData && myReviewsData.hostRating.count > 0
+      ? myReviewsData.hostRating.avg.toFixed(1)
+      : '—';
+  const interestList = parseList(user.interests.join(', ')).filter(Boolean);
+  const bioLine =
+    interestList.length > 0
+      ? `☕ Coffee lover · ${interestList.slice(0, 2).join(' · ')}`
+      : 'Here for good coffee and better conversations.';
+  const [s1, s2, s3, s4] = splitScore(user.reliabilityScore);
+
+  /* form helpers (original) */
   function field(key: string) {
     return {
       value: form[key] ?? '',
@@ -215,8 +348,8 @@ export default function ProfilePage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setStatus(null);
+    setFormError(null);
+    setFormStatus(null);
     setBusy(true);
     const payload: UpdateProfileInput = {
       firstName: form.firstName || undefined,
@@ -241,9 +374,9 @@ export default function ProfilePage() {
     try {
       await api.updateProfile(payload);
       await refresh();
-      setStatus('Saved!');
+      setFormStatus('Saved!');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+      setFormError(err instanceof ApiError ? err.message : 'Something went wrong');
     } finally {
       setBusy(false);
     }
@@ -262,341 +395,728 @@ export default function ProfilePage() {
     }
   }
 
-  const displayName = user.firstName ?? user.phone;
-  const initial = (user.firstName?.[0] ?? user.phone?.[0] ?? '?').toUpperCase();
-  const joinDate = formatJoinDate(user.createdAt);
+  /* ── nav items ──────────────────────────────────────────────────── */
+
+  const NAV_ITEMS: {
+    id?: Section;
+    href?: string;
+    icon: string;
+    label: string;
+  }[] = [
+    { id: 'overview', icon: 'fa-user', label: 'Overview' },
+    { href: '/meetups', icon: 'fa-calendar-days', label: 'My Meetups' },
+    { id: 'reviews', icon: 'fa-star', label: 'Reviews & Ratings' },
+    { href: '/tables', icon: 'fa-bookmark', label: 'Saved Tables' },
+    { id: 'overview', icon: 'fa-user-group', label: 'Connections' },
+    { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity' },
+    { href: '/requests', icon: 'fa-envelope-open', label: 'Invitations' },
+    { id: 'identity', icon: 'fa-shield-halved', label: 'Identity Verification' },
+    { id: 'settings', icon: 'fa-gear', label: 'Account Settings' },
+  ];
+
+  /* ── stub badge list ─────────────────────────────────────────────── */
+
+  const BADGES = [
+    { icon: 'fa-mug-hot', label: 'Great Host', color: 'text-primary' },
+    { icon: 'fa-link', label: 'Connector', color: 'text-[oklch(0.62_0.21_259)]' },
+    { icon: 'fa-seedling', label: 'Early Member', color: 'text-[oklch(0.72_0.15_163)]' },
+    { icon: 'fa-medal', label: 'Top Rated', color: 'text-[oklch(0.8_0.14_75)]' },
+  ];
+
+  /* ─────────────────────────────────────────────────────────────────
+     RENDER
+  ───────────────────────────────────────────────────────────────── */
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
-      {/* ── Page header (eyebrow + nav) ── */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <p className="eyebrow text-primary">Account</p>
-          <h1 className="display mt-1 text-3xl">Your profile</h1>
-        </div>
-        <Link href="/meetups" className="text-muted-foreground font-semibold text-sm hover:underline">
-          My meetups
-        </Link>
-      </div>
+    <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+      <div className="grid gap-6 lg:grid-cols-[240px_1fr_320px]">
 
-      {/* ── Main grid: left (2/3) + right rail (1/3) ── */}
-      <div className="grid gap-6 lg:grid-cols-3">
-
-        {/* ── LEFT COLUMN ── */}
-        <div className="space-y-6 lg:col-span-2">
-
-          {/* ── Profile hero banner ── */}
-          <div className="relative overflow-hidden rounded-3xl bg-ink px-6 py-8 shadow-glow">
-            {/* decorative gradient blob */}
-            <div
-              className="pointer-events-none absolute -right-12 -top-12 size-56 rounded-full opacity-30 blur-3xl bg-gradient-hero"
-              aria-hidden
-            />
-            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-              {/* Avatar */}
-              <div
-                className="flex size-20 shrink-0 items-center justify-center rounded-full text-3xl font-extrabold font-heading"
-                style={{ background: 'oklch(1 0 0 / 0.15)', color: 'white' }}
-              >
-                {initial}
-              </div>
-
-              {/* Name / meta */}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2
-                    className="font-heading text-2xl font-extrabold leading-tight"
-                    style={{ color: 'var(--ink-foreground)' }}
-                  >
-                    {displayName}
-                  </h2>
-                  {user.verificationStatus === 'VERIFIED' && (
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold"
-                      style={{ background: 'oklch(1 0 0 / 0.15)', color: 'white' }}
-                    >
-                      ✓ Verified
-                    </span>
-                  )}
-                </div>
-                <p
-                  className="mt-0.5 text-sm font-medium"
-                  style={{ color: 'oklch(1 0 0 / 0.65)' }}
-                >
-                  @{user.phone}
-                </p>
-                <p
-                  className="mt-1 text-xs"
-                  style={{ color: 'oklch(1 0 0 / 0.5)' }}
-                >
-                  📍 {user.city ?? '—'} · Joined {joinDate}
-                </p>
-              </div>
-
-              {/* Edit CTA */}
-              <a
-                href="#firstName"
-                className="shrink-0 self-start rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/10 sm:self-center"
-              >
-                Edit profile ↓
-              </a>
-            </div>
-
-            {/* ── Stat tiles ── */}
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { icon: '🫖', label: 'Hosted', value: stats.hosted },
-                { icon: '🎟️', label: 'Joined', value: stats.joined },
-                { icon: '⭐', label: 'Reliability', value: user.reliabilityScore },
-                {
-                  icon: '🌟',
-                  label: 'Avg rating',
-                  value: stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '—',
-                },
-              ].map(({ icon, label, value }) => (
-                <div
-                  key={label}
-                  className="flex flex-col items-center rounded-2xl p-3 text-center"
-                  style={{ background: 'oklch(1 0 0 / 0.08)' }}
-                >
-                  <span className="text-lg leading-none">{icon}</span>
-                  <span
-                    className="mt-1.5 font-heading text-xl font-extrabold leading-none"
-                    style={{ color: 'var(--ink-foreground)' }}
-                  >
-                    {value}
-                  </span>
-                  <span
-                    className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                    style={{ color: 'oklch(1 0 0 / 0.5)' }}
-                  >
-                    {label}
-                  </span>
-                </div>
-              ))}
+        {/* ══════════════════════════════════════════════════════════
+            LEFT — Section nav
+        ══════════════════════════════════════════════════════════ */}
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          {/* Mini profile card */}
+          <div className="rounded-3xl border bg-card p-5 shadow-soft flex flex-col items-center gap-3 text-center">
+            <Avatar name={displayName} size={64} online />
+            <div>
+              <p className="font-heading font-bold text-sm leading-tight">{displayName}</p>
+              <p className="text-muted-foreground text-xs">@{user.phone}</p>
+              <p className="text-primary text-xs font-semibold mt-0.5">● Online</p>
             </div>
           </div>
 
-          {/* ── Edit form ── */}
-          <form onSubmit={submit} className="grid gap-6 lg:grid-cols-2">
-            {/* Section: Basic info */}
-            <section className="space-y-4">
-              <p className="eyebrow text-primary">Basic info</p>
+          {/* Vertical nav */}
+          <nav className="rounded-3xl border bg-card p-2 shadow-soft">
+            {NAV_ITEMS.map(({ id, href, icon, label }) => {
+              const isActive = id !== undefined && section === id && !href;
+              const cls = `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-secondary text-primary font-semibold'
+                  : 'text-foreground hover:bg-muted'
+              }`;
+              return href ? (
+                <Link key={label} href={href} className={cls}>
+                  <i className={`fa-solid ${icon} w-4 text-center text-xs`} />
+                  {label}
+                </Link>
+              ) : (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => id && setSection(id)}
+                  className={cls}
+                >
+                  <i className={`fa-solid ${icon} w-4 text-center text-xs`} />
+                  {label}
+                </button>
+              );
+            })}
+          </nav>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="firstName">First name</Label>
-                  <Input id="firstName" {...field('firstName')} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastInitial">Last initial</Label>
-                  <Input id="lastInitial" maxLength={2} {...field('lastInitial')} />
-                </div>
-              </div>
+          {/* Invite friends card */}
+          <div className="rounded-3xl bg-secondary p-5 text-center">
+            <p className="text-2xl mb-2">☕</p>
+            <p className="font-heading font-bold text-secondary-foreground text-sm">Invite friends</p>
+            <p className="text-secondary-foreground/80 text-xs mt-1">
+              Grow your coffee circle.
+            </p>
+            <Link
+              href="/invite"
+              className="mt-3 block rounded-full bg-primary text-primary-foreground py-2 text-xs font-semibold hover:brightness-110 transition-[filter]"
+            >
+              Invite now
+            </Link>
+          </div>
+        </aside>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Age band</Label>
-                  <select className={selectClass} {...field('ageBand')}>
-                    <option value="">—</option>
-                    <option>18-24</option>
-                    <option>25-34</option>
-                    <option>35-44</option>
-                    <option>45+</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Gender</Label>
-                  <select className={selectClass} {...field('gender')}>
-                    <option value="">—</option>
-                    <option value="WOMAN">Woman</option>
-                    <option value="MAN">Man</option>
-                  </select>
-                </div>
-              </div>
-            </section>
+        {/* ══════════════════════════════════════════════════════════
+            MAIN — section-dependent content
+        ══════════════════════════════════════════════════════════ */}
+        <div className="min-w-0 space-y-6">
 
-            {/* Section: Location */}
-            <section className="space-y-4">
-              <p className="eyebrow text-primary">Location</p>
+          {/* ── OVERVIEW ─────────────────────────────────────────── */}
+          {section === 'overview' && (
+            <>
+              {/* Cover banner */}
+              <div className="bg-ink relative overflow-hidden rounded-3xl p-6 shadow-glow">
+                <div
+                  className="pointer-events-none absolute -right-12 -top-12 size-64 rounded-full opacity-30 blur-3xl bg-gradient-hero"
+                  aria-hidden
+                />
+                <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+                  {/* Large avatar with camera badge */}
+                  <div className="relative shrink-0">
+                    <Avatar name={displayName} size={96} />
+                    <button
+                      type="button"
+                      aria-label="Change photo"
+                      className="absolute bottom-0 right-0 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-2 ring-card text-xs transition-transform hover:scale-110"
+                    >
+                      <i className="fa-solid fa-camera" />
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>City</Label>
-                  <select className={selectClass} {...field('city')}>
-                    <option value="">—</option>
-                    <option>Islamabad</option>
-                    <option>Lahore</option>
-                  </select>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1
+                        className="font-heading text-2xl font-extrabold leading-tight"
+                        style={{ color: 'var(--ink-foreground)' }}
+                      >
+                        {displayName}
+                      </h1>
+                      {user.verificationStatus === 'VERIFIED' && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold"
+                          style={{ background: 'oklch(1 0 0 / 0.15)', color: 'white' }}
+                        >
+                          <i className="fa-solid fa-circle-check text-[10px]" /> Verified
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm" style={{ color: 'oklch(1 0 0 / 0.65)' }}>
+                      {bioLine}
+                    </p>
+                    <p className="mt-1 text-xs flex gap-3 flex-wrap" style={{ color: 'oklch(1 0 0 / 0.5)' }}>
+                      <span>📍 {user.city ?? '—'}</span>
+                      <span>🗓️ Joined {joinDate}</span>
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSection('settings')}
+                    className="shrink-0 self-start rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/10"
+                  >
+                    Edit Profile
+                  </button>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Language</Label>
-                  <select className={selectClass} {...field('language')}>
-                    <option value="">—</option>
-                    <option value="URDU">Urdu</option>
-                    <option value="ENGLISH">English</option>
-                    <option value="BOTH">Both</option>
-                  </select>
-                </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="areas">Areas you can reach</Label>
-                <Input id="areas" placeholder="F-6, F-7, Blue Area" {...field('areas')} />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>What days are you available?</Label>
-                <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
-                  {DAYS.map((d) => (
-                    <label key={d} className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={selectedDays.has(d)}
-                        onChange={() => toggleDay(d)}
-                        className="accent-primary"
-                      />
-                      {d}
-                    </label>
+                {/* Stat tiles */}
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                  {[
+                    { icon: '🫖', label: 'Hosted', value: myHostedTables.length },
+                    { icon: '👥', label: 'Joined', value: activeJoinedCount },
+                    { icon: '⭐', label: 'Reliability', value: user.reliabilityScore },
+                    { icon: '❤️', label: 'Connections', value: '—' },
+                    { icon: '🏅', label: 'Avg Rating', value: avgRating },
+                  ].map(({ icon, label, value }) => (
+                    <div
+                      key={label}
+                      className="flex flex-col items-center rounded-2xl p-3 text-center"
+                      style={{ background: 'oklch(1 0 0 / 0.08)' }}
+                    >
+                      <span className="text-lg leading-none">{icon}</span>
+                      <span
+                        className="mt-1.5 font-heading text-xl font-extrabold leading-none"
+                        style={{ color: 'var(--ink-foreground)' }}
+                      >
+                        {value}
+                      </span>
+                      <span
+                        className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                        style={{ color: 'oklch(1 0 0 / 0.5)' }}
+                      >
+                        {label}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
-            </section>
 
-            {/* Section: About you */}
-            <section className="space-y-4">
-              <p className="eyebrow text-primary">About you</p>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="interests">Interests</Label>
-                <Input id="interests" placeholder="Books, Startups, Film" {...field('interests')} />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="occupation">What do you do?</Label>
-                <Input
-                  id="occupation"
-                  placeholder="Software engineer, Teacher, Student…"
-                  {...field('occupation')}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Life stage</Label>
-                  <select className={selectClass} {...field('lifeStage')}>
-                    <option value="">—</option>
-                    <option value="STUDENT">Student</option>
-                    <option value="EARLY_CAREER">Early-career</option>
-                    <option value="PROFESSIONAL">Professional</option>
-                    <option value="BUSINESS_OWNER">Business owner</option>
-                    <option value="PARENT">Parent</option>
-                    <option value="OTHER">Other</option>
-                  </select>
+              {/* Tabs: About / Achievements / Reviews / Activity */}
+              <div>
+                <div className="flex border-b border-border/60">
+                  {(
+                    [
+                      { id: 'about', label: 'About' },
+                      { id: 'achievements', label: 'Achievements' },
+                      { id: 'reviews', label: 'Reviews' },
+                      { id: 'activity', label: 'Activity Feed' },
+                    ] as { id: typeof overviewTab; label: string }[]
+                  ).map(({ id, label }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setOverviewTab(id)}
+                      className={`-mb-px px-4 py-2.5 text-sm font-semibold transition-colors ${
+                        overviewTab === id
+                          ? 'border-b-2 border-primary text-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-                <div className="space-y-1.5">
-                  <Label>In a new group you…</Label>
-                  <select className={selectClass} {...field('socialEnergy')}>
-                    <option value="">—</option>
-                    <option value="LISTENER">Listen &amp; warm up slowly</option>
-                    <option value="MIX">A mix</option>
-                    <option value="INITIATOR">Get it going</option>
-                  </select>
+
+                <div className="pt-5">
+                  {/* About tab */}
+                  {overviewTab === 'about' && (
+                    <div className="space-y-5">
+                      <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-4">
+                        <div>
+                          <p className="eyebrow text-primary mb-2">About me</p>
+                          <p className="text-sm text-muted-foreground">{bioLine}</p>
+                        </div>
+                        {user.occupation && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <i className="fa-solid fa-briefcase text-muted-foreground text-xs" />
+                            <span>{user.occupation}</span>
+                          </div>
+                        )}
+                        {user.city && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <i className="fa-solid fa-location-dot text-muted-foreground text-xs" />
+                            <span>{user.city}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {interestList.length > 0 && (
+                        <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="eyebrow text-primary">Interests &amp; Vibes</p>
+                            <button
+                              type="button"
+                              onClick={() => setSection('settings')}
+                              className="text-primary text-xs font-semibold hover:underline"
+                            >
+                              Manage
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {interestList.map((interest) => (
+                              <span
+                                key={interest}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground"
+                              >
+                                <i className={`fa-solid ${INTEREST_ICON[interest] ?? 'fa-circle-dot'} text-[10px]`} />
+                                {interest}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Achievements tab — stub */}
+                  {overviewTab === 'achievements' && (
+                    <div className="rounded-3xl border bg-card p-5 shadow-soft">
+                      <p className="eyebrow text-primary mb-4">Achievements</p>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {BADGES.map(({ icon, label, color }) => (
+                          <div
+                            key={label}
+                            className="flex flex-col items-center gap-2 rounded-2xl bg-muted/50 p-4 text-center opacity-50"
+                          >
+                            <i className={`fa-solid ${icon} text-2xl ${color}`} />
+                            <span className="text-xs font-semibold">{label}</span>
+                            <span className="text-muted-foreground text-[10px]">coming soon</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reviews tab */}
+                  {overviewTab === 'reviews' && <MyReviews />}
+
+                  {/* Activity feed — stub */}
+                  {overviewTab === 'activity' && (
+                    <div className="rounded-3xl border border-dashed py-16 text-center">
+                      <p className="text-4xl">📋</p>
+                      <p className="font-heading mt-3 font-bold">No activity yet</p>
+                      <p className="text-muted-foreground mt-1 text-sm">
+                        Your recent actions will appear here.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </section>
 
-            {/* Section: What you're hoping for */}
-            <section className="space-y-3">
-              <p className="eyebrow text-primary">What are you hoping for?</p>
-              <div className="rounded-3xl border bg-card/60 p-4 space-y-2.5">
-                {Object.values(Intent).map((it) => (
-                  <label key={it} className="flex items-center gap-3 text-sm cursor-pointer">
+              {/* My Upcoming Meetups */}
+              <section>
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="font-heading text-lg font-bold tracking-tight">My Upcoming Meetups</h2>
+                  <Link href="/meetups" className="text-primary text-sm font-semibold hover:underline">
+                    View all →
+                  </Link>
+                </div>
+                {upcomingJoined.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed py-10 text-center">
+                    <p className="text-3xl">🪑</p>
+                    <p className="text-muted-foreground mt-2 text-sm">No upcoming meetups.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    {upcomingJoined.map((t) => (
+                      <MeetupCoverCard key={t.id} t={t} />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* My Hosted Meetups */}
+              {myHostedTables.length > 0 && (
+                <section>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="font-heading text-lg font-bold tracking-tight">My Hosted Meetups</h2>
+                    <Link href="/meetups" className="text-primary text-sm font-semibold hover:underline">
+                      View all →
+                    </Link>
+                  </div>
+                  <div className="rounded-3xl border bg-card p-5 shadow-soft">
+                    {myHostedTables.map((t) => (
+                      <HostedMeetupRow key={t.id} t={t} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+
+          {/* ── SETTINGS — entire edit form verbatim ─────────────── */}
+          {section === 'settings' && (
+            <>
+              <div>
+                <p className="eyebrow text-primary">Account</p>
+                <h1 className="display mt-1 text-3xl">Account Settings</h1>
+              </div>
+
+              <form onSubmit={submit} className="grid gap-6 lg:grid-cols-2">
+                {/* Section: Basic info */}
+                <section className="space-y-4">
+                  <p className="eyebrow text-primary">Basic info</p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="firstName">First name</Label>
+                      <Input id="firstName" {...field('firstName')} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lastInitial">Last initial</Label>
+                      <Input id="lastInitial" maxLength={2} {...field('lastInitial')} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Age band</Label>
+                      <select className={selectClass} {...field('ageBand')}>
+                        <option value="">—</option>
+                        <option>18-24</option>
+                        <option>25-34</option>
+                        <option>35-44</option>
+                        <option>45+</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Gender</Label>
+                      <select className={selectClass} {...field('gender')}>
+                        <option value="">—</option>
+                        <option value="WOMAN">Woman</option>
+                        <option value="MAN">Man</option>
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Section: Location */}
+                <section className="space-y-4">
+                  <p className="eyebrow text-primary">Location</p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>City</Label>
+                      <select className={selectClass} {...field('city')}>
+                        <option value="">—</option>
+                        <option>Islamabad</option>
+                        <option>Lahore</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Language</Label>
+                      <select className={selectClass} {...field('language')}>
+                        <option value="">—</option>
+                        <option value="URDU">Urdu</option>
+                        <option value="ENGLISH">English</option>
+                        <option value="BOTH">Both</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="areas">Areas you can reach</Label>
+                    <Input id="areas" placeholder="F-6, F-7, Blue Area" {...field('areas')} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label>What days are you available?</Label>
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
+                      {DAYS.map((d) => (
+                        <label key={d} className="flex cursor-pointer items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selectedDays.has(d)}
+                            onChange={() => toggleDay(d)}
+                            className="accent-primary"
+                          />
+                          {d}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* Section: About you */}
+                <section className="space-y-4">
+                  <p className="eyebrow text-primary">About you</p>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="interests">Interests</Label>
+                    <Input id="interests" placeholder="Books, Startups, Film" {...field('interests')} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="occupation">What do you do?</Label>
+                    <Input
+                      id="occupation"
+                      placeholder="Software engineer, Teacher, Student…"
+                      {...field('occupation')}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Life stage</Label>
+                      <select className={selectClass} {...field('lifeStage')}>
+                        <option value="">—</option>
+                        <option value="STUDENT">Student</option>
+                        <option value="EARLY_CAREER">Early-career</option>
+                        <option value="PROFESSIONAL">Professional</option>
+                        <option value="BUSINESS_OWNER">Business owner</option>
+                        <option value="PARENT">Parent</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>In a new group you…</Label>
+                      <select className={selectClass} {...field('socialEnergy')}>
+                        <option value="">—</option>
+                        <option value="LISTENER">Listen &amp; warm up slowly</option>
+                        <option value="MIX">A mix</option>
+                        <option value="INITIATOR">Get it going</option>
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Section: What you're hoping for */}
+                <section className="space-y-3">
+                  <p className="eyebrow text-primary">What are you hoping for?</p>
+                  <div className="rounded-3xl border bg-card/60 p-4 space-y-2.5">
+                    {Object.values(Intent).map((it) => (
+                      <label key={it} className="flex items-center gap-3 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={intents.includes(it)}
+                          onChange={(e) =>
+                            setIntents((prev) =>
+                              e.target.checked ? [...prev, it] : prev.filter((x) => x !== it),
+                            )
+                          }
+                          className="accent-primary"
+                        />
+                        {INTENT_LABELS[it] ?? it}
+                      </label>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Section: Preferences */}
+                <section className="space-y-4">
+                  <p className="eyebrow text-primary">Preferences</p>
+
+                  <div className="space-y-1.5">
+                    <Label>Coffee or chai?</Label>
+                    <select className={selectClass} {...field('beveragePref')}>
+                      <option value="">—</option>
+                      <option value="COFFEE">Coffee ☕</option>
+                      <option value="CHAI">Chai 🍵</option>
+                      <option value="EITHER">Either</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="accessibilityNeeds">Accessibility needs (optional)</Label>
+                    <Textarea id="accessibilityNeeds" {...field('accessibilityNeeds')} />
+                  </div>
+                </section>
+
+                {/* Section: Consent */}
+                <section className="rounded-3xl border bg-card/60 p-4 space-y-3">
+                  <p className="eyebrow text-primary">Consent</p>
+                  <label className="flex items-center gap-3 text-sm cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={intents.includes(it)}
-                      onChange={(e) =>
-                        setIntents((prev) =>
-                          e.target.checked ? [...prev, it] : prev.filter((x) => x !== it),
-                        )
-                      }
+                      checked={photo}
+                      onChange={(e) => setPhoto(e.target.checked)}
                       className="accent-primary"
                     />
-                    {INTENT_LABELS[it] ?? it}
+                    OK to appear in event group photos
                   </label>
-                ))}
+                  <label
+                    id="code-of-conduct"
+                    className="flex scroll-mt-24 items-center gap-3 text-sm cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={consent}
+                      onChange={(e) => setConsent(e.target.checked)}
+                      className="accent-primary"
+                    />
+                    I agree to the Community Code of Conduct
+                  </label>
+                </section>
+
+                {formStatus && <p className="text-sm text-green-600 font-medium lg:col-span-2">{formStatus}</p>}
+                {formError && <p className="text-destructive text-sm lg:col-span-2">{formError}</p>}
+
+                <Button type="submit" size="lg" className="w-full lg:col-span-2" disabled={busy}>
+                  {busy ? 'Saving…' : 'Save profile'}
+                </Button>
+              </form>
+
+              {/* CNIC upload */}
+              <IdentityCard
+                verificationStatus={user.verificationStatus}
+                onCnicChange={(e) => void handleCnic(e)}
+                cnicMsg={cnicMsg}
+              />
+
+              {/* Reviews at the bottom of settings */}
+              <MyReviews />
+            </>
+          )}
+
+          {/* ── REVIEWS section ──────────────────────────────────── */}
+          {section === 'reviews' && (
+            <>
+              <div>
+                <p className="eyebrow text-primary">Profile</p>
+                <h1 className="display mt-1 text-3xl">Reviews &amp; Ratings</h1>
               </div>
-            </section>
+              <MyReviews />
+            </>
+          )}
 
-            {/* Section: Preferences */}
-            <section className="space-y-4">
-              <p className="eyebrow text-primary">Preferences</p>
-
-              <div className="space-y-1.5">
-                <Label>Coffee or chai?</Label>
-                <select className={selectClass} {...field('beveragePref')}>
-                  <option value="">—</option>
-                  <option value="COFFEE">Coffee ☕</option>
-                  <option value="CHAI">Chai 🍵</option>
-                  <option value="EITHER">Either</option>
-                </select>
+          {/* ── IDENTITY section ─────────────────────────────────── */}
+          {section === 'identity' && (
+            <>
+              <div>
+                <p className="eyebrow text-primary">Profile</p>
+                <h1 className="display mt-1 text-3xl">Identity Verification</h1>
               </div>
+              <IdentityCard
+                verificationStatus={user.verificationStatus}
+                onCnicChange={(e) => void handleCnic(e)}
+                cnicMsg={cnicMsg}
+              />
+            </>
+          )}
+        </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="accessibilityNeeds">Accessibility needs (optional)</Label>
-                <Textarea id="accessibilityNeeds" {...field('accessibilityNeeds')} />
+        {/* ══════════════════════════════════════════════════════════
+            RIGHT RAIL — always visible
+        ══════════════════════════════════════════════════════════ */}
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+
+          {/* Reliability Score card */}
+          <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-4">
+            <p className="eyebrow text-primary">Reliability Score</p>
+            <div className="flex items-center gap-4">
+              <ReliabilityGauge score={user.reliabilityScore} />
+              <div>
+                <p className="font-heading text-2xl font-extrabold">{user.reliabilityScore}</p>
+                <p className="text-muted-foreground text-xs">/ 100 points</p>
+                <p className="text-primary text-xs font-semibold mt-1">You&apos;re a reliable member</p>
               </div>
-            </section>
+            </div>
 
-            {/* Section: Consent */}
-            <section className="rounded-3xl border bg-card/60 p-4 space-y-3">
-              <p className="eyebrow text-primary">Consent</p>
-              <label className="flex items-center gap-3 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={photo}
-                  onChange={(e) => setPhoto(e.target.checked)}
-                  className="accent-primary"
-                />
-                OK to appear in event group photos
-              </label>
-              <label
-                id="code-of-conduct"
-                className="flex scroll-mt-24 items-center gap-3 text-sm cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="accent-primary"
-                />
-                I agree to the Community Code of Conduct
-              </label>
-            </section>
-
-            {status && <p className="text-sm text-green-600 font-medium lg:col-span-2">{status}</p>}
-            {error && <p className="text-destructive text-sm lg:col-span-2">{error}</p>}
-
-            <Button type="submit" size="lg" className="w-full lg:col-span-2" disabled={busy}>
-              {busy ? 'Saving…' : 'Save profile'}
-            </Button>
-          </form>
-
-          {/* Reviews / reputation */}
-          <div>
-            <MyReviews />
+            {/* Breakdown — derived, sum = reliability score */}
+            <div className="space-y-2">
+              {[
+                { label: 'Great communication', value: s1 },
+                { label: 'Shows up on time', value: s2 },
+                { label: 'Respectful & friendly', value: s3 },
+                { label: 'Organized meetups', value: s4 },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{label}</span>
+                  <span className="font-semibold text-primary">{value}/25</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-muted-foreground text-[10px]">
+              * Breakdown is derived from your total score.
+            </p>
           </div>
-        </div>
 
-        {/* ── RIGHT RAIL ── */}
-        <div className="space-y-4">
-          <ReliabilityGauge score={user.reliabilityScore} />
-          <IdentityCard
-            verificationStatus={user.verificationStatus}
-            onCnicChange={(e) => void handleCnic(e)}
-            cnicMsg={cnicMsg}
-          />
-        </div>
+          {/* Identity Verification card */}
+          <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-3">
+            <p className="eyebrow text-primary">Identity Verification</p>
+            {[
+              { icon: 'fa-phone', label: 'Phone Number', status: 'Verified', verified: true },
+              { icon: 'fa-envelope', label: 'Email Address', status: 'Not added', verified: false },
+              {
+                icon: 'fa-id-card',
+                label: 'Government ID',
+                status:
+                  user.verificationStatus === 'VERIFIED'
+                    ? 'Verified'
+                    : user.verificationStatus === 'PENDING'
+                      ? 'Pending'
+                      : 'Not submitted',
+                verified: user.verificationStatus === 'VERIFIED',
+              },
+            ].map(({ icon, label, status, verified }) => (
+              <div key={label} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <i className={`fa-solid ${icon} text-muted-foreground text-xs w-4 text-center`} />
+                  <span className="text-sm">{label}</span>
+                </div>
+                <span
+                  className={`flex items-center gap-1 text-xs font-semibold ${verified ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                  {verified && (
+                    <span className="size-4 rounded-full bg-primary/10 flex items-center justify-center text-[10px]">✓</span>
+                  )}
+                  {status}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Achievements card — stub */}
+          <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="eyebrow text-primary">Achievements</p>
+              <button
+                type="button"
+                className="text-primary text-xs font-semibold hover:underline"
+                onClick={() => { setSection('overview'); setOverviewTab('achievements'); }}
+              >
+                View all
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {BADGES.map(({ icon, label, color }) => (
+                <div
+                  key={label}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-muted/50 p-3 text-center opacity-50"
+                >
+                  <i className={`fa-solid ${icon} text-xl ${color}`} />
+                  <span className="text-[10px] font-semibold leading-tight">{label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-muted-foreground text-[10px] text-center">Coming soon</p>
+          </div>
+
+          {/* Connect your socials — stub */}
+          <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-3">
+            <p className="eyebrow text-primary">Connect Socials</p>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { icon: 'fa-brands fa-linkedin', label: 'LinkedIn' },
+                { icon: 'fa-brands fa-instagram', label: 'Instagram' },
+                { icon: 'fa-brands fa-x-twitter', label: 'X' },
+                { icon: 'fa-brands fa-spotify', label: 'Spotify' },
+                { icon: 'fa-solid fa-link', label: 'Website' },
+              ].map(({ icon, label }) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled
+                  aria-label={label}
+                  title={label}
+                  className="flex size-9 items-center justify-center rounded-full border bg-muted text-muted-foreground text-sm opacity-50 cursor-not-allowed"
+                >
+                  <i className={icon} />
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled
+              className="w-full rounded-full border py-2 text-xs font-semibold text-muted-foreground opacity-50 cursor-not-allowed"
+            >
+              Manage Connections
+            </button>
+            <p className="text-muted-foreground text-[10px] text-center">Coming soon</p>
+          </div>
+        </aside>
       </div>
     </main>
   );
