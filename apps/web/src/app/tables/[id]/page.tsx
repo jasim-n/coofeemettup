@@ -119,6 +119,19 @@ export default function TableDetailPage() {
   const filled = table.seats - table.seatsLeft;
   const price = table.pricePKR == null ? 'Free' : formatPKR(table.pricePKR);
   const venue = table.venueName ?? table.cafe?.name ?? table.venueAddress ?? 'See map';
+  // Google Maps deep-link for the pinned location — use exact coords when the
+  // table (or its cafe) has them, otherwise fall back to the venue text.
+  const mapLat = table.lat ?? table.cafe?.lat ?? null;
+  const mapLng = table.lng ?? table.cafe?.lng ?? null;
+  const mapQuery =
+    mapLat != null && mapLng != null
+      ? `${mapLat},${mapLng}`
+      : [table.venueName, table.venueAddress, table.cafe?.name, table.cafe?.area]
+          .filter(Boolean)
+          .join(', ');
+  const mapsUrl = mapQuery
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
+    : null;
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
@@ -146,7 +159,22 @@ export default function TableDetailPage() {
             </Badge>
             <h1 className="display mt-2 text-3xl">{table.title ?? table.category}</h1>
             <div className="text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-              <span><i className="fa-solid fa-location-dot mr-1" />{venue}</span>
+              {mapsUrl ? (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary hover:underline"
+                >
+                  <i className="fa-solid fa-location-dot mr-1" />
+                  {venue}
+                </a>
+              ) : (
+                <span>
+                  <i className="fa-solid fa-location-dot mr-1" />
+                  {venue}
+                </span>
+              )}
               <span><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(table.startAt)}</span>
             </div>
             <div className="mt-3 flex items-center gap-2">
@@ -444,9 +472,16 @@ export default function TableDetailPage() {
             <ul className="space-y-2.5 text-sm">
               <li className="flex items-start justify-between gap-2">
                 <span className="text-muted-foreground"><i className="fa-solid fa-location-dot mr-1" />{venue}</span>
-                <Link href="/tables/nearby" className="text-primary shrink-0 font-semibold">
-                  Map
-                </Link>
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary shrink-0 font-semibold hover:underline"
+                  >
+                    <i className="fa-solid fa-map-location-dot mr-1" />View on map
+                  </a>
+                )}
               </li>
               <li className="text-muted-foreground"><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(table.startAt)}</li>
               <li className="text-muted-foreground"><i className="fa-solid fa-ticket mr-1" />{price} per person</li>
