@@ -100,9 +100,9 @@ function TableCoverCard({ t }: { t: TableDto }) {
   return (
     <Link
       href={`/tables/${t.id}`}
-      className="bg-card shadow-soft ring-border/60 group block overflow-hidden rounded-3xl ring-1 transition-all hover:-translate-y-0.5 hover:shadow-glow"
+      className="bg-card shadow-soft ring-border/60 group flex h-full flex-col overflow-hidden rounded-3xl ring-1 transition-all hover:-translate-y-0.5 hover:shadow-glow"
     >
-      <div className="relative h-40">
+      <div className="relative h-40 shrink-0">
         <Cover
           src={t.imageUrl ?? undefined}
           category={t.category}
@@ -114,7 +114,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
         </span>
         <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>
         <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
           <i className="fa-solid fa-location-dot" /> {t.venueName ?? t.cafe?.name ?? 'See map'}
@@ -123,7 +123,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
           <Avatar name={t.host?.firstName ?? 'H'} size={22} />
           Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
         </div>
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-auto flex items-center justify-between pt-3">
           <Badge variant={low ? 'warning' : 'secondary'}>
             {t.seatsLeft > 0 ? `${t.seatsLeft} seats left` : 'Full'}
           </Badge>
@@ -215,8 +215,8 @@ export default function DiscoverPage() {
   }, [tables, q, category, priceTier, when, customDate, coords, distanceKm]);
 
   // split into recommended (first 4) + more
-  const recommended = results.slice(0, 4);
-  const more = results.slice(4);
+  const recommended = results.slice(0, 3);
+  const more = results.slice(3);
 
   // top categories by table count
   const catCounts = useMemo(() => {
@@ -539,7 +539,7 @@ export default function DiscoverPage() {
                   See all
                 </Link>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recommended.map((t) => (
                   <TableCoverCard key={t.id} t={t} />
                 ))}
@@ -555,7 +555,7 @@ export default function DiscoverPage() {
                   More tables you might like
                 </h2>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {more.map((t) => (
                   <TableCoverCard key={t.id} t={t} />
                 ))}
