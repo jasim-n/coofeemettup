@@ -702,7 +702,7 @@ export default function MeetupsPage() {
         </aside>
 
         {/* ── MAIN COLUMN ────────────────────────────────────────── */}
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0 space-y-6 lg:pt-5">
           {/* header */}
           <div className="flex items-start justify-between gap-4">
             <div>
