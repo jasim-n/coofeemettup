@@ -75,14 +75,15 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
     <div className="grid gap-6 lg:grid-cols-3">
       {/* ---------- main column ---------- */}
       <div className="space-y-6 lg:col-span-2">
-        {/* hero band */}
-        <section className="bg-ink relative overflow-hidden rounded-3xl p-8 shadow-glow">
-          <div
-            aria-hidden
-            className="bg-gradient-hero pointer-events-none absolute -top-20 -right-16 size-72 rounded-full opacity-30 blur-3xl"
-          />
-          <div className="relative grid items-center gap-6 md:grid-cols-2">
-            <div>
+        {/* hero band — café illustration from the design, full-bleed on the right */}
+        <section className="bg-ink relative overflow-hidden rounded-3xl shadow-glow">
+          <div aria-hidden className="pointer-events-none absolute inset-0">
+            {/* eslint-disable-next-line @next/next/no-img-element -- static bundled hero art */}
+            <img src="/hero-cafe.jpg" alt="" className="ml-auto h-full w-3/5 object-cover sm:w-1/2" />
+            <div className="from-ink via-ink/85 to-ink/10 absolute inset-0 bg-gradient-to-r via-45%" />
+          </div>
+          <div className="relative p-8">
+            <div className="max-w-md">
               <p className="text-sm font-medium text-white/70">{greeting} 👋</p>
               <h1 className="font-heading mt-1 text-4xl font-extrabold tracking-tight text-white">
                 {name}
@@ -99,29 +100,23 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                 </Link>
                 <Link
                   href="/discover"
-                  className="rounded-full px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/30 transition-colors hover:bg-white/10"
+                  className="rounded-full px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition-colors hover:bg-white/10"
                 >
                   Explore tables
                 </Link>
               </div>
             </div>
-            <div className="hidden md:block">
-              <Cover
-                category="Coffee & chill"
-                className="shadow-glow h-44 w-full rounded-2xl object-cover ring-1 ring-white/10"
+            {/* stats row */}
+            <div className="mt-7 grid max-w-xl grid-cols-3 gap-3 border-t border-white/10 pt-5">
+              <HeroStat icon="📍" value={String(tables.length)} label="Tables nearby" />
+              <HeroStat
+                icon="🗓️"
+                value={next ? emojiFor(next.category) + ' ' + (next.title ?? next.category) : 'None yet'}
+                label={next ? formatDateTime(next.startAt) : 'Next meetup'}
+                truncate
               />
+              <HeroStat icon="⭐" value={String(user.reliabilityScore)} label="Reliability score" />
             </div>
-          </div>
-          {/* stats row */}
-          <div className="relative mt-7 grid grid-cols-3 gap-3 border-t border-white/10 pt-5">
-            <HeroStat icon="📍" value={String(tables.length)} label="Tables nearby" />
-            <HeroStat
-              icon="🗓️"
-              value={next ? emojiFor(next.category) + ' ' + (next.title ?? next.category) : 'None yet'}
-              label={next ? formatDateTime(next.startAt) : 'Next meetup'}
-              truncate
-            />
-            <HeroStat icon="⭐" value={String(user.reliabilityScore)} label="Reliability score" />
           </div>
         </section>
 
