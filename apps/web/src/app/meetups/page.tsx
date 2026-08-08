@@ -12,33 +12,12 @@ import { PageLoader } from '@/components/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SaveButton } from '@/components/save-button';
+import { categoryIcon } from '@/lib/category-icon';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
 
-const CAT_ICON: Record<string, string> = {
-  'Deep talks': 'fa-comments',
-  'Coffee & chill': 'fa-mug-hot',
-  Networking: 'fa-handshake',
-  Books: 'fa-book',
-  Startups: 'fa-rocket',
-  'Language exchange': 'fa-language',
-  'Board games': 'fa-chess',
-};
-const iconFor = (c: string) => CAT_ICON[c] ?? 'fa-mug-saucer';
-
 const personName = (u: { firstName?: string | null; lastInitial?: string | null }) =>
   `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
-
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 
 const NOW = Date.now();
 
@@ -176,21 +155,29 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
       </div>
       <div className="p-4">
         <p className="text-muted-foreground mb-0.5 text-xs font-semibold">
-          {emojiFor(t.category)} {t.category}
+          <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />
+          {t.category}
         </p>
         <h3 className="font-heading truncate text-sm font-bold tracking-tight">
           {t.title ?? t.category}
         </h3>
         <p className="text-muted-foreground mt-0.5 truncate text-xs">
-          📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+          <i className="fa-solid fa-location-dot mr-1" />
+          {t.venueName ?? t.cafe?.name ?? 'See map'}
         </p>
         {/* avatar stack */}
         <div className="mt-2 flex items-center gap-2">
           <Avatar name={t.host?.firstName ?? 'H'} size={22} />
           <span className="text-muted-foreground text-xs">+{filled}</span>
         </div>
-        <p className="text-muted-foreground mt-1 text-xs">🗓️ {formatDateTime(t.startAt)}</p>
-        <p className="text-muted-foreground text-xs">{t.seatsLeft} seats left</p>
+        <p className="text-muted-foreground mt-1 text-xs">
+          <i className="fa-solid fa-calendar-day mr-1" />
+          {formatDateTime(t.startAt)}
+        </p>
+        <p className="text-muted-foreground text-xs">
+          <i className="fa-solid fa-chair mr-1" />
+          {t.seatsLeft} seats left
+        </p>
         <div className="mt-3 flex items-center justify-between">
           <span className="font-heading text-primary text-sm font-extrabold">
             {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
@@ -299,7 +286,8 @@ function SuggestedRow({ t }: { t: TableDto }) {
           {t.title ?? t.category}
         </p>
         <p className="text-muted-foreground truncate text-xs">
-          📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+          <i className="fa-solid fa-location-dot mr-1" />
+          {t.venueName ?? t.cafe?.name ?? 'See map'}
         </p>
         <p className="text-muted-foreground truncate text-xs">{formatDateTime(t.startAt)}</p>
         <p className="font-heading text-primary text-xs font-bold">
@@ -451,7 +439,7 @@ export default function MeetupsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-6 sm:px-6">
       {error && (
         <p className="text-destructive mb-4 text-sm">{error}</p>
       )}
@@ -555,7 +543,7 @@ export default function MeetupsPage() {
                         : 'hover:bg-muted text-foreground'
                     }`}
                   >
-                    <i className={`fa-solid ${iconFor(cat)} w-4 text-center`} />
+                    <i className={`fa-solid ${categoryIcon(cat)} w-4 text-center`} />
                     {cat}
                   </button>
                 </li>
@@ -647,7 +635,7 @@ export default function MeetupsPage() {
                 </div>
                 {upcomingCards.length === 0 ? (
                   <div className="rounded-3xl border border-dashed py-12 text-center">
-                    <p className="text-3xl">🪑</p>
+                    <i className="fa-solid fa-chair text-muted-foreground text-3xl" />
                     <p className="text-muted-foreground mt-2 text-sm">
                       No upcoming meetups match your filters.
                     </p>
@@ -724,9 +712,13 @@ export default function MeetupsPage() {
                           href={`/tables/${inv.table.id}`}
                           className="font-heading block truncate text-sm font-bold tracking-tight hover:underline"
                         >
-                          {emojiFor(inv.table.category)} {inv.table.title ?? inv.table.category}
+                          <i className={`fa-solid ${categoryIcon(inv.table.category)} mr-1`} />
+                          {inv.table.title ?? inv.table.category}
                         </Link>
-                        <p className="text-muted-foreground text-xs">🗓️ {formatDateTime(inv.table.startAt)}</p>
+                        <p className="text-muted-foreground text-xs">
+                          <i className="fa-solid fa-calendar-day mr-1" />
+                          {formatDateTime(inv.table.startAt)}
+                        </p>
                         <div className="flex items-center gap-1.5">
                           <Avatar name={personName(inv.inviter)} size={18} />
                           <span className="text-muted-foreground text-xs">
@@ -773,7 +765,7 @@ export default function MeetupsPage() {
           {/* ── SAVED TAB ────────────────────────────────────────── */}
           {tab === 'saved' && (
             <div className="rounded-3xl border border-dashed py-16 text-center">
-              <p className="text-4xl">🔖</p>
+              <i className="fa-solid fa-bookmark text-muted-foreground text-4xl" />
               <p className="font-heading mt-3 font-bold">No saved tables yet</p>
               <p className="text-muted-foreground mt-1 text-sm">
                 Tap the heart on any meetup to save it here.
@@ -873,7 +865,9 @@ export default function MeetupsPage() {
 
           {/* Host your own meetup */}
           <div className="bg-secondary rounded-3xl p-5">
-            <div className="mb-3 text-center text-4xl">☕</div>
+            <div className="mb-3 text-center text-4xl">
+              <i className="fa-solid fa-mug-hot text-primary" />
+            </div>
             <p className="font-heading text-secondary-foreground text-center font-bold tracking-tight">
               Host your own meetup
             </p>

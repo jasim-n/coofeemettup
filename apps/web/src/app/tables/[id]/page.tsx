@@ -22,18 +22,12 @@ import TableReviews from '@/components/table-reviews';
 import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
 import { UserLink } from '@/components/user-link';
+import { categoryIcon } from '@/lib/category-icon';
 
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
+
+// Module-level timestamp: stable across re-renders, never called during render.
+const NOW_MS = Date.now();
 
 export default function TableDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -114,6 +108,9 @@ export default function TableDetailPage() {
   const personName = (u: PublicUser) =>
     `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
 
+  // eventEnded uses module-level NOW_MS so Date.now() is never called during render.
+  const eventEnded = table ? new Date(table.startAt).getTime() < NOW_MS : false;
+
   if (error && !table) return <main className="p-6 text-destructive text-sm">{error}</main>;
   if (!table) return <PageLoader />;
 
@@ -124,7 +121,7 @@ export default function TableDetailPage() {
   const venue = table.venueName ?? table.cafe?.name ?? table.venueAddress ?? 'See map';
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       <Link href="/tables" className="text-primary text-sm font-semibold hover:underline">
         ← Back to all tables
       </Link>
@@ -145,12 +142,12 @@ export default function TableDetailPage() {
           {/* title block */}
           <div>
             <Badge variant="secondary">
-              {emojiFor(table.category)} {table.category}
+              <i className={`fa-solid ${categoryIcon(table.category)} mr-1`} /> {table.category}
             </Badge>
             <h1 className="display mt-2 text-3xl">{table.title ?? table.category}</h1>
             <div className="text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-              <span>📍 {venue}</span>
-              <span>🗓️ {formatDateTime(table.startAt)}</span>
+              <span><i className="fa-solid fa-location-dot mr-1" />{venue}</span>
+              <span><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(table.startAt)}</span>
             </div>
             <div className="mt-3 flex items-center gap-2">
               <UserLink userId={table.hostId} className="flex items-center gap-2">
@@ -175,10 +172,10 @@ export default function TableDetailPage() {
 
           {/* stat tiles */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile icon="👥" value={`${filled} / ${table.seats}`} label="Seats filled" />
-            <StatTile icon="🪑" value={String(table.seatsLeft)} label="Seats left" />
-            <StatTile icon="🎟️" value={price} label="Per person" />
-            <StatTile icon="✨" value={table.category} label="Vibe" />
+            <StatTile icon="fa-users" value={`${filled} / ${table.seats}`} label="Seats filled" />
+            <StatTile icon="fa-chair" value={String(table.seatsLeft)} label="Seats left" />
+            <StatTile icon="fa-ticket" value={price} label="Per person" />
+            <StatTile icon="fa-wand-magic-sparkles" value={table.category} label="Vibe" />
           </div>
 
           {/* about */}
@@ -212,9 +209,12 @@ export default function TableDetailPage() {
                     {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    {hostRep && hostRep.hostRating.count > 0
-                      ? `⭐ ${hostRep.hostRating.avg} · ${hostRep.hostRating.count} review${hostRep.hostRating.count === 1 ? '' : 's'}`
-                      : 'New host'}
+                    {hostRep && hostRep.hostRating.count > 0 ? (
+                      <>
+                        <i className="fa-solid fa-star mr-1 text-amber-400" />
+                        {hostRep.hostRating.avg} · {hostRep.hostRating.count} review{hostRep.hostRating.count === 1 ? '' : 's'}
+                      </>
+                    ) : 'New host'}
                   </p>
                 </div>
               </UserLink>
@@ -230,7 +230,7 @@ export default function TableDetailPage() {
                   href={`/tables/${id}/chat`}
                   className="text-primary text-xs font-semibold hover:underline"
                 >
-                  💬 Group chat →
+                  <i className="fa-solid fa-comments mr-1" />Group chat →
                 </Link>
               </div>
               {requests.length === 0 && (
@@ -260,7 +260,7 @@ export default function TableDetailPage() {
                       )}
                       {r.user && (
                         <span className="text-muted-foreground text-xs font-normal">
-                          · ⭐ {r.user.reliabilityScore}
+                          · <i className="fa-solid fa-star text-amber-400" /> {r.user.reliabilityScore}
                         </span>
                       )}
                     </span>
@@ -327,8 +327,8 @@ export default function TableDetailPage() {
             </section>
           )}
 
-          {/* reviews */}
-          {(isHost || status === 'APPROVED') && (
+          {/* reviews — only visible after the event has ended */}
+          {eventEnded && (isHost || status === 'APPROVED') && (
             <section className="bg-card shadow-soft rounded-3xl border p-6">
               <h2 className="font-heading mb-2 text-lg font-bold tracking-tight">
                 What people are saying
@@ -351,9 +351,9 @@ export default function TableDetailPage() {
                 full ? 'bg-muted' : 'bg-secondary text-secondary-foreground'
               }`}
             >
-              {table.seatsLeft > 0
-                ? `🪑 ${table.seatsLeft} seat${table.seatsLeft === 1 ? '' : 's'} left${table.seatsLeft <= 2 ? ' — filling up fast!' : ''}`
-                : 'This table is full.'}
+              {table.seatsLeft > 0 ? (
+                <><i className="fa-solid fa-chair mr-1" />{table.seatsLeft} seat{table.seatsLeft === 1 ? '' : 's'} left{table.seatsLeft <= 2 ? ' — filling up fast!' : ''}</>
+              ) : 'This table is full.'}
             </div>
 
             {error && <p className="text-destructive mt-3 text-sm">{error}</p>}
@@ -363,7 +363,9 @@ export default function TableDetailPage() {
               <div className="mt-4 space-y-2">
                 {status === 'APPROVED' ? (
                   <>
-                    <p className="text-foreground text-sm font-medium">You’re in! 🎉</p>
+                    <p className="text-foreground text-sm font-medium">
+                      {"You're in!"} <i className="fa-solid fa-circle-check ml-1 text-primary" />
+                    </p>
                     <Link
                       href={`/tables/${id}/chat`}
                       className={buttonVariants({
@@ -372,7 +374,7 @@ export default function TableDetailPage() {
                         className: 'w-full',
                       })}
                     >
-                      💬 Open group chat
+                      <i className="fa-solid fa-comment mr-1.5" />Open group chat
                     </Link>
                     <Button
                       variant="ghost"
@@ -431,7 +433,7 @@ export default function TableDetailPage() {
               </div>
             ) : (
               <p className="text-muted-foreground mt-4 text-sm">
-                You’re hosting this table — manage requests below.
+                {"You're"} hosting this table — manage requests below.
               </p>
             )}
           </div>
@@ -441,20 +443,20 @@ export default function TableDetailPage() {
             <p className="font-heading mb-3 font-bold tracking-tight">Table details</p>
             <ul className="space-y-2.5 text-sm">
               <li className="flex items-start justify-between gap-2">
-                <span className="text-muted-foreground">📍 {venue}</span>
+                <span className="text-muted-foreground"><i className="fa-solid fa-location-dot mr-1" />{venue}</span>
                 <Link href="/tables/nearby" className="text-primary shrink-0 font-semibold">
                   Map
                 </Link>
               </li>
-              <li className="text-muted-foreground">🗓️ {formatDateTime(table.startAt)}</li>
-              <li className="text-muted-foreground">🎟️ {price} per person</li>
+              <li className="text-muted-foreground"><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(table.startAt)}</li>
+              <li className="text-muted-foreground"><i className="fa-solid fa-ticket mr-1" />{price} per person</li>
               <li className="text-muted-foreground">✓ Leave anytime before it starts</li>
             </ul>
           </div>
 
           {/* who's joining */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
-            <p className="font-heading mb-3 font-bold tracking-tight">Who’s joining</p>
+            <p className="font-heading mb-3 font-bold tracking-tight">{"Who's"} joining</p>
             {filled > 0 ? (
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
@@ -463,7 +465,7 @@ export default function TableDetailPage() {
                       key={i}
                       className="bg-secondary ring-card grid size-8 place-items-center rounded-full text-xs ring-2"
                     >
-                      👤
+                      <i className="fa-solid fa-user" />
                     </span>
                   ))}
                 </div>
@@ -484,7 +486,7 @@ export default function TableDetailPage() {
                   Invite your friends
                 </p>
                 <p className="text-secondary-foreground/80 mt-1 text-sm">
-                  Know someone who’d love this?
+                  {"Know someone who'd love this?"}
                 </p>
                 <Link
                   href="/invite"
@@ -493,7 +495,7 @@ export default function TableDetailPage() {
                   Invite friends →
                 </Link>
               </div>
-              <span className="text-2xl">🎉</span>
+              <i className="fa-solid fa-circle-check text-2xl text-primary" />
             </div>
           </div>
         </aside>
@@ -505,8 +507,8 @@ export default function TableDetailPage() {
 function StatTile({ icon, value, label }: { icon: string; value: string; label: string }) {
   return (
     <div className="bg-card shadow-soft rounded-2xl border p-4 text-center">
-      <span className="bg-primary/10 mx-auto grid size-9 place-items-center rounded-xl text-base">
-        {icon}
+      <span className="bg-primary/10 text-primary mx-auto grid size-9 place-items-center rounded-xl text-base">
+        <i className={`fa-solid ${icon}`} />
       </span>
       <p className="font-heading mt-2 truncate text-sm font-extrabold tracking-tight">{value}</p>
       <p className="text-muted-foreground truncate text-xs">{label}</p>

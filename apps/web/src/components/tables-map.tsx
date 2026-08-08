@@ -10,6 +10,7 @@ import { ApiError, type TableDto } from '@jrst/api-client';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Spinner } from '@/components/spinner';
+import { categoryIcon } from '@/lib/category-icon';
 import { Input } from '@/components/ui/input';
 import { Cover } from '@/components/cover-image';
 
@@ -26,17 +27,6 @@ const OSM_STYLE: StyleSpecification = {
   },
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
-
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 
 const TIMES = [
   { key: 'morning', label: 'Morning', emoji: '🌅' },
@@ -347,7 +337,7 @@ export default function TablesMap() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-1">
                         <p className="font-heading text-sm font-bold leading-tight tracking-tight">
-                          {emojiFor(t.category)} {t.title ?? t.category}
+                          <i className={`fa-solid ${categoryIcon(t.category)}`} /> {t.title ?? t.category}
                         </p>
                         <span
                           className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -413,7 +403,7 @@ export default function TablesMap() {
                   }`}
                   title={p.name}
                 >
-                  <span className="text-sm">{emojiFor(p.table.category)}</span>
+                  <i className={`fa-solid ${categoryIcon(p.table.category)} text-sm`} />
                   <span>{p.table.seatsLeft}</span>
                 </button>
               </Marker>
@@ -460,7 +450,7 @@ function TableCard({ pin, onClose }: { pin: Pin; onClose: () => void }) {
     <div className="bg-card w-64 rounded-2xl p-3.5 shadow-glow">
       <div className="flex items-start justify-between gap-2">
         <p className="font-heading text-sm font-bold tracking-tight">
-          {emojiFor(t.category)} {t.title ?? t.category}
+          <i className={`fa-solid ${categoryIcon(t.category)}`} /> {t.title ?? t.category}
         </p>
         <button
           type="button"

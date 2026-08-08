@@ -181,8 +181,8 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
       </div>
       <div className="p-3">
         <p className="font-heading truncate text-sm font-bold">{t.title ?? t.category}</p>
-        <p className="text-muted-foreground truncate text-xs">📍 {t.venueName ?? t.cafe?.name ?? 'See map'}</p>
-        <p className="text-muted-foreground text-xs">🗓️ {formatDateTime(t.startAt)}</p>
+        <p className="text-muted-foreground truncate text-xs"><i className="fa-solid fa-location-dot mr-1" />{t.venueName ?? t.cafe?.name ?? 'See map'}</p>
+        <p className="text-muted-foreground text-xs"><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(t.startAt)}</p>
         <p className="text-muted-foreground text-xs">{t.seatsLeft} seats left</p>
       </div>
     </Link>
@@ -201,7 +201,7 @@ function HostedMeetupRow({ t }: { t: TableDto }) {
       <div className="min-w-0 flex-1">
         <p className="font-heading truncate text-sm font-bold">{t.title ?? t.category}</p>
         <p className="text-muted-foreground truncate text-xs">
-          📍 {t.venueName ?? t.cafe?.name ?? 'See map'} · {formatDateTime(t.startAt)}
+          <i className="fa-solid fa-location-dot mr-1" />{t.venueName ?? t.cafe?.name ?? 'See map'} · {formatDateTime(t.startAt)}
         </p>
         <p className="text-muted-foreground text-xs">{filled}/{t.seats} seats filled</p>
       </div>
@@ -327,7 +327,7 @@ export default function ProfilePage() {
   const interestList = parseList(user.interests.join(', ')).filter(Boolean);
   const bioLine =
     interestList.length > 0
-      ? `☕ Coffee lover · ${interestList.slice(0, 2).join(' · ')}`
+      ? `Coffee lover · ${interestList.slice(0, 2).join(' · ')}`
       : 'Here for good coffee and better conversations.';
   const [s1, s2, s3, s4] = splitScore(user.reliabilityScore);
 
@@ -431,7 +431,7 @@ export default function ProfilePage() {
   ───────────────────────────────────────────────────────────────── */
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-6">
       <div className="grid gap-6 lg:grid-cols-[240px_1fr_320px]">
 
         {/* ══════════════════════════════════════════════════════════
@@ -478,7 +478,7 @@ export default function ProfilePage() {
 
           {/* Invite friends card */}
           <div className="rounded-3xl bg-secondary p-5 text-center">
-            <p className="text-2xl mb-2">☕</p>
+            <p className="text-2xl mb-2"><i className="fa-solid fa-mug-hot text-primary" /></p>
             <p className="font-heading font-bold text-secondary-foreground text-sm">Invite friends</p>
             <p className="text-secondary-foreground/80 text-xs mt-1">
               Grow your coffee circle.
@@ -540,8 +540,8 @@ export default function ProfilePage() {
                       {bioLine}
                     </p>
                     <p className="mt-1 text-xs flex gap-3 flex-wrap" style={{ color: 'oklch(1 0 0 / 0.5)' }}>
-                      <span>📍 {user.city ?? '—'}</span>
-                      <span>🗓️ Joined {joinDate}</span>
+                      <span><i className="fa-solid fa-location-dot mr-1" />{user.city ?? '—'}</span>
+                      <span><i className="fa-solid fa-calendar-day mr-1" />Joined {joinDate}</span>
                     </p>
                   </div>
 
@@ -557,18 +557,18 @@ export default function ProfilePage() {
                 {/* Stat tiles */}
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
                   {[
-                    { icon: '🫖', label: 'Hosted', value: myHostedTables.length },
-                    { icon: '👥', label: 'Joined', value: activeJoinedCount },
-                    { icon: '⭐', label: 'Reliability', value: user.reliabilityScore },
-                    { icon: '❤️', label: 'Connections', value: connectionsCount ?? '—' },
-                    { icon: '🏅', label: 'Avg Rating', value: avgRating },
+                    { icon: 'fa-mug-hot', label: 'Hosted', value: myHostedTables.length },
+                    { icon: 'fa-users', label: 'Joined', value: activeJoinedCount },
+                    { icon: 'fa-star', label: 'Reliability', value: user.reliabilityScore },
+                    { icon: 'fa-heart', label: 'Connections', value: connectionsCount ?? '—' },
+                    { icon: 'fa-medal', label: 'Avg Rating', value: avgRating },
                   ].map(({ icon, label, value }) => (
                     <div
                       key={label}
                       className="flex flex-col items-center rounded-2xl p-3 text-center"
                       style={{ background: 'oklch(1 0 0 / 0.08)' }}
                     >
-                      <span className="text-lg leading-none">{icon}</span>
+                      <span className="text-lg leading-none"><i className={`fa-solid ${icon}`} /></span>
                       <span
                         className="mt-1.5 font-heading text-xl font-extrabold leading-none"
                         style={{ color: 'var(--ink-foreground)' }}
@@ -688,7 +688,7 @@ export default function ProfilePage() {
                   {/* Activity feed — stub */}
                   {overviewTab === 'activity' && (
                     <div className="rounded-3xl border border-dashed py-16 text-center">
-                      <p className="text-4xl">📋</p>
+                      <p className="text-4xl"><i className="fa-solid fa-clipboard-list text-muted-foreground" /></p>
                       <p className="font-heading mt-3 font-bold">No activity yet</p>
                       <p className="text-muted-foreground mt-1 text-sm">
                         Your recent actions will appear here.
@@ -708,7 +708,7 @@ export default function ProfilePage() {
                 </div>
                 {upcomingJoined.length === 0 ? (
                   <div className="rounded-3xl border border-dashed py-10 text-center">
-                    <p className="text-3xl">🪑</p>
+                    <p className="text-3xl"><i className="fa-solid fa-chair text-muted-foreground" /></p>
                     <p className="text-muted-foreground mt-2 text-sm">No upcoming meetups.</p>
                   </div>
                 ) : (
@@ -905,8 +905,8 @@ export default function ProfilePage() {
                     <Label>Coffee or chai?</Label>
                     <select className={selectClass} {...field('beveragePref')}>
                       <option value="">—</option>
-                      <option value="COFFEE">Coffee ☕</option>
-                      <option value="CHAI">Chai 🍵</option>
+                      <option value="COFFEE">Coffee</option>
+                      <option value="CHAI">Chai</option>
                       <option value="EITHER">Either</option>
                     </select>
                   </div>

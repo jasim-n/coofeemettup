@@ -76,7 +76,7 @@ export default function TableChatPage() {
   }
 
   return (
-    <main className="mx-auto flex h-[100dvh] w-full max-w-md flex-col px-4 py-4">
+    <main className="mx-auto flex h-[100dvh] w-full max-w-[1508px] flex-col px-4 py-4">
       <div className="mb-3 flex items-center justify-between px-2">
         <div>
           <p className="eyebrow text-primary">Table</p>
@@ -92,7 +92,7 @@ export default function TableChatPage() {
       <div className="bg-card flex-1 space-y-3 overflow-y-auto rounded-3xl border p-4 shadow-soft">
         {member === false && (
           <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
-            <p>💬 Only the host and approved guests can chat here.</p>
+            <p><i className="fa-solid fa-comment mr-1" />Only the host and approved guests can chat here.</p>
           </div>
         )}
         {member && messages.length === 0 && (

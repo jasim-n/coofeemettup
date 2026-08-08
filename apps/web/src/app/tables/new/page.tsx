@@ -60,7 +60,7 @@ export default function NewTablePage() {
     );
   if (!user.canHost)
     return (
-      <main className="mx-auto w-full max-w-md flex-1 px-6 py-16 text-center">
+      <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-16 text-center">
         <p className="text-4xl">🔒</p>
         <h1 className="display mt-3 text-2xl">Hosting is invite-only</h1>
         <p className="text-muted-foreground mt-2 text-sm">
@@ -110,7 +110,7 @@ export default function NewTablePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       <div className="mb-6">
         <p className="eyebrow text-primary">Host a table</p>
         <h1 className="display mt-1 text-3xl">Create a table</h1>

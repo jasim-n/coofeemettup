@@ -32,7 +32,7 @@ export default function TablesPage() {
   }, []);
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Grab a seat</p>
@@ -57,7 +57,7 @@ export default function TablesPage() {
       {!tables && !error && <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>}
       {tables && tables.length === 0 && (
         <div className="rounded-3xl border border-dashed py-14 text-center">
-          <p className="text-3xl">🪑</p>
+          <p className="text-primary text-3xl"><i className="fa-solid fa-chair" /></p>
           <p className="text-muted-foreground mt-2 text-sm">
             No open tables right now — check back soon.
           </p>
@@ -79,10 +79,10 @@ export default function TablesPage() {
                     <Badge variant="secondary">{t.category}</Badge>
                   </div>
                   <div className="text-muted-foreground mt-2 space-y-1 text-sm">
-                    <p>🗓️ {formatDateTime(t.startAt)}</p>
-                    <p>📍 {t.venueName ?? t.cafe?.name ?? 'Location on details'}</p>
+                    <p><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(t.startAt)}</p>
+                    <p><i className="fa-solid fa-location-dot mr-1" />{t.venueName ?? t.cafe?.name ?? 'Location on details'}</p>
                     <p>
-                      🙋 Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
+                      <i className="fa-solid fa-user mr-1" />Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
                     </p>
                   </div>
                   <div className="mt-3 flex items-center justify-between">

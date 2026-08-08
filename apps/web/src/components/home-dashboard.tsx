@@ -8,17 +8,8 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Badge } from '@/components/ui/badge';
 import { SaveButton } from '@/components/save-button';
+import { categoryIcon } from '@/lib/category-icon';
 
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
 
 function ago(iso: string, now: number) {
@@ -84,7 +75,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
           </div>
           <div className="relative p-8">
             <div className="max-w-md">
-              <p className="text-sm font-medium text-white/70">{greeting} 👋</p>
+              <p className="text-sm font-medium text-white/70">{greeting}</p>
               <h1 className="font-heading mt-1 text-4xl font-extrabold tracking-tight text-white">
                 {name}
               </h1>
@@ -108,14 +99,14 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
             </div>
             {/* stats row */}
             <div className="mt-7 grid max-w-xl grid-cols-3 gap-3 border-t border-white/10 pt-5">
-              <HeroStat icon="📍" value={String(tables.length)} label="Tables nearby" />
+              <HeroStat icon="fa-location-dot" value={String(tables.length)} label="Tables nearby" />
               <HeroStat
-                icon="🗓️"
-                value={next ? emojiFor(next.category) + ' ' + (next.title ?? next.category) : 'None yet'}
+                icon="fa-calendar-day"
+                value={next ? next.title ?? next.category : 'None yet'}
                 label={next ? formatDateTime(next.startAt) : 'Next meetup'}
                 truncate
               />
-              <HeroStat icon="⭐" value={String(user.reliabilityScore)} label="Reliability score" />
+              <HeroStat icon="fa-star" value={String(user.reliabilityScore)} label="Reliability score" />
             </div>
           </div>
         </section>
@@ -135,7 +126,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                       : 'bg-card ring-border/60 hover:shadow-soft'
                   }`}
                 >
-                  {emojiFor(c)} {c}
+                  <i className={`fa-solid ${categoryIcon(c)}`} /> {c}
                 </Link>
               ))}
             </div>
@@ -152,7 +143,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
           </div>
           {upcoming.length === 0 ? (
             <div className="rounded-3xl border border-dashed py-12 text-center">
-              <p className="text-3xl">🪑</p>
+              <i className="fa-solid fa-chair text-3xl text-muted-foreground" />
               <p className="text-muted-foreground mt-2 text-sm">
                 No open tables right now — check{' '}
                 <Link href="/discover" className="text-primary font-semibold hover:underline">
@@ -185,7 +176,8 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                 {verified && <Badge variant="success">Verified ✓</Badge>}
               </div>
               <p className="text-muted-foreground text-sm">
-                ⭐ <span className="text-foreground font-semibold">{user.reliabilityScore}</span>{' '}
+                <i className="fa-solid fa-star text-amber-400" />{' '}
+                <span className="text-foreground font-semibold">{user.reliabilityScore}</span>{' '}
                 Reliability
               </p>
             </div>
@@ -206,8 +198,8 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
               href={`/tables/${next.id}`}
               className="hover:bg-muted -mx-2 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"
             >
-              <span className="bg-secondary grid size-11 shrink-0 place-items-center rounded-2xl text-lg">
-                {emojiFor(next.category)}
+              <span className="bg-secondary text-primary grid size-11 shrink-0 place-items-center rounded-2xl text-lg">
+                <i className={`fa-solid ${categoryIcon(next.category)}`} />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-heading truncate font-bold tracking-tight">
@@ -217,7 +209,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                   {formatDateTime(next.startAt)}
                 </p>
                 <p className="text-muted-foreground truncate text-xs">
-                  📍 {next.venueName ?? next.cafe?.name ?? 'See map'}
+                  <i className="fa-solid fa-location-dot" /> {next.venueName ?? next.cafe?.name ?? 'See map'}
                 </p>
               </div>
               <span className="text-muted-foreground">→</span>
@@ -242,7 +234,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                 Invite now →
               </Link>
             </div>
-            <span className="text-3xl">🎁</span>
+            <i className="fa-solid fa-gift text-3xl text-primary" />
           </div>
         </div>
 
@@ -261,8 +253,8 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
             <ul className="space-y-3">
               {activity.map((n) => (
                 <li key={n.id} className="flex items-start gap-3">
-                  <span className="bg-primary/10 mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-sm">
-                    🔔
+                  <span className="bg-primary/10 text-primary mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-sm">
+                    <i className="fa-solid fa-bell" />
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{n.title}</p>
@@ -290,7 +282,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                   Verify now
                 </Link>
               </div>
-              <span className="text-3xl">🛡️</span>
+              <i className="fa-solid fa-shield-halved text-3xl text-primary" />
             </div>
           </div>
         )}
@@ -313,7 +305,7 @@ function HeroStat({
   return (
     <div className="flex items-center gap-2.5 text-white">
       <span className="glass-dark grid size-9 shrink-0 place-items-center rounded-xl text-base">
-        {icon}
+        <i className={`fa-solid ${icon}`} />
       </span>
       <div className="min-w-0">
         <p className={`font-heading text-sm font-bold ${truncate ? 'truncate' : ''}`}>{value}</p>
@@ -337,14 +329,14 @@ function TableCoverCard({ t }: { t: TableDto }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
-          {emojiFor(t.category)} {t.category}
+          <i className={`fa-solid ${categoryIcon(t.category)}`} /> {t.category}
         </span>
         <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
       <div className="p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>
         <p className="text-muted-foreground mt-1 text-sm">
-          📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+          <i className="fa-solid fa-location-dot" /> {t.venueName ?? t.cafe?.name ?? 'See map'}
         </p>
         <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
           <span className="bg-primary/10 text-primary grid size-6 place-items-center rounded-full text-[10px] font-bold">

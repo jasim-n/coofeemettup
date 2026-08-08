@@ -59,7 +59,7 @@ export default function AdminVerificationsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-10">
       <div className="flex gap-3 text-sm font-semibold">
         <Link href="/admin" className="text-muted-foreground hover:underline">
           ← Admin

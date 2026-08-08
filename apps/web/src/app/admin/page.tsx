@@ -27,7 +27,7 @@ export default function AdminPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>

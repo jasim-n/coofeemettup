@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-10">
       <div className="mb-8">
         <p className="eyebrow text-primary">Admin console</p>
         <h1 className="display mt-1 text-4xl uppercase">Dashboard</h1>

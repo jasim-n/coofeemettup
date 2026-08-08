@@ -8,6 +8,7 @@ import { type SuggestedPerson, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
+import { categoryIcon } from '@/lib/category-icon';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -34,23 +35,6 @@ const CATEGORIES = [
   { label: 'Coffee & Casual', icon: 'fa-mug-hot' },
   { label: 'Networking', icon: 'fa-handshake' },
 ] as const;
-
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Deep Talks': '💬',
-  'Coffee & chill': '☕',
-  'Coffee & Casual': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  'Books & Writing': '📚',
-  Startups: '🚀',
-  'Startup & Business': '🚀',
-  'Language Exchange': '🗣️',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-  Mindfulness: '🧘',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
   { id: 'relevant', label: 'Most relevant' },
@@ -190,7 +174,7 @@ function TableListRow({ t }: { t: TableDto }) {
       <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
         <div>
           <Badge variant="secondary" className="mb-1.5">
-            {emojiFor(t.category)} {t.category}
+            <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
           </Badge>
           <h3 className="font-heading line-clamp-1 text-base font-bold tracking-tight">
             {t.title ?? t.category}
@@ -244,7 +228,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
-          {emojiFor(t.category)} {t.category}
+          <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
         </span>
         <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
@@ -252,11 +236,11 @@ function TableCoverCard({ t }: { t: TableDto }) {
         <h3 className="font-heading line-clamp-1 text-base font-bold tracking-tight">
           {t.title ?? t.category}
         </h3>
-        <p className="text-muted-foreground mt-1 text-sm">
-          📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+        <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
+          <i className="fa-solid fa-location-dot" />{t.venueName ?? t.cafe?.name ?? 'See map'}
         </p>
-        <p className="text-muted-foreground mt-0.5 text-xs">
-          🗓️ {formatDateTime(t.startAt)}
+        <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
+          <i className="fa-solid fa-calendar-day" />{formatDateTime(t.startAt)}
         </p>
         <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
           <Avatar name={t.host?.firstName ?? 'H'} size={22} />
@@ -331,7 +315,7 @@ function MapPreview({ results }: { results: TableDto[] }) {
                   className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-bold shadow-md ${pinColor(p.seatsLeft)}`}
                   title={p.category}
                 >
-                  {emojiFor(p.category)}
+                  <i className={`fa-solid ${categoryIcon(p.category)}`} />
                 </span>
               </Marker>
             ))}
@@ -402,13 +386,13 @@ function MightLike({ tables }: { tables: TableDto[] }) {
                       {t.title ?? t.category}
                     </p>
                     <p className="text-muted-foreground truncate text-xs">
-                      {emojiFor(t.category)} {t.category}
+                      <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
                     </p>
-                    <p className="text-muted-foreground truncate text-xs">
-                      📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+                    <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
+                      <i className="fa-solid fa-location-dot" />{t.venueName ?? t.cafe?.name ?? 'See map'}
                     </p>
-                    <p className="text-muted-foreground truncate text-xs">
-                      🗓️ {formatDateTime(t.startAt)}
+                    <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
+                      <i className="fa-solid fa-calendar-day" />{formatDateTime(t.startAt)}
                     </p>
                     {going > 0 && (
                       <p className="text-primary text-xs font-semibold">{going} going</p>
@@ -749,7 +733,7 @@ function SearchInner() {
   if (!user) return <PageLoader label="Loading…" />;
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-6">
       <div className="grid gap-6 lg:grid-cols-[260px_1fr_320px]">
 
         {/* ── LEFT FILTERS ─────────────────────────────────────────── */}

@@ -1,0 +1,174 @@
+{
+  "project": {
+    "name": "Coffee Meetups",
+    "screen": "Home Dashboard",
+    "design_type": "Web App Dashboard",
+    "viewport": { "width": 1536, "height": 1024 },
+    "design_goal": "Create a premium, friendly, modern social meetup dashboard focused on discovering people, conversations, and local meetups.",
+    "style": ["modern", "premium", "friendly", "social", "minimal", "airy", "soft", "rounded", "clean SaaS"]
+  },
+  "fonts": {
+    "primary": { "family": "Poppins", "fallback": ["Arial", "sans-serif"] },
+    "weights": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 }
+  },
+  "colors": {
+    "background": "#F7FAFC",
+    "surface": "#FFFFFF",
+    "surface_soft": "#F8FAFC",
+    "primary": "#10B89B",
+    "primary_dark": "#0FA88F",
+    "primary_light": "#E3F7F3",
+    "hero_gradient": { "type": "linear", "direction": "135deg", "colors": ["#082F32", "#0B4A4A", "#18B7A0"] },
+    "button_gradient": { "type": "linear", "direction": "90deg", "colors": ["#16A394", "#10B89B"] },
+    "text": { "primary": "#0F172A", "secondary": "#64748B", "muted": "#94A3B8", "white": "#FFFFFF" },
+    "border": "#E2E8F0",
+    "success": "#10B89B",
+    "warning": "#F59E0B",
+    "danger": "#F43F5E",
+    "purple": "#8B5CF6",
+    "category_colors": {
+      "language": "#5B21B6",
+      "deep_talks": "#7C3AED",
+      "startup": "#E11D48",
+      "coffee": "#0FA88F",
+      "books": "#2563EB",
+      "music": "#DB2777"
+    }
+  },
+  "design_tokens": {
+    "border_radius": { "small": 10, "medium": 16, "large": 20, "xl": 28, "pill": 999 },
+    "spacing": { "4": 4, "8": 8, "12": 12, "16": 16, "20": 20, "24": 24, "32": 32, "40": 40, "48": 48, "64": 64, "80": 80 },
+    "shadows": {
+      "card": "0 8px 40px rgba(16,42,67,0.08)",
+      "hero": "0 16px 48px rgba(10,107,98,0.18)",
+      "hover": "0 20px 60px rgba(16,42,67,0.12)"
+    }
+  },
+  "typography": {
+    "hero_title": { "font_family": "Poppins", "font_size": 56, "font_weight": 700, "line_height": 1.08, "color": "#FFFFFF" },
+    "hero_subtitle": { "font_family": "Poppins", "font_size": 30, "font_weight": 400, "line_height": 1.2, "color": "#FFFFFF" },
+    "page_heading": { "font_size": 28, "font_weight": 700, "line_height": 1.25, "color": "#0F172A" },
+    "section_heading": { "font_size": 25, "font_weight": 600, "line_height": 1.3, "color": "#0F172A" },
+    "card_title": { "font_size": 18, "font_weight": 600, "line_height": 1.4, "color": "#0F172A" },
+    "body": { "font_size": 15, "font_weight": 400, "line_height": 1.6, "color": "#64748B" },
+    "medium": { "font_size": 15, "font_weight": 500, "line_height": 1.4, "color": "#0F172A" },
+    "small": { "font_size": 13, "font_weight": 400, "line_height": 1.5, "color": "#64748B" },
+    "label": { "font_size": 14, "font_weight": 600, "line_height": 1.4 }
+  },
+  "page": { "background": "#F7FAFC", "padding": { "top": 14, "right": 14, "bottom": 48, "left": 14 } },
+  "layout": {
+    "type": "desktop_dashboard",
+    "content_width": 1508,
+    "columns": { "main": 1018, "gap": 23, "sidebar": 395 },
+    "main_column": { "x": 44, "width": 1018 },
+    "sidebar": { "x": 1085, "width": 395 }
+  },
+  "navbar": {
+    "position": { "x": 14, "y": 14, "width": 1508, "height": 76 },
+    "style": { "background": "#FFFFFF", "border_radius": 22, "shadow": "0 8px 40px rgba(16,42,67,0.08)" },
+    "logo": { "name": "Coffee Meetups", "icon": "coffee cup outline", "icon_color": "#10B89B", "text_color": "#0F172A", "text_size": 25, "text_weight": 700 },
+    "navigation": [
+      { "label": "Home", "icon": "home", "active": true },
+      { "label": "Explore", "icon": "search", "active": false },
+      { "label": "Nearby", "icon": "location", "active": false },
+      { "label": "Meetups", "icon": "calendar", "active": false },
+      { "label": "Messages", "icon": "message", "active": false }
+    ],
+    "active_nav": { "background": "#E5F7F4", "border_radius": 26, "text_color": "#0F172A", "height": 52 },
+    "search": { "width": 280, "height": 52, "border_radius": 26, "background": "#F8FAFC", "border": "#E2E8F0", "placeholder": "Search meetups, people, vibes...", "shortcut": "⌘ K" },
+    "right_controls": ["notification", "user_avatar", "dropdown_chevron"],
+    "notification": { "count": 2, "badge_color": "#10B89B" },
+    "avatar": { "size": 46, "shape": "circle" }
+  },
+  "hero": {
+    "position": { "x": 44, "y": 99, "width": 1018, "height": 416 },
+    "border_radius": 28,
+    "background": { "type": "linear_gradient", "colors": ["#082F32", "#0B4A4A", "#18B7A0"], "direction": "135deg" },
+    "shadow": "0 16px 48px rgba(10,107,98,0.18)",
+    "content": {
+      "greeting": "Good Evening 👋",
+      "name": "Ahmed",
+      "headline": ["Find meaningful conversations,", "one coffee at a time."],
+      "primary_cta": { "label": "Find a Table", "width": 176, "height": 49, "background": { "type": "linear_gradient", "colors": ["#16A394", "#10B89B"] }, "border_radius": 25, "font_size": 15, "font_weight": 600 },
+      "secondary_cta": { "label": "Explore Meetups", "width": 188, "height": 49, "background": "transparent", "border": "#16C3A9", "border_width": 1.5, "border_radius": 25 }
+    },
+    "hero_stats": [
+      { "icon": "location", "value": "12", "label": "Tables nearby", "secondary": "+3 since yesterday" },
+      { "icon": "calendar", "value": "Today • 7:30 PM", "label": "Next meetup", "secondary": "Language Exchange" },
+      { "icon": "star", "value": "100", "label": "Reliability score", "secondary": "Top rated ✨" }
+    ],
+    "hero_illustration": {
+      "type": "coffee_shop_scene",
+      "elements": ["cafe table", "chairs", "coffee cups", "pendant lamp", "city buildings", "windows", "soft decorative shapes"],
+      "opacity": 0.9
+    }
+  },
+  "profile_sidebar": {
+    "position": { "x": 1085, "y": 99, "width": 395, "height": 878 },
+    "background": "#FFFFFF",
+    "border_radius": 28,
+    "shadow": "0 8px 40px rgba(16,42,67,0.08)",
+    "profile_header": { "name": "Ahmed", "status": "Verified ✓", "score": "100", "score_label": "Reliability score", "action": "View profile →" },
+    "upcoming_meetup": { "title": "Language Exchange", "date": "Tomorrow • 7:30 PM", "location": "Blue Area Roasters", "icon": "coffee", "action": "open meetup" },
+    "invite_card": { "title": "Invite friends", "description": "Better tables with people you know.", "avatars": 3, "additional_count": "+12", "action": "Invite now →", "background": "#EAF9F6" },
+    "recent_activity": {
+      "title": "Recent activity",
+      "action": "View all",
+      "items": [
+        { "text": "Usman joined Startup Coffee", "time": "2h ago" },
+        { "text": "New table available near you", "time": "3h ago" },
+        { "text": "Sara liked your meetup", "time": "5h ago" }
+      ]
+    },
+    "verification_card": { "title": "Verify your identity", "description": "Verified members build trust and get into tables faster.", "action": "Verify now", "background": "#F0E9FF", "accent": "#5B21B6" }
+  },
+  "popular_vibes": {
+    "position": { "x": 44, "y": 553 },
+    "title": "Popular vibes",
+    "items": [
+      { "label": "Coffee Chats", "icon": "coffee", "active": true },
+      { "label": "Language", "icon": "globe" },
+      { "label": "Startup", "icon": "rocket" },
+      { "label": "Deep Talks", "icon": "message" },
+      { "label": "Design", "icon": "palette" },
+      { "label": "Books", "icon": "book" },
+      { "label": "Music", "icon": "music" }
+    ],
+    "chip": { "height": 44, "border_radius": 22, "horizontal_padding": 21, "font_size": 14, "font_weight": 500 },
+    "active_chip": { "background": "#E3F7F3", "text": "#0FA88F" },
+    "inactive_chip": { "background": "#FFFFFF", "border": "#E2E8F0", "text": "#0F172A" }
+  },
+  "tables_section": {
+    "title": "Tables near you",
+    "action": "See all →",
+    "card_grid": { "columns": 4, "gap": 12, "card_width": 238, "card_height": 294 },
+    "cards": [
+      { "category": "Language", "title": "Language Exchange", "location": "Blue Area Roasters", "people": "4 people +5", "date": "Wed, 22 Jul • 7:30 PM", "availability": "3 seats left", "price": "PKR 99", "image_style": "warm brown cafe" },
+      { "category": "Deep Talks", "title": "Past Deep Talks", "location": "Rooftop Garden", "people": "4 people +3", "date": "Fri, 24 Jul • 5:15 PM", "availability": "3 seats left", "price": "Free", "image_style": "neutral rooftop" },
+      { "category": "Startup", "title": "Startup Coffee", "location": "Blue Area Roasters", "people": "4 people +8", "date": "Wed, 29 Jul • 8:00 AM", "availability": "6 seats left", "price": "PKR 500", "image_style": "dark cafe" },
+      { "category": "Coffee Chats", "title": "Weekend Coffee", "location": "The Coffee Club", "people": "4 people +6", "date": "Sat, 15 Aug • 6:00 PM", "availability": "5 seats left", "price": "Free", "image_style": "warm cafe" }
+    ],
+    "card": { "background": "#FFFFFF", "border_radius": 20, "shadow": "0 8px 40px rgba(16,42,67,0.08)", "image_height": 105, "content_padding": 15 },
+    "favorite_button": { "size": 32, "shape": "circle", "background": "#FFFFFF", "icon": "heart-outline" },
+    "join_button": { "height": 30, "border_radius": 10, "background": { "type": "linear_gradient", "colors": ["#16A394", "#10B89B"] }, "text": "Join Table", "font_size": 12, "font_weight": 600 }
+  },
+  "visual_rules": {
+    "avoid": ["heavy gradients", "sharp corners", "dark cards outside hero", "excessive borders", "dense information", "large amounts of text", "oversized icons", "generic Bootstrap styling"],
+    "use": ["large whitespace", "20-28px card radius", "soft shadows", "Poppins typography", "teal primary color", "white surfaces", "subtle pastel backgrounds", "rounded pills", "friendly iconography", "clear visual hierarchy"]
+  },
+  "responsive_behavior": {
+    "desktop": { "min_width": 1200, "layout": "two-column" },
+    "tablet": { "width_range": "768-1199", "behavior": ["collapse right sidebar below main content", "hero becomes full width", "meetup cards use 2 columns"] },
+    "mobile": { "max_width": 767, "behavior": ["single-column layout", "hide desktop navigation", "use hamburger navigation", "hero becomes vertical", "hero illustration moves below content", "stats become horizontal scroll", "popular vibes become horizontal scroll", "meetup cards become single column", "profile sidebar becomes stacked sections"] }
+  },
+  "implementation_notes": {
+    "preferred_stack": "React + Tailwind CSS",
+    "componentization": true,
+    "use_reusable_components": true,
+    "use_css_variables": true,
+    "avoid_inline_magic_numbers": true,
+    "font_loading": "Google Fonts Poppins",
+    "icons": "Lucide or another consistent outline icon library",
+    "animations": { "enabled": true, "duration": "150-250ms", "easing": "ease-out", "hover": ["subtle card lift", "button scale 1.02", "shadow increase"] }
+  }
+}

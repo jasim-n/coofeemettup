@@ -14,35 +14,38 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/spinner';
 import { ConnectButton } from '@/components/connect-button';
 import { UserLink } from '@/components/user-link';
+import { categoryIcon } from '@/lib/category-icon';
 
 /* ─── types ──────────────────────────────────────────────────────── */
 
 type PriceTier = 'any' | 'free' | 'under200' | '200to500' | 'above500';
 type WhenFilter = 'anytime' | 'today' | 'week' | 'weekend' | 'custom';
 
-/* ─── helpers ────────────────────────────────────────────────────── */
+/* ─── haversine distance (km) ────────────────────────────────────── */
 
-const CAT_ICON: Record<string, string> = {
-  'Deep talks': 'fa-comments',
-  'Coffee & chill': 'fa-mug-hot',
-  Networking: 'fa-handshake',
-  Books: 'fa-book',
-  Startups: 'fa-rocket',
-  'Language exchange': 'fa-language',
-  'Board games': 'fa-chess',
-};
-const iconFor = (c: string) => CAT_ICON[c] ?? 'fa-mug-saucer';
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
+function matchesDistance(
+  t: TableDto,
+  coords: { lat: number; lng: number } | null,
+  maxKm: number,
+): boolean {
+  if (!coords) return true; // geolocation not available → pass all
+  const tLat = t.lat ?? t.cafe?.lat ?? null;
+  const tLng = t.lng ?? t.cafe?.lng ?? null;
+  if (tLat == null || tLng == null) return true; // no coords on table → pass
+  return haversineKm(coords.lat, coords.lng, tLat, tLng) <= maxKm;
+}
 
 const CITIES = ['Islamabad', 'Lahore', 'Karachi', 'Rawalpindi'] as const;
 
@@ -104,15 +107,15 @@ function TableCoverCard({ t }: { t: TableDto }) {
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
-          {emojiFor(t.category)} {t.category}
+        <span className="glass ring-border/40 absolute left-3 top-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
+          <i className={`fa-solid ${categoryIcon(t.category)}`} /> {t.category}
         </span>
         <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
       <div className="p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>
-        <p className="text-muted-foreground mt-1 text-sm">
-          📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+        <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
+          <i className="fa-solid fa-location-dot" /> {t.venueName ?? t.cafe?.name ?? 'See map'}
         </p>
         <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
           <Avatar name={t.host?.firstName ?? 'H'} size={22} />
@@ -150,6 +153,8 @@ export default function DiscoverPage() {
   const [priceTier, setPriceTier] = useState<PriceTier>('any');
   const [when, setWhen] = useState<WhenFilter>('anytime');
   const [customDate, setCustomDate] = useState('');
+  const [distanceKm, setDistanceKm] = useState(25);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -177,6 +182,15 @@ export default function DiscoverPage() {
     };
   }, [user]);
 
+  // geolocation — request once on mount
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (p) => setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {}, // denied/unavailable → coords stays null
+      { timeout: 8000 },
+    );
+  }, []);
+
   const categories = useMemo(
     () => [...new Set((tables ?? []).map((t) => t.category))].sort(),
     [tables],
@@ -188,6 +202,7 @@ export default function DiscoverPage() {
       if (category && t.category !== category) return false;
       if (!matchesPrice(t, priceTier)) return false;
       if (!matchesWhen(t, when, customDate)) return false;
+      if (!matchesDistance(t, coords, distanceKm)) return false;
       if (needle) {
         const hay =
           `${t.title ?? ''} ${t.category} ${t.venueName ?? ''} ${t.cafe?.name ?? ''} ${t.description ?? ''}`.toLowerCase();
@@ -195,7 +210,7 @@ export default function DiscoverPage() {
       }
       return true;
     });
-  }, [tables, q, category, priceTier, when, customDate]);
+  }, [tables, q, category, priceTier, when, customDate, coords, distanceKm]);
 
   // split into recommended (first 4) + more
   const recommended = results.slice(0, 4);
@@ -231,6 +246,7 @@ export default function DiscoverPage() {
     setPriceTier('any');
     setWhen('anytime');
     setCustomDate('');
+    setDistanceKm(25);
   };
 
   const openCount = tables?.length ?? 0;
@@ -254,7 +270,7 @@ export default function DiscoverPage() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-6 sm:px-6">
       <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
         {/* ── LEFT RAIL ─────────────────────────────────────────────── */}
         <aside className="bg-card shadow-soft rounded-3xl border p-5 lg:sticky lg:top-24 lg:self-start">
@@ -310,7 +326,7 @@ export default function DiscoverPage() {
                         : 'hover:bg-muted text-foreground'
                     }`}
                   >
-                    <i className={`fa-solid ${iconFor(c)} w-4 text-center`} />
+                    <i className={`fa-solid ${categoryIcon(c)} w-4 text-center`} />
                     {c}
                   </button>
                 </li>
@@ -363,19 +379,25 @@ export default function DiscoverPage() {
               <p className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">
                 Distance
               </p>
-              <span className="text-xs font-semibold">25 km</span>
+              <span className="text-xs font-semibold">{distanceKm} km</span>
             </div>
             <input
               type="range"
               min={0}
               max={50}
-              defaultValue={25}
+              value={distanceKm}
+              onChange={(e) => setDistanceKm(Number(e.target.value))}
               className="accent-primary w-full"
             />
             <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
               <span>0 km</span>
               <span>50 km</span>
             </div>
+            {!coords && (
+              <p className="text-muted-foreground mt-1.5 text-[10px]">
+                Enable location to filter by distance
+              </p>
+            )}
           </div>
 
           {/* PRICE RANGE */}
@@ -421,7 +443,9 @@ export default function DiscoverPage() {
               className="bg-gradient-hero pointer-events-none absolute -top-20 -right-16 size-72 rounded-full opacity-30 blur-3xl"
             />
             <div className="relative">
-              <p className="eyebrow text-white/60">✨ Explore &amp; Connect</p>
+              <p className="eyebrow flex items-center gap-1.5 text-white/60">
+                <i className="fa-solid fa-wand-magic-sparkles" /> Explore &amp; Connect
+              </p>
               <h2 className="display font-heading mt-2 text-3xl font-extrabold tracking-tight">
                 Discover conversations{' '}
                 <span className="text-primary">that matter</span>
@@ -464,7 +488,7 @@ export default function DiscoverPage() {
                         category === cat ? 'bg-white/20' : 'bg-primary/10'
                       }`}
                     >
-                      <i className={`fa-solid ${iconFor(cat)} ${category === cat ? 'text-white' : 'text-primary'}`} />
+                      <i className={`fa-solid ${categoryIcon(cat)} ${category === cat ? 'text-white' : 'text-primary'}`} />
                     </span>
                     <span className="flex flex-col items-start leading-tight">
                       <span>{cat}</span>
@@ -561,7 +585,7 @@ export default function DiscoverPage() {
                       className="hover:bg-muted -mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-2xl px-2 py-2 text-left transition-colors"
                     >
                       <span className="bg-primary/10 grid size-8 shrink-0 place-items-center rounded-xl">
-                        <i className={`fa-solid ${iconFor(cat)} text-primary text-xs`} />
+                        <i className={`fa-solid ${categoryIcon(cat)} text-primary text-xs`} />
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold">{cat}</p>
@@ -635,8 +659,8 @@ export default function DiscoverPage() {
                       href={`/tables/${t.id}`}
                       className="hover:bg-muted -mx-2 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"
                     >
-                      <span className="bg-secondary grid size-9 shrink-0 place-items-center rounded-xl text-base">
-                        {emojiFor(t.category)}
+                      <span className="bg-secondary grid size-9 shrink-0 place-items-center rounded-xl">
+                        <i className={`fa-solid ${categoryIcon(t.category)} text-primary`} />
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="font-heading truncate text-sm font-bold">
@@ -645,8 +669,8 @@ export default function DiscoverPage() {
                         <p className="text-muted-foreground truncate text-xs">
                           {formatDateTime(t.startAt)}
                         </p>
-                        <p className="text-muted-foreground truncate text-xs">
-                          📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+                        <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
+                          <i className="fa-solid fa-location-dot" /> {t.venueName ?? t.cafe?.name ?? 'See map'}
                         </p>
                       </div>
                       <span className="text-muted-foreground shrink-0">→</span>

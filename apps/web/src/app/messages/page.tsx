@@ -256,7 +256,7 @@ export default function MessagesPage() {
   const presencePool: PublicUser[] = connections.slice(0, 5);
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-4">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-4">
       <div className="grid gap-4 lg:h-[calc(100dvh-6rem)] lg:grid-cols-[330px_1fr_300px]">
 
         {/* ========== LEFT — conversations panel ========== */}
@@ -401,7 +401,7 @@ export default function MessagesPage() {
                             {c.name}
                           </p>
                           <p className="text-muted-foreground truncate text-xs">
-                            {c.kind === 'dm' ? c.last || 'Say hello 👋' : 'Group chat'}
+                            {c.kind === 'dm' ? c.last || 'Say hello' : 'Group chat'}
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -480,15 +480,15 @@ export default function MessagesPage() {
                     <p className="font-heading truncate text-sm font-bold tracking-tight">
                       {selected.table.title ?? selected.table.category}
                     </p>
-                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                      📍{' '}
+                    <p className="text-muted-foreground mt-0.5 flex items-center gap-1 truncate text-xs">
+                      <i className="fa-solid fa-location-dot" />
                       {selected.table.venueName ??
                         selected.table.cafe?.name ??
                         selected.table.venueAddress ??
                         'TBD'}
                     </p>
-                    <p className="text-muted-foreground truncate text-xs">
-                      🗓️ {formatDateTime(selected.table.startAt)}
+                    <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
+                      <i className="fa-solid fa-calendar-day" />{formatDateTime(selected.table.startAt)}
                     </p>
                   </div>
                   <Link
@@ -511,7 +511,7 @@ export default function MessagesPage() {
                 /* ---- DM bubbles ---- */
                 dmMsgs.length === 0 ? (
                   <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
-                    <p>No messages yet — say hi! 👋</p>
+                    <p>No messages yet — say hi!</p>
                   </div>
                 ) : (
                   <>
@@ -562,11 +562,11 @@ export default function MessagesPage() {
               ) : /* ---- Group bubbles ---- */
               groupChat === null || groupChat.member === false ? (
                 <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
-                  <p>💬 Only the host and approved guests can chat here.</p>
+                  <p>Only the host and approved guests can chat here.</p>
                 </div>
               ) : groupChat.messages.length === 0 ? (
                 <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
-                  <p>No messages yet — say hi! 👋</p>
+                  <p>No messages yet — say hi!</p>
                 </div>
               ) : (
                 <>

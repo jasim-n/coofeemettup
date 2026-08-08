@@ -6,22 +6,12 @@ import { ApiError, type InviteDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
+import { categoryIcon } from '@/lib/category-icon';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 import { Button } from '@/components/ui/button';
-
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 const personName = (u: { firstName?: string | null; lastInitial?: string | null }) =>
   `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
 
@@ -72,7 +62,7 @@ function InviteCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         <span className="glass absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white ring-1 ring-white/20">
-          {emojiFor(table.category)} {table.category}
+          <i className={`fa-solid ${categoryIcon(table.category)} mr-1`} />{table.category}
         </span>
       </div>
 
@@ -82,13 +72,13 @@ function InviteCard({
           href={`/tables/${table.id}`}
           className="font-heading block truncate text-base font-bold tracking-tight hover:underline"
         >
-          {emojiFor(table.category)} {table.title ?? table.category}
+          <i className={`fa-solid ${categoryIcon(table.category)} mr-1`} />{table.title ?? table.category}
         </Link>
 
         {/* Meta */}
         <div className="text-muted-foreground space-y-1 text-sm">
-          <p>📍 {table.venueName ?? 'See map'}</p>
-          <p>🗓️ {formatDateTime(table.startAt)}</p>
+          <p><i className="fa-solid fa-location-dot mr-1" />{table.venueName ?? 'See map'}</p>
+          <p><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(table.startAt)}</p>
         </div>
 
         {/* Inviter */}
@@ -190,7 +180,7 @@ export default function InvitesPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       {toast && <Toast msg={toast} />}
 
       {/* Header */}

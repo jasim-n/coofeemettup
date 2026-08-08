@@ -6,22 +6,12 @@ import { type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
+import { categoryIcon } from '@/lib/category-icon';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
-
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 
 export default function SavedPage() {
   const { user, loading } = useAuth();
@@ -55,7 +45,7 @@ export default function SavedPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       {/* header */}
       <p className="eyebrow text-muted-foreground text-xs font-semibold uppercase tracking-widest">
         Bookmarks
@@ -103,7 +93,7 @@ export default function SavedPage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                     <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
-                      {emojiFor(t.category)} {t.category}
+                      <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
                     </span>
                     <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
                   </div>
@@ -112,10 +102,10 @@ export default function SavedPage() {
                       {t.title ?? t.category}
                     </h3>
                     <p className="text-muted-foreground mt-1 text-sm">
-                      📍 {t.venueName ?? t.cafe?.name ?? 'See map'}
+                      <i className="fa-solid fa-location-dot mr-1" />{t.venueName ?? t.cafe?.name ?? 'See map'}
                     </p>
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      🗓️ {formatDateTime(t.startAt)}
+                      <i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(t.startAt)}
                     </p>
                     <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
                       <Avatar name={t.host?.firstName ?? 'H'} size={22} />

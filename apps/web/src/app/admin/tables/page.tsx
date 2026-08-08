@@ -10,17 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageLoader, Spinner } from '@/components/spinner';
-
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
+import { categoryIcon } from '@/lib/category-icon';
 
 const STATUS_FILTERS = ['ALL', 'OPEN', 'FULL', 'CLOSED', 'CANCELLED', 'COMPLETED'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -108,7 +98,7 @@ export default function AdminTablesPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -187,7 +177,7 @@ export default function AdminTablesPage() {
                     href={`/tables/${t.id}`}
                     className="font-heading text-lg font-bold tracking-tight hover:underline"
                   >
-                    {emojiFor(t.category)} {t.title ?? t.category}
+                    <i className={`fa-solid ${categoryIcon(t.category)}`} /> {t.title ?? t.category}
                   </Link>
                   <div className="flex shrink-0 items-center gap-1.5">
                     {t.pendingRequests > 0 && (

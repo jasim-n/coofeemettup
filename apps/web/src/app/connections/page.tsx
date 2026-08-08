@@ -74,7 +74,7 @@ function TabBadge({ count }: { count: number }) {
 function Empty({ icon, message, cta }: { icon: string; message: string; cta?: React.ReactNode }) {
   return (
     <div className="rounded-3xl border border-dashed py-16 text-center">
-      <p className="text-4xl">{icon}</p>
+      <p className="text-4xl"><i className={`fa-solid ${icon} text-muted-foreground`} /></p>
       <p className="text-muted-foreground mt-3 text-sm">{message}</p>
       {cta && <div className="mt-3">{cta}</div>}
     </div>
@@ -135,7 +135,7 @@ export default function ConnectionsPage() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-6">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-6">
       {/* ── header ─────────────────────────────────────────────── */}
       <div className="mb-6">
         <p className="eyebrow text-primary">Your network</p>
@@ -172,7 +172,7 @@ export default function ConnectionsPage() {
             <PageLoader label="Loading connections…" />
           ) : connections.length === 0 ? (
             <Empty
-              icon="🤝"
+              icon="fa-handshake"
               message="You don't have any connections yet."
               cta={
                 <button
@@ -193,10 +193,10 @@ export default function ConnectionsPage() {
                   sub={
                     <>
                       {u.city && (
-                        <p className="text-muted-foreground mt-0.5 text-xs">📍 {u.city}</p>
+                        <p className="text-muted-foreground mt-0.5 text-xs"><i className="fa-solid fa-location-dot mr-1" />{u.city}</p>
                       )}
                       <p className="text-muted-foreground text-xs">
-                        ⭐ {u.reliabilityScore} reliability
+                        <i className="fa-solid fa-star text-amber-400 mr-1" />{u.reliabilityScore} reliability
                       </p>
                     </>
                   }
@@ -214,7 +214,7 @@ export default function ConnectionsPage() {
           {requests === null ? (
             <PageLoader label="Loading requests…" />
           ) : requests.length === 0 ? (
-            <Empty icon="📭" message="No pending connection requests." />
+            <Empty icon="fa-envelope-open" message="No pending connection requests." />
           ) : (
             <div className="space-y-3">
               {requests.map((req) => (
@@ -231,7 +231,7 @@ export default function ConnectionsPage() {
           {suggestions === null ? (
             <PageLoader label="Loading suggestions…" />
           ) : suggestions.length === 0 ? (
-            <Empty icon="👥" message="No suggestions right now. Join more tables to meet people!" />
+            <Empty icon="fa-user-group" message="No suggestions right now. Join more tables to meet people!" />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {suggestions.map(({ user: u, mutuals }) => (
@@ -241,7 +241,7 @@ export default function ConnectionsPage() {
                   sub={
                     <>
                       {u.city && (
-                        <p className="text-muted-foreground mt-0.5 text-xs">📍 {u.city}</p>
+                        <p className="text-muted-foreground mt-0.5 text-xs"><i className="fa-solid fa-location-dot mr-1" />{u.city}</p>
                       )}
                       <p className="text-muted-foreground text-xs">
                         {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}

@@ -7,22 +7,12 @@ import { useAuth } from '@/components/auth-provider';
 import { useRequestsBadge } from '@/components/requests-badge';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
+import { categoryIcon } from '@/lib/category-icon';
 import { UserLink } from '@/components/user-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageLoader, Spinner } from '@/components/spinner';
-
-const CAT_EMOJI: Record<string, string> = {
-  'Deep talks': '💬',
-  'Coffee & chill': '☕',
-  Networking: '🤝',
-  Books: '📚',
-  Startups: '🚀',
-  'Language exchange': '🗣️',
-  'Board games': '🎲',
-};
-const emojiFor = (c: string) => CAT_EMOJI[c] ?? '🪑';
 
 export default function RequestsPage() {
   const { user, loading } = useAuth();
@@ -92,7 +82,7 @@ export default function RequestsPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-10">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Host inbox</p>
@@ -124,7 +114,7 @@ export default function RequestsPage() {
 
       {reqs !== null && reqs.length === 0 && (
         <div className="rounded-3xl border border-dashed py-12 text-center">
-          <p className="text-3xl">📥</p>
+          <i className="fa-solid fa-inbox text-muted-foreground text-3xl" />
           <p className="text-muted-foreground mt-2 text-sm">
             No pending requests &mdash; you&apos;re all caught up.
           </p>
@@ -150,22 +140,26 @@ export default function RequestsPage() {
                     href={`/tables/${r.tableId}`}
                     className="font-heading text-lg font-bold tracking-tight hover:underline"
                   >
-                    {emojiFor(r.table?.category ?? '')}{' '}
+                    <i className={`fa-solid ${categoryIcon(r.table?.category)} mr-1`} />
                     {r.table?.title ?? r.table?.category ?? 'Your table'}
                   </Link>
                   <Badge variant="warning">pending</Badge>
                 </div>
 
                 <div className="text-muted-foreground mt-2 space-y-1 text-sm">
-                  <p>🗓️ {r.table ? formatDateTime(r.table.startAt) : ''}</p>
-                  <p>📍 {r.table?.venueName ?? '—'}</p>
-                  <p>
-                    👤{' '}
+                  <p className="flex items-center gap-1.5">
+                    <i className="fa-solid fa-calendar-day" />{r.table ? formatDateTime(r.table.startAt) : ''}
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <i className="fa-solid fa-location-dot" />{r.table?.venueName ?? '—'}
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <i className="fa-solid fa-user" />
                     <UserLink userId={r.userId}>
                       {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
                     </UserLink>
                     {r.user?.reliabilityScore != null && (
-                      <> · ⭐ {r.user.reliabilityScore}</>
+                      <> · <i className="fa-solid fa-star" /> {r.user.reliabilityScore}</>
                     )}
                   </p>
                 </div>

@@ -159,7 +159,7 @@ export default function PublicProfilePage() {
     rep && rep.hostRating.count > 0 ? rep.hostRating.avg.toFixed(1) : '—';
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       <div className="space-y-6">
 
         {/* ── Hero band ─────────────────────────────────────────── */}

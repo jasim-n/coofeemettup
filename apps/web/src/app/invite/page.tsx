@@ -70,7 +70,7 @@ export default function InvitePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Bring a friend</p>

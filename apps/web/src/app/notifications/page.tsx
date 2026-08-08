@@ -39,7 +39,7 @@ export default function NotificationsPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-10">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Inbox</p>
@@ -53,7 +53,7 @@ export default function NotificationsPage() {
       {error && <p className="text-destructive text-sm mb-4">{error}</p>}
       {items.length === 0 && !error && (
         <div className="rounded-3xl border border-dashed py-12 text-center">
-          <p className="text-3xl">🔔</p>
+          <i className="fa-solid fa-bell text-muted-foreground text-3xl" />
           <p className="text-muted-foreground mt-2 text-sm">You’re all caught up.</p>
         </div>
       )}
