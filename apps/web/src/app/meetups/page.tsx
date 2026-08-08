@@ -12,6 +12,7 @@ import { PageLoader } from '@/components/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { categoryIcon } from '@/lib/category-icon';
+import { haversineKm, formatDistance } from '@/lib/geo';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
 
@@ -38,6 +39,9 @@ function applyFilters(
   when: WhenFilter,
   category: string,
   fromDate: string,
+  toDate: string,
+  coords: { lat: number; lng: number } | null,
+  radiusKm: number,
 ): TableDto[] {
   return tables.filter((t) => {
     const start = new Date(t.startAt).getTime();
@@ -58,10 +62,27 @@ function applyFilters(
     // category filter
     if (category && t.category !== category) return false;
 
-    // date filter
+    // date from filter
     if (fromDate) {
       const from = new Date(fromDate).setHours(0, 0, 0, 0);
       if (start < from) return false;
+    }
+
+    // date to filter
+    if (toDate) {
+      const to = new Date(toDate).setHours(23, 59, 59, 999);
+      if (start > to) return false;
+    }
+
+    // radius filter — only when coords known and limit is set (< 50 = unlimited sentinel)
+    if (coords !== null && radiusKm < 50) {
+      const tLat = t.lat ?? t.cafe?.lat ?? null;
+      const tLng = t.lng ?? t.cafe?.lng ?? null;
+      if (tLat !== null && tLng !== null) {
+        const dist = haversineKm(coords.lat, coords.lng, tLat, tLng);
+        if (dist > radiusKm) return false;
+      }
+      // if no coords on the table, keep it
     }
 
     return true;
@@ -69,6 +90,20 @@ function applyFilters(
 }
 
 /* ─── calendar ──────────────────────────────────────────────────── */
+
+const DOT_COLOR: Record<string, string> = {
+  'Deep talks': 'bg-purple-500',
+  'Coffee & chill': 'bg-primary',
+  Startups: 'bg-amber-500',
+  'Language exchange': 'bg-blue-500',
+  Networking: 'bg-rose-500',
+  Books: 'bg-emerald-500',
+  'Board games': 'bg-teal-500',
+};
+
+function calendarDotClass(category: string): string {
+  return DOT_COLOR[category] ?? 'bg-primary';
+}
 
 function CalendarCard({ joined }: { joined: TableDto[] }) {
   const today = new Date(NOW);
@@ -80,12 +115,17 @@ function CalendarCard({ joined }: { joined: TableDto[] }) {
   const rawFirst = new Date(year, month, 1).getDay();
   const blanks = rawFirst === 0 ? 6 : rawFirst - 1;
 
-  const meetupDays = new Set(
-    joined.map((t) => {
-      const d = new Date(t.startAt);
-      return d.getFullYear() === year && d.getMonth() === month ? d.getDate() : -1;
-    }),
-  );
+  // day-of-month → dot color class (first meetup that day wins)
+  const dayDotMap = new Map<number, string>();
+  for (const t of joined) {
+    const d = new Date(t.startAt);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const day = d.getDate();
+      if (!dayDotMap.has(day)) {
+        dayDotMap.set(day, calendarDotClass(t.category));
+      }
+    }
+  }
 
   return (
     <div className="bg-card shadow-soft rounded-3xl border p-5">
@@ -108,7 +148,7 @@ function CalendarCard({ joined }: { joined: TableDto[] }) {
         {Array.from({ length: daysInMonth }, (_, i) => {
           const day = i + 1;
           const isToday = day === today.getDate();
-          const hasMeetup = meetupDays.has(day);
+          const dotClass = dayDotMap.get(day);
           return (
             <span
               key={day}
@@ -119,8 +159,8 @@ function CalendarCard({ joined }: { joined: TableDto[] }) {
               }`}
             >
               {day}
-              {hasMeetup && !isToday && (
-                <span className="bg-primary absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full" />
+              {dotClass && !isToday && (
+                <span className={`${dotClass} absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full`} />
               )}
             </span>
           );
@@ -191,9 +231,23 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
 
 /* ─── my meetups table row ──────────────────────────────────────── */
 
-function MeetupTableRow({ t, meId }: { t: TableDto; meId?: string }) {
+function MeetupTableRow({
+  t,
+  meId,
+  coords,
+}: {
+  t: TableDto;
+  meId?: string;
+  coords: { lat: number; lng: number } | null;
+}) {
   const hosting = meId != null && t.hostId === meId;
   const approved = t.myRequestStatus === 'APPROVED';
+  const tLat = t.lat ?? t.cafe?.lat ?? null;
+  const tLng = t.lng ?? t.cafe?.lng ?? null;
+  const distLabel =
+    coords !== null && tLat !== null && tLng !== null
+      ? formatDistance(haversineKm(coords.lat, coords.lng, tLat, tLng))
+      : '—';
   return (
     <tr className="border-border/60 border-b last:border-0">
       <td className="py-3 pr-4">
@@ -217,6 +271,9 @@ function MeetupTableRow({ t, meId }: { t: TableDto; meId?: string }) {
       <td className="text-muted-foreground py-3 pr-4 text-xs whitespace-nowrap">
         {t.venueName ?? t.cafe?.name ?? '—'}
       </td>
+      <td className="text-muted-foreground py-3 pr-4 text-xs whitespace-nowrap">
+        {distLabel}
+      </td>
       <td className="py-3 pr-4">
         <Badge variant={hosting ? 'secondary' : approved ? 'success' : 'warning'}>
           {hosting ? 'Hosting' : approved ? 'Confirmed' : 'Pending'}
@@ -238,10 +295,12 @@ function MeetupTable({
   rows,
   emptyMsg,
   meId,
+  coords,
 }: {
   rows: TableDto[];
   emptyMsg: string;
   meId?: string;
+  coords: { lat: number; lng: number } | null;
 }) {
   if (rows.length === 0) {
     return (
@@ -256,7 +315,7 @@ function MeetupTable({
         <table className="w-full">
           <thead>
             <tr className="border-border/60 border-b">
-              {['Meetup', 'Date & Time', 'Location', 'Status', 'Action'].map((h) => (
+              {['Meetup', 'Date & Time', 'Location', 'Distance', 'Status', 'Action'].map((h) => (
                 <th
                   key={h}
                   className="text-muted-foreground pb-2 pr-4 text-left text-xs font-semibold last:pr-0"
@@ -268,7 +327,7 @@ function MeetupTable({
           </thead>
           <tbody>
             {rows.map((t) => (
-              <MeetupTableRow key={t.id} t={t} meId={meId} />
+              <MeetupTableRow key={t.id} t={t} meId={meId} coords={coords} />
             ))}
           </tbody>
         </table>
@@ -325,6 +384,11 @@ export default function MeetupsPage() {
   const [when, setWhen] = useState<WhenFilter>('upcoming');
   const [category, setCategory] = useState('');
   const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [radiusKm, setRadiusKm] = useState(50);
+
+  // geolocation
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // tabs
   const [tab, setTab] = useState<TabId>('upcoming');
@@ -369,6 +433,14 @@ export default function MeetupsPage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (p) => setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {},
+      { timeout: 8000 },
+    );
+  }, []);
+
   const categories = useMemo(
     () => [...new Set([...browse, ...joined].map((t) => t.category))],
     [browse, joined],
@@ -376,8 +448,8 @@ export default function MeetupsPage() {
 
   // filtered subsets
   const filteredBrowse = useMemo(
-    () => applyFilters(browse, when, category, fromDate),
-    [browse, when, category, fromDate],
+    () => applyFilters(browse, when, category, fromDate, toDate, coords, radiusKm),
+    [browse, when, category, fromDate, toDate, coords, radiusKm],
   );
 
   const upcomingCards = useMemo(
@@ -395,8 +467,8 @@ export default function MeetupsPage() {
     ];
     const seen = new Set<string>();
     const deduped = mine.filter((t) => (seen.has(t.id) ? false : seen.add(t.id)));
-    return applyFilters(deduped, when, category, fromDate);
-  }, [hosted, joined, when, category, fromDate]);
+    return applyFilters(deduped, when, category, fromDate, toDate, coords, radiusKm);
+  }, [hosted, joined, when, category, fromDate, toDate, coords, radiusKm]);
 
   const pastJoined = useMemo(
     () =>
@@ -432,6 +504,8 @@ export default function MeetupsPage() {
     setWhen('all');
     setCategory('');
     setFromDate('');
+    setToDate('');
+    setRadiusKm(50);
   }
 
   async function handleInviteAction(
@@ -515,13 +589,26 @@ export default function MeetupsPage() {
             <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
               Date Range
             </p>
-            <label className="text-muted-foreground block text-xs">Select date range</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="border-border focus:ring-primary mt-1 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
-            />
+            <div className="space-y-2">
+              <div>
+                <label className="text-muted-foreground block text-xs font-medium">From</label>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="border-border focus:ring-primary mt-1 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground block text-xs font-medium">To</label>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="border-border focus:ring-primary mt-1 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                />
+              </div>
+            </div>
           </div>
 
           {/* CATEGORY */}
@@ -576,9 +663,22 @@ export default function MeetupsPage() {
             <div className="mt-3">
               <div className="mb-1 flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Distance</span>
-                <span className="font-semibold">25 km</span>
+                <span className="font-semibold">
+                  {radiusKm >= 50 ? '50+ km' : `${radiusKm} km`}
+                </span>
               </div>
-              <input type="range" min={0} max={50} defaultValue={25} className="accent-primary w-full" />
+              <input
+                type="range"
+                min={0}
+                max={50}
+                value={radiusKm}
+                onChange={(e) => setRadiusKm(Number(e.target.value))}
+                className="accent-primary w-full"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
+                <span>0 km</span>
+                <span>50+ km</span>
+              </div>
             </div>
           </div>
 
@@ -670,6 +770,7 @@ export default function MeetupsPage() {
                   rows={activeJoined}
                   emptyMsg="You aren't hosting or attending any meetups yet."
                   meId={user?.id}
+                  coords={coords}
                 />
                 {activeJoined.length > 0 && (
                   <Link
@@ -692,6 +793,7 @@ export default function MeetupsPage() {
                 rows={activeJoined}
                 emptyMsg="You aren't hosting or attending any meetups yet."
                 meId={user?.id}
+                coords={coords}
               />
             </div>
           )}
@@ -772,6 +874,7 @@ export default function MeetupsPage() {
               <MeetupTable
                 rows={pastJoined}
                 emptyMsg="No past meetups yet."
+                coords={coords}
               />
             </div>
           )}

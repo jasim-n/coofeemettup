@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "project": "Coffee Meetups",
+    "screen": "Meetups",
+    "source_file": "meetups.pdf",
+    "reference_dimensions": {
+      "width": 1536,
+      "height": 1024
+    },
+    "font": "Poppins",
+    "source_of_truth": "Supplied Meetups PDF reference"
+  },
+  "design_tokens": {
+    "font_family": "Poppins",
+    "primary": "#10B89B",
+    "primary_dark": "#087F70",
+    "primary_soft": "#E8F8F5",
+    "text_primary": "#0F172A",
+    "text_secondary": "#64748B",
+    "surface": "#FFFFFF",
+    "background": "#F8FAFC",
+    "border": "#E5EAF0",
+    "success": "#10B981",
+    "warning": "#F59E0B",
+    "purple": "#7C5CFC",
+    "radius": {
+      "header": 16,
+      "panel": 12,
+      "card": 10,
+      "button": 8,
+      "pill": 999
+    }
+  },
+  "layout": {
+    "canvas": [
+      1536,
+      1024
+    ],
+    "page_padding": 14,
+    "header": {
+      "x": 14,
+      "y": 8,
+      "w": 1508,
+      "h": 66
+    },
+    "left_filter": {
+      "x": 14,
+      "y": 76,
+      "w": 248,
+      "h": 940
+    },
+    "center": {
+      "x": 262,
+      "y": 76,
+      "w": 868,
+      "h": 940
+    },
+    "right_sidebar": {
+      "x": 1130,
+      "y": 76,
+      "w": 376,
+      "h": 940
+    }
+  },
+  "header": {
+    "brand": "Coffee Meetups",
+    "nav": [
+      {
+        "label": "Home",
+        "active": false
+      },
+      {
+        "label": "Explore",
+        "active": false
+      },
+      {
+        "label": "Nearby",
+        "active": false
+      },
+      {
+        "label": "Meetups",
+        "active": true
+      },
+      {
+        "label": "Messages",
+        "active": false
+      }
+    ],
+    "search": "Search meetups, people, vibes...",
+    "shortcut": "⌘ K",
+    "notifications": 2,
+    "profile": true
+  },
+  "left_filters": {
+    "title": "Filters",
+    "clear": "Clear all",
+    "when": {
+      "label": "WHEN",
+      "options": [
+        {
+          "label": "All Meetups",
+          "selected": true
+        },
+        {
+          "label": "Upcoming",
+          "selected": false
+        },
+        {
+          "label": "This Week",
+          "selected": false
+        },
+        {
+          "label": "This Weekend",
+          "selected": false
+        },
+        {
+          "label": "Past",
+          "selected": false
+        }
+      ]
+    },
+    "date_range": {
+      "label": "DATE RANGE",
+      "placeholder": "Select date range"
+    },
+    "category": {
+      "label": "CATEGORY",
+      "selected": "All Categories",
+      "options": [
+        "All Categories",
+        "Coffee Chats",
+        "Language Exchange",
+        "Startup & Business",
+        "Deep Talks",
+        "Design & Creative",
+        "Books & Writing",
+        "Music"
+      ],
+      "more": "View more"
+    },
+    "location": {
+      "label": "LOCATION",
+      "placeholder": "Enter location",
+      "range": [
+        "0 km",
+        "50+ km"
+      ]
+    },
+    "action": "Apply Filters"
+  },
+  "center_header": {
+    "title": "Meetups",
+    "subtitle": "Discover, join and manage your coffee conversations.",
+    "primary_action": "Create Meetup",
+    "tabs": [
+      {
+        "label": "Upcoming",
+        "active": true
+      },
+      {
+        "label": "My Meetups",
+        "active": false
+      },
+      {
+        "label": "Invitations",
+        "count": 3,
+        "active": false
+      },
+      {
+        "label": "Past",
+        "active": false
+      },
+      {
+        "label": "Saved",
+        "active": false
+      }
+    ]
+  },
+  "upcoming_meetups": [
+    {
+      "date_badge": "Today",
+      "title": "Language Exchange",
+      "venue": "Blue Area Roasters",
+      "time": "Today • 7:30 PM",
+      "seats": "3 seats left",
+      "price": "PKR 99"
+    },
+    {
+      "date_badge": "Tomorrow",
+      "title": "Startup Coffee",
+      "venue": "The Hive Cafe",
+      "time": "Tomorrow • 6:00 PM",
+      "seats": "6 seats left",
+      "price": "PKR 300"
+    },
+    {
+      "date_badge": "Sat, 25 May",
+      "title": "Deep Talks",
+      "venue": "Rooftop Garden",
+      "time": "Sat, 25 May • 5:15 PM",
+      "seats": "4 seats left",
+      "price": "Free"
+    },
+    {
+      "date_badge": "Sun, 26 May",
+      "title": "Weekend Coffee",
+      "venue": "The Coffee Club",
+      "time": "Sun, 26 May • 10:00 AM",
+      "seats": "5 seats left",
+      "price": "Free"
+    }
+  ],
+  "my_meetups": [
+    {
+      "title": "Language Exchange",
+      "venue": "Blue Area Roasters",
+      "date": "Wed, 22 Jul",
+      "time": "7:30 PM",
+      "location": "Blue Area, Islamabad",
+      "distance": "0.2 km away",
+      "status": "Confirmed",
+      "action": "Manage"
+    },
+    {
+      "title": "Startup Coffee",
+      "venue": "The Hive Cafe",
+      "date": "Thu, 23 Jul",
+      "time": "6:00 PM",
+      "location": "F-7 Markaz, Islamabad",
+      "distance": "1.1 km away",
+      "status": "Confirmed",
+      "action": "Manage"
+    },
+    {
+      "title": "Deep Talks",
+      "venue": "Rooftop Garden",
+      "date": "Fri, 24 Jul",
+      "time": "5:15 PM",
+      "location": "F-6, Islamabad",
+      "distance": "2.3 km away",
+      "status": "Pending",
+      "action": "Manage"
+    },
+    {
+      "title": "Weekend Coffee",
+      "venue": "The Coffee Club",
+      "date": "Sun, 26 Jul",
+      "time": "10:00 AM",
+      "location": "Bahria Town, Islamabad",
+      "distance": "5.8 km away",
+      "status": "Confirmed",
+      "action": "Manage"
+    }
+  ],
+  "right_sidebar": {
+    "calendar": {
+      "title": "Calendar",
+      "month": "May 2024",
+      "action": "View full calendar",
+      "highlighted_dates": [
+        {
+          "date": 22,
+          "color": "teal"
+        },
+        {
+          "date": 23,
+          "color": "orange"
+        },
+        {
+          "date": 25,
+          "color": "purple"
+        }
+      ]
+    },
+    "suggested_for_you": [
+      {
+        "title": "Mindful Conversations",
+        "venue": "Chai Shai Cafe",
+        "date": "Sat, 25 May • 4:00 PM",
+        "price": "Free"
+      },
+      {
+        "title": "Women in Tech",
+        "venue": "The Co-Working Space",
+        "date": "Sun, 26 May • 3:00 PM",
+        "price": "Free"
+      },
+      {
+        "title": "Designers' Meetup",
+        "venue": "Artisan Coffee",
+        "date": "Wed, 29 May • 6:30 PM",
+        "price": "PKR 150"
+      }
+    ],
+    "invitations": {
+      "title": "Your invitations",
+      "action": "View all",
+      "item": {
+        "title": "Invite to Startup Founders",
+        "from": "Ali Raza invited you",
+        "date": "Fri, 31 May • 6:00 PM",
+        "venue": "The Hive Cafe",
+        "actions": [
+          "Maybe",
+          "Accept"
+        ]
+      }
+    },
+    "host": {
+      "title": "Host your own meetup",
+      "description": "Bring amazing people together over coffee and great conversations.",
+      "action": "Create Meetup"
+    }
+  },
+  "implementation_rules": [
+    "Use Poppins throughout.",
+    "Treat the supplied meetups.pdf as the visual source of truth.",
+    "Preserve the exact three-column desktop composition.",
+    "Preserve the left Filters panel, center Meetups content and right Calendar/sidebar.",
+    "Keep the four Upcoming Meetups cards in the displayed order.",
+    "Keep the My Meetups table beneath the cards.",
+    "Keep the calendar, Suggested for you, Your invitations and Host your own meetup sections in the right sidebar.",
+    "Do not substitute the Meetups screen with the Nearby or Explore layout.",
+    "Match the reference spacing, card proportions, typography hierarchy, borders, shadows and teal accent."
+  ],
+  "claude_prompt": "Recreate the supplied meetups.pdf reference exactly in React/Tailwind. Use Poppins, not Inter. Treat the PDF/reference image as the source of truth. Preserve the 1536x1024 desktop canvas and exact three-column composition: left Filters, center Meetups with Upcoming cards and My Meetups table, right Calendar/Suggested/Invitations/Host sections. Preserve the visible text and data in this JSON. Do not redesign, simplify, rearrange, or invent sections. Use the reference image for exact visual matching."
+}
