@@ -14,25 +14,14 @@ import { Spinner } from '@/components/spinner';
 import { ConnectButton } from '@/components/connect-button';
 import { UserLink } from '@/components/user-link';
 import { categoryIcon } from '@/lib/category-icon';
+import { haversineKm } from '@/lib/geo';
 
 /* ─── types ──────────────────────────────────────────────────────── */
 
 type PriceTier = 'any' | 'free' | 'under200' | '200to500' | 'above500';
 type WhenFilter = 'anytime' | 'today' | 'week' | 'weekend' | 'custom';
 
-/* ─── haversine distance (km) ────────────────────────────────────── */
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+/* ─── distance filter ────────────────────────────────────────────── */
 
 function matchesDistance(
   t: TableDto,

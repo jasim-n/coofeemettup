@@ -23,6 +23,7 @@ import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
 import { UserLink } from '@/components/user-link';
 import { categoryIcon } from '@/lib/category-icon';
+import { haversineKm, formatDistance } from '@/lib/geo';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
 
@@ -39,8 +40,18 @@ export default function TableDetailPage() {
   const [invited, setInvited] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   const isHost = !!table && !!user && table.hostId === user.id;
+
+  // Ask for the viewer's location once so we can show distance to the table.
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (p) => setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {}, // denied/unavailable → no distance shown
+      { timeout: 8000 },
+    );
+  }, []);
 
   const load = useCallback(async () => {
     const t = await api.getTable(id);
@@ -132,6 +143,10 @@ export default function TableDetailPage() {
   const mapsUrl = mapQuery
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
     : null;
+  const distanceLabel =
+    coords && mapLat != null && mapLng != null
+      ? formatDistance(haversineKm(coords.lat, coords.lng, mapLat, mapLng))
+      : null;
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
@@ -176,6 +191,12 @@ export default function TableDetailPage() {
                 </span>
               )}
               <span><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(table.startAt)}</span>
+              {distanceLabel && (
+                <span className="text-primary font-semibold">
+                  <i className="fa-solid fa-route mr-1" />
+                  {distanceLabel}
+                </span>
+              )}
             </div>
             <div className="mt-3 flex items-center gap-2">
               <UserLink userId={table.hostId} className="flex items-center gap-2">
@@ -483,6 +504,9 @@ export default function TableDetailPage() {
                   </a>
                 )}
               </li>
+              {distanceLabel && (
+                <li className="text-primary font-semibold"><i className="fa-solid fa-route mr-1" />{distanceLabel}</li>
+              )}
               <li className="text-muted-foreground"><i className="fa-solid fa-calendar-day mr-1" />{formatDateTime(table.startAt)}</li>
               <li className="text-muted-foreground"><i className="fa-solid fa-ticket mr-1" />{price} per person</li>
               <li className="text-muted-foreground">✓ Leave anytime before it starts</li>
