@@ -174,6 +174,7 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
     >
       <div className="relative h-32">
         <Cover
+          src={t.imageUrl ?? undefined}
           category={t.category}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -196,7 +197,7 @@ function HostedMeetupRow({ t }: { t: TableDto }) {
   return (
     <div className="flex items-center gap-3 py-3 border-b border-border/60 last:border-0">
       <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1 ring-border/40">
-        <Cover category={t.category} className="h-full w-full object-cover" />
+        <Cover src={t.imageUrl ?? undefined} category={t.category} className="h-full w-full object-cover" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-heading truncate text-sm font-bold">{t.title ?? t.category}</p>
@@ -440,7 +441,7 @@ export default function ProfilePage() {
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           {/* Mini profile card */}
           <div className="rounded-3xl border bg-card p-5 shadow-soft flex flex-col items-center gap-3 text-center">
-            <Avatar name={displayName} size={64} online />
+            <Avatar name={displayName} src={user.photoUrl} size={64} online />
             <div>
               <p className="font-heading font-bold text-sm leading-tight">{displayName}</p>
               <p className="text-muted-foreground text-xs">@{user.phone}</p>
@@ -509,7 +510,7 @@ export default function ProfilePage() {
                 <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
                   {/* Large avatar with camera badge */}
                   <div className="relative shrink-0">
-                    <Avatar name={displayName} size={96} />
+                    <Avatar name={displayName} src={user.photoUrl} size={96} />
                     <button
                       type="button"
                       aria-label="Change photo"

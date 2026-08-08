@@ -170,7 +170,7 @@ export default function PublicProfilePage() {
           />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             <div className="shrink-0">
-              <Avatar name={displayName} size={96} />
+              <Avatar name={displayName} src={p.photoUrl} size={96} />
             </div>
 
             <div className="min-w-0 flex-1">

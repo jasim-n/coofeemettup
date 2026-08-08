@@ -142,6 +142,7 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
     >
       <div className="relative h-36">
         <Cover
+          src={t.imageUrl ?? undefined}
           category={t.category}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -193,14 +194,15 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
 
 /* ─── my meetups table row ──────────────────────────────────────── */
 
-function MeetupTableRow({ t }: { t: TableDto }) {
+function MeetupTableRow({ t, meId }: { t: TableDto; meId?: string }) {
+  const hosting = meId != null && t.hostId === meId;
   const approved = t.myRequestStatus === 'APPROVED';
   return (
     <tr className="border-border/60 border-b last:border-0">
       <td className="py-3 pr-4">
         <div className="flex items-center gap-3">
           <div className="ring-border/40 h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1">
-            <Cover category={t.category} className="h-full w-full object-cover" />
+            <Cover src={t.imageUrl ?? undefined} category={t.category} className="h-full w-full object-cover" />
           </div>
           <div className="min-w-0">
             <p className="font-heading truncate text-sm font-bold">
@@ -219,8 +221,8 @@ function MeetupTableRow({ t }: { t: TableDto }) {
         {t.venueName ?? t.cafe?.name ?? '—'}
       </td>
       <td className="py-3 pr-4">
-        <Badge variant={approved ? 'success' : 'warning'}>
-          {approved ? 'Confirmed' : 'Pending'}
+        <Badge variant={hosting ? 'secondary' : approved ? 'success' : 'warning'}>
+          {hosting ? 'Hosting' : approved ? 'Confirmed' : 'Pending'}
         </Badge>
       </td>
       <td className="py-3">
@@ -235,7 +237,15 @@ function MeetupTableRow({ t }: { t: TableDto }) {
   );
 }
 
-function MeetupTable({ rows, emptyMsg }: { rows: TableDto[]; emptyMsg: string }) {
+function MeetupTable({
+  rows,
+  emptyMsg,
+  meId,
+}: {
+  rows: TableDto[];
+  emptyMsg: string;
+  meId?: string;
+}) {
   if (rows.length === 0) {
     return (
       <div className="rounded-3xl border border-dashed py-10 text-center">
@@ -261,7 +271,7 @@ function MeetupTable({ rows, emptyMsg }: { rows: TableDto[]; emptyMsg: string })
           </thead>
           <tbody>
             {rows.map((t) => (
-              <MeetupTableRow key={t.id} t={t} />
+              <MeetupTableRow key={t.id} t={t} meId={meId} />
             ))}
           </tbody>
         </table>
@@ -279,7 +289,7 @@ function SuggestedRow({ t }: { t: TableDto }) {
       className="hover:bg-muted -mx-2 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"
     >
       <div className="ring-border/40 h-14 w-14 shrink-0 overflow-hidden rounded-xl ring-1">
-        <Cover category={t.category} className="h-full w-full object-cover" />
+        <Cover src={t.imageUrl ?? undefined} category={t.category} className="h-full w-full object-cover" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-heading truncate text-sm font-bold">
@@ -310,6 +320,7 @@ export default function MeetupsPage() {
 
   const [browse, setBrowse] = useState<TableDto[]>([]);
   const [joined, setJoined] = useState<TableDto[]>([]);
+  const [hosted, setHosted] = useState<TableDto[]>([]);
   const [invites, setInvites] = useState<InviteDto[]>([]);
   const [inviteBusy, setInviteBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -327,10 +338,15 @@ export default function MeetupsPage() {
     let active = true;
     void (async () => {
       try {
-        const [b, j] = await Promise.all([api.browseTables(), api.myJoinedTables()]);
+        const [b, j, h] = await Promise.all([
+          api.browseTables(),
+          api.myJoinedTables(),
+          api.myHostedTables().catch(() => [] as TableDto[]),
+        ]);
         if (active) {
           setBrowse(b);
           setJoined(j);
+          setHosted(h);
         }
       } catch (err) {
         if (active) setError(err instanceof ApiError ? err.message : 'Failed to load meetups');
@@ -373,18 +389,18 @@ export default function MeetupsPage() {
     [filteredBrowse],
   );
 
-  const activeJoined = useMemo(
-    () =>
-      applyFilters(
-        joined.filter(
-          (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
-        ),
-        when,
-        category,
-        fromDate,
+  // "My Meetups" = tables I host + tables I've joined (approved/pending), deduped.
+  const activeJoined = useMemo(() => {
+    const mine = [
+      ...hosted,
+      ...joined.filter(
+        (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
       ),
-    [joined, when, category, fromDate],
-  );
+    ];
+    const seen = new Set<string>();
+    const deduped = mine.filter((t) => (seen.has(t.id) ? false : seen.add(t.id)));
+    return applyFilters(deduped, when, category, fromDate);
+  }, [hosted, joined, when, category, fromDate]);
 
   const pastJoined = useMemo(
     () =>
@@ -656,7 +672,8 @@ export default function MeetupsPage() {
                 </div>
                 <MeetupTable
                   rows={activeJoined}
-                  emptyMsg="You haven't joined any meetups yet."
+                  emptyMsg="You aren't hosting or attending any meetups yet."
+                  meId={user?.id}
                 />
                 {activeJoined.length > 0 && (
                   <Link
@@ -677,7 +694,8 @@ export default function MeetupsPage() {
               <h2 className="font-heading text-lg font-bold tracking-tight">My Meetups</h2>
               <MeetupTable
                 rows={activeJoined}
-                emptyMsg="You haven't joined any meetups yet."
+                emptyMsg="You aren't hosting or attending any meetups yet."
+                meId={user?.id}
               />
             </div>
           )}

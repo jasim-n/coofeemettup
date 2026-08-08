@@ -306,7 +306,7 @@ export default function MessagesPage() {
                                 }}
                                 className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
                               >
-                                <Avatar name={name} size={32} />
+                                <Avatar name={name} src={person.photoUrl} size={32} />
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm font-semibold">{name}</p>
                                   {person.city && (
@@ -701,6 +701,7 @@ export default function MessagesPage() {
                   <UserLink key={person.id} userId={person.id}>
                     <Avatar
                       name={`${person.firstName ?? 'M'} ${person.lastInitial ?? ''}`.trim()}
+                      src={person.photoUrl}
                       size={36}
                       online
                     />

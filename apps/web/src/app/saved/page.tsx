@@ -88,6 +88,7 @@ export default function SavedPage() {
                 >
                   <div className="relative h-40">
                     <Cover
+                      src={t.imageUrl ?? undefined}
                       category={t.category}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />

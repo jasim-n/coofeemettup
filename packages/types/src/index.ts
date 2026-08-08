@@ -127,6 +127,7 @@ export interface PublicUser {
   beveragePref: BeveragePref | null;
   accessibilityNeeds: string | null;
   occupation: string | null;
+  photoUrl: string | null;
   photoConsent: boolean;
   codeOfConductAt: string | null;
   createdAt: string;
@@ -176,6 +177,7 @@ export interface TableDto {
   seatsLeft: number;
   category: string;
   description: string | null;
+  imageUrl: string | null;
   rules: string | null;
   pricePKR: number | null;
   status: TableStatus;
@@ -293,6 +295,7 @@ export interface PublicProfile {
   role: Role;
   interests: string[];
   occupation: string | null;
+  photoUrl: string | null;
   lifeStage: LifeStage | null;
   socialEnergy: SocialEnergy | null;
   intents: Intent[];

@@ -135,7 +135,7 @@ export function DesktopNav() {
             onClick={() => setMenuOpen((o) => !o)}
             className="hover:bg-muted flex items-center gap-1.5 rounded-full py-1 pr-2 pl-1 transition-colors"
           >
-            <Avatar name={name} size={34} online />
+            <Avatar name={name} src={user.photoUrl} size={34} online />
             <i className="fa-solid fa-chevron-down text-muted-foreground text-xs" />
           </button>
 
@@ -146,7 +146,7 @@ export function DesktopNav() {
             >
               {/* header */}
               <div className="flex items-center gap-3 p-4">
-                <Avatar name={name} size={48} online />
+                <Avatar name={name} src={user.photoUrl} size={48} online />
                 <div className="min-w-0">
                   <p className="font-heading truncate font-bold tracking-tight">{name}</p>
                   <p className="text-muted-foreground truncate text-xs">@{user.phone}</p>

@@ -164,6 +164,7 @@ function TableListRow({ t }: { t: TableDto }) {
       {/* thumbnail */}
       <div className="relative h-28 w-40 shrink-0 overflow-hidden rounded-2xl">
         <Cover
+          src={t.imageUrl ?? undefined}
           category={t.category}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -223,6 +224,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
     >
       <div className="relative h-40">
         <Cover
+          src={t.imageUrl ?? undefined}
           category={t.category}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -378,6 +380,7 @@ function MightLike({ tables }: { tables: TableDto[] }) {
                 >
                   {/* 56px cover thumb */}
                   <Cover
+                    src={t.imageUrl ?? undefined}
                     category={t.category}
                     className="size-14 shrink-0 rounded-xl object-cover"
                   />
@@ -427,7 +430,7 @@ function PeopleYouMayKnow({ suggestions }: { suggestions: SuggestedPerson[] }) {
           return (
             <li key={u.id} className="flex items-center gap-3">
               <UserLink userId={u.id} className="flex items-center gap-3 min-w-0 flex-1">
-                <Avatar name={name} size={36} />
+                <Avatar name={name} src={u.photoUrl} size={36} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold truncate">{name}</p>
                   <p className="text-muted-foreground text-xs">

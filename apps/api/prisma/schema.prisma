@@ -152,6 +152,7 @@ model User {
   beveragePref       BeveragePref?
   accessibilityNeeds String?
   occupation         String?
+  photoUrl           String?
   photoConsent       Boolean            @default(false)
   codeOfConductAt    DateTime?
 
@@ -238,6 +239,7 @@ model Table {
   seatsLeft    Int
   category     String
   description  String?
+  imageUrl     String? // cover photo; falls back to a category cover when null
   rules        String?
   pricePKR     Int? // null = free
   status       TableStatus        @default(OPEN)

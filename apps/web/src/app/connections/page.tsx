@@ -31,7 +31,7 @@ function PersonCard({
   return (
     <div className="bg-card shadow-soft ring-border/60 flex flex-col items-center gap-3 rounded-3xl p-5 ring-1 text-center">
       <UserLink userId={user.id} className="flex flex-col items-center gap-3">
-        <Avatar name={name} size={56} />
+        <Avatar name={name} src={user.photoUrl} size={56} />
         <div className="min-w-0 w-full">
           <p className="font-heading text-sm font-bold truncate">{name}</p>
           {sub}
@@ -47,7 +47,7 @@ function RequestRow({ req }: { req: ConnectionRequestDto }) {
   return (
     <div className="bg-card shadow-soft ring-border/60 flex items-center gap-4 rounded-2xl p-4 ring-1">
       <UserLink userId={req.user.id} className="flex items-center gap-4 min-w-0 flex-1">
-        <Avatar name={name} size={44} />
+        <Avatar name={name} src={req.user.photoUrl} size={44} />
         <div className="min-w-0 flex-1">
           <p className="font-heading text-sm font-bold">{name}</p>
           <p className="text-muted-foreground text-xs">wants to connect</p>

@@ -6,6 +6,7 @@ import { type NotificationDto, type PublicUser, type TableDto } from '@jrst/api-
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
+import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { SaveButton } from '@/components/save-button';
 import { categoryIcon } from '@/lib/category-icon';
@@ -23,20 +24,23 @@ function ago(iso: string, now: number) {
 export function HomeDashboard({ user }: { user: PublicUser }) {
   const [tables, setTables] = useState<TableDto[]>([]);
   const [joined, setJoined] = useState<TableDto[]>([]);
+  const [hosted, setHosted] = useState<TableDto[]>([]);
   const [activity, setActivity] = useState<NotificationDto[]>([]);
 
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
-        const [t, j, n] = await Promise.all([
+        const [t, j, h, n] = await Promise.all([
           api.browseTables(),
           api.myJoinedTables(),
+          api.myHostedTables().catch(() => [] as TableDto[]),
           api.notifications().catch(() => ({ items: [] as NotificationDto[], unread: 0 })),
         ]);
         if (active) {
           setTables(t);
           setJoined(j);
+          setHosted(h);
           setActivity(n.items.slice(0, 3));
         }
       } catch {
@@ -49,10 +53,6 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   }, []);
 
   const upcoming = tables.slice(0, 6);
-  const active = joined.filter(
-    (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
-  );
-  const next = active[0] ?? null;
   const verified = user.verificationStatus === 'VERIFIED';
   const vibes = [...new Set(tables.map((t) => t.category))].slice(0, 6);
   const name = user.firstName ?? user.phone;
@@ -61,6 +61,18 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   const now = Date.now();
   const hour = new Date(now).getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  // Next meetup = the soonest UPCOMING table the user is part of — one they host
+  // OR joined (approved/pending) — sorted by start time.
+  const next =
+    [
+      ...hosted,
+      ...joined.filter(
+        (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
+      ),
+    ]
+      .filter((t) => new Date(t.startAt).getTime() >= now)
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())[0] ?? null;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -104,6 +116,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                 icon="fa-calendar-day"
                 value={next ? next.title ?? next.category : 'None yet'}
                 label={next ? formatDateTime(next.startAt) : 'Next meetup'}
+                href={next ? `/tables/${next.id}` : undefined}
                 truncate
               />
               <HeroStat icon="fa-star" value={String(user.reliabilityScore)} label="Reliability score" />
@@ -167,9 +180,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         {/* profile card */}
         <div className="bg-card shadow-soft rounded-3xl border p-5">
           <div className="flex items-center gap-3">
-            <span className="bg-primary/10 text-primary font-heading grid size-14 place-items-center rounded-full text-xl font-bold">
-              {initial(name)}
-            </span>
+            <Avatar name={name} src={user.photoUrl} size={56} />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="font-heading truncate font-bold">{name}</p>
@@ -296,14 +307,16 @@ function HeroStat({
   value,
   label,
   truncate,
+  href,
 }: {
   icon: string;
   value: string;
   label: string;
   truncate?: boolean;
+  href?: string;
 }) {
-  return (
-    <div className="flex items-center gap-2.5 text-white">
+  const inner = (
+    <>
       <span className="glass-dark grid size-9 shrink-0 place-items-center rounded-xl text-base">
         <i className={`fa-solid ${icon}`} />
       </span>
@@ -311,7 +324,17 @@ function HeroStat({
         <p className={`font-heading text-sm font-bold ${truncate ? 'truncate' : ''}`}>{value}</p>
         <p className="truncate text-xs text-white/60">{label}</p>
       </div>
-    </div>
+    </>
+  );
+  return href ? (
+    <Link
+      href={href}
+      className="-m-1 flex items-center gap-2.5 rounded-xl p-1 text-white transition-colors hover:bg-white/10"
+    >
+      {inner}
+    </Link>
+  ) : (
+    <div className="flex items-center gap-2.5 text-white">{inner}</div>
   );
 }
 
@@ -325,6 +348,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
       <div className="relative h-40">
         <Cover
           category={t.category}
+          src={t.imageUrl ?? undefined}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />

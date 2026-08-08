@@ -84,7 +84,7 @@ function InviteCard({
         {/* Inviter */}
         <div className="flex items-center gap-2">
           <UserLink userId={inviter.id} className="flex items-center gap-2">
-            <Avatar name={personName(inviter)} size={24} />
+            <Avatar name={personName(inviter)} src={inviter.photoUrl} size={24} />
             <span className="text-muted-foreground text-xs">
               Invited by{' '}
               <span className="text-foreground font-semibold">{personName(inviter)}</span>

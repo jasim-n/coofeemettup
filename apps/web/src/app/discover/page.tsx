@@ -103,6 +103,7 @@ function TableCoverCard({ t }: { t: TableDto }) {
     >
       <div className="relative h-40">
         <Cover
+          src={t.imageUrl ?? undefined}
           category={t.category}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -617,7 +618,7 @@ export default function DiscoverPage() {
                   return (
                     <li key={u.id} className="flex items-center gap-3">
                       <UserLink userId={u.id} className="flex items-center gap-3 min-w-0 flex-1">
-                        <Avatar name={name} size={34} />
+                        <Avatar name={name} src={u.photoUrl} size={34} />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold truncate">{name}</p>
                           <p className="text-muted-foreground text-xs">

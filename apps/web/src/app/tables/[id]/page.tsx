@@ -131,7 +131,7 @@ export default function TableDetailPage() {
         <div className="space-y-6 lg:col-span-2">
           {/* cover */}
           <div className="shadow-soft relative h-64 overflow-hidden rounded-3xl">
-            <Cover category={table.category} className="h-full w-full object-cover" />
+            <Cover src={table.imageUrl ?? undefined} category={table.category} className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
             <span className="glass ring-border/40 absolute left-4 top-4 rounded-full px-3 py-1.5 text-xs font-bold ring-1">
               {table.seatsLeft > 0 ? `${table.seatsLeft} seats left` : 'Full'}
@@ -308,7 +308,7 @@ export default function TableDetailPage() {
                         className="flex items-center justify-between gap-3 rounded-2xl border p-3"
                       >
                         <UserLink userId={conn.id} className="flex items-center gap-2 text-sm font-medium">
-                          <Avatar name={personName(conn)} size={32} />
+                          <Avatar name={personName(conn)} src={conn.photoUrl} size={32} />
                           {personName(conn)}
                         </UserLink>
                         <Button
