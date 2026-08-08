@@ -110,7 +110,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
               </div>
             </div>
             {/* stats row */}
-            <div className="mt-7 grid max-w-xl grid-cols-3 gap-3 border-t border-white/10 pt-5">
+            <div className="mt-7 flex flex-wrap items-center gap-x-10 gap-y-3 border-t border-white/10 pt-5">
               <HeroStat icon="fa-location-dot" value={String(tables.length)} label="Tables nearby" />
               <HeroStat
                 icon="fa-calendar-day"
@@ -150,7 +150,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         <div>
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="font-heading text-xl font-bold tracking-tight">Tables near you</h2>
-            <Link href="/tables" className="text-primary text-sm font-semibold hover:underline">
+            <Link href="/discover" className="text-primary text-sm font-semibold hover:underline">
               See all →
             </Link>
           </div>
@@ -321,7 +321,9 @@ function HeroStat({
         <i className={`fa-solid ${icon}`} />
       </span>
       <div className="min-w-0">
-        <p className={`font-heading text-sm font-bold ${truncate ? 'truncate' : ''}`}>{value}</p>
+        <p className={`font-heading text-sm font-bold ${truncate ? 'max-w-[11rem] truncate' : ''}`}>
+          {value}
+        </p>
         <p className="truncate text-xs text-white/60">{label}</p>
       </div>
     </>

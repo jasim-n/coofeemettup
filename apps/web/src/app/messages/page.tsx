@@ -373,7 +373,7 @@ export default function MessagesPage() {
                     <p className="mb-2 font-medium">No conversations yet</p>
                     <p className="mb-4 text-xs">Join a table or connect with people</p>
                     <Link
-                      href="/tables"
+                      href="/discover"
                       className="bg-primary text-primary-foreground rounded-full px-4 py-2 text-xs font-semibold"
                     >
                       Browse tables

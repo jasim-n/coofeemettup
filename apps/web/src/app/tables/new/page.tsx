@@ -66,7 +66,7 @@ export default function NewTablePage() {
         <p className="text-muted-foreground mt-2 text-sm">
           Your account isn’t enabled to host tables yet. Ask an admin to grant host access.
         </p>
-        <Link href="/tables" className="text-primary mt-4 inline-block text-sm font-semibold hover:underline">
+        <Link href="/discover" className="text-primary mt-4 inline-block text-sm font-semibold hover:underline">
           ← Browse tables
         </Link>
       </main>
@@ -115,7 +115,7 @@ export default function NewTablePage() {
         <p className="eyebrow text-primary">Host a table</p>
         <h1 className="display mt-1 text-3xl">Create a table</h1>
         <Link
-          href="/tables"
+          href="/discover"
           className="text-muted-foreground mt-2 inline-block text-sm font-semibold hover:underline"
         >
           ← Tables

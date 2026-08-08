@@ -18,7 +18,7 @@ export default function NearbyTablesPage() {
           <Link href="/discover" className="text-primary hover:underline">
             Discover
           </Link>
-          <Link href="/tables" className="text-primary hover:underline">
+          <Link href="/discover" className="text-primary hover:underline">
             List
           </Link>
           <Link href="/" className="text-muted-foreground hover:underline">

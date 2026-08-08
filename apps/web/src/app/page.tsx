@@ -158,7 +158,7 @@ export default function Home() {
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Tile href="/tables/nearby" icon="fa-location-dot" label="Nearby tables" wide accent />
-          <Tile href="/tables" icon="fa-chair" label="All tables" />
+          <Tile href="/discover" icon="fa-chair" label="All tables" />
           <Tile href="/discover" icon="fa-magnifying-glass" label="Discover" />
           {user!.canHost && <Tile href="/tables/new" icon="fa-wand-magic-sparkles" label="Host a table" />}
           {user!.canHost && <Tile href="/requests" icon="fa-inbox" label="Requests" />}
