@@ -1,0 +1,425 @@
+{
+  "meta": {
+    "project": "Coffee Meetups",
+    "page": "Explore",
+    "source": "Uploaded Explore reference mockup",
+    "reference_file": "explore_reference.png",
+    "viewport": {
+      "width": 1536,
+      "height": 1024
+    },
+    "implementation_target": "React/Tailwind or Figma recreation",
+    "instruction": "Use the supplied reference as the visual source of truth. Recreate the layout, hierarchy, section order, spacing, colors, typography and content without redesigning it."
+  },
+  "design_system": {
+    "font_family": "Poppins",
+    "font_weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "colors": {
+      "page_background": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "primary": "#10B89B",
+      "primary_dark": "#0FA88F",
+      "primary_soft": "#E7F7F4",
+      "text": "#0F172A",
+      "muted_text": "#64748B",
+      "border": "#E5EAF0",
+      "purple": "#7C3AED",
+      "pink": "#EC4899",
+      "yellow": "#F5B82E"
+    },
+    "shape": {
+      "large_card_radius": 20,
+      "card_radius": 16,
+      "button_radius": 10,
+      "pill_radius": 999
+    },
+    "effects": {
+      "card_shadow": "0 4px 20px rgba(15,23,42,0.06)",
+      "soft_shadow": "0 2px 12px rgba(15,23,42,0.05)"
+    },
+    "spacing": [
+      8,
+      12,
+      16,
+      20,
+      24,
+      32
+    ]
+  },
+  "layout": {
+    "type": "three-column dashboard",
+    "outer_margin": 20,
+    "left_filters_width": 260,
+    "main_content_width": 870,
+    "right_sidebar_width": 330,
+    "column_gap": 18
+  },
+  "navbar": {
+    "height": 72,
+    "background": "#FFFFFF",
+    "radius": 20,
+    "logo": "teal coffee cup icon + Coffee Meetups",
+    "navigation": [
+      {
+        "label": "Home",
+        "active": false,
+        "icon": "home"
+      },
+      {
+        "label": "Explore",
+        "active": true,
+        "icon": "search"
+      },
+      {
+        "label": "Nearby",
+        "active": false,
+        "icon": "location"
+      },
+      {
+        "label": "Meetups",
+        "active": false,
+        "icon": "calendar"
+      },
+      {
+        "label": "Messages",
+        "active": false,
+        "icon": "message"
+      }
+    ],
+    "search": {
+      "placeholder": "Search meetups, people, vibes...",
+      "shortcut": "⌘ K"
+    },
+    "notifications": 2,
+    "profile_menu": true
+  },
+  "left_filters": {
+    "title": "Filters",
+    "clear_action": "Clear all",
+    "sections": [
+      {
+        "title": "VIBES / TOPICS",
+        "items": [
+          [
+            "All Vibes",
+            "sliders",
+            true
+          ],
+          [
+            "Coffee Chats",
+            "coffee",
+            false
+          ],
+          [
+            "Language Exchange",
+            "globe",
+            false
+          ],
+          [
+            "Startup & Business",
+            "rocket",
+            false
+          ],
+          [
+            "Deep Talks",
+            "chat",
+            false
+          ],
+          [
+            "Design & Creative",
+            "palette",
+            false
+          ],
+          [
+            "Books & Writing",
+            "book",
+            false
+          ],
+          [
+            "Music",
+            "music",
+            false
+          ],
+          [
+            "Tech & AI",
+            "chip",
+            false
+          ],
+          [
+            "Health & Wellness",
+            "leaf",
+            false
+          ]
+        ]
+      },
+      {
+        "title": "WHEN",
+        "type": "radio",
+        "items": [
+          "Anytime",
+          "Today",
+          "This Week",
+          "This Weekend",
+          "Custom Range"
+        ],
+        "selected": "Anytime"
+      },
+      {
+        "title": "DISTANCE",
+        "type": "range",
+        "min": "0 km",
+        "max": "50+ km",
+        "default": [
+          0,
+          50
+        ]
+      },
+      {
+        "title": "PRICE RANGE",
+        "items": [
+          "Any Price",
+          "Free",
+          "Under PKR 200",
+          "PKR 200 – 500",
+          "Above PKR 500"
+        ],
+        "selected": "Any Price"
+      }
+    ]
+  },
+  "hero": {
+    "eyebrow": "✨ Explore & Connect",
+    "title": [
+      "Discover conversations",
+      "that matter"
+    ],
+    "highlight": "that matter",
+    "description": [
+      "Find like-minded people, join interesting tables",
+      "and make meaningful connections."
+    ],
+    "active_now": {
+      "value": 128,
+      "label": "Active now"
+    },
+    "visual": "warm coffee-shop conversation photograph",
+    "style": "dark teal overlay on left with photographic scene on right"
+  },
+  "top_categories": {
+    "title": "Top categories",
+    "action": "View all",
+    "items": [
+      [
+        "Coffee Chats",
+        "124 tables",
+        "coffee"
+      ],
+      [
+        "Language Exchange",
+        "96 tables",
+        "globe"
+      ],
+      [
+        "Startup & Business",
+        "88 tables",
+        "rocket"
+      ],
+      [
+        "Deep Talks",
+        "76 tables",
+        "chat"
+      ],
+      [
+        "Design & Creative",
+        "62 tables",
+        "palette"
+      ],
+      [
+        "Books & Writing",
+        "52 tables",
+        "book"
+      ]
+    ]
+  },
+  "recommended": {
+    "title": "Recommended for you",
+    "action": "See all",
+    "cards": [
+      {
+        "category": "Language",
+        "title": "Language Exchange",
+        "location": "Blue Area Roasters",
+        "datetime": "Wed, 22 Jul • 7:30 PM",
+        "attendees": "4 people +5",
+        "availability": "3 seats left",
+        "price": "PKR 99",
+        "cta": "Join Table"
+      },
+      {
+        "category": "Startup",
+        "title": "Startup Coffee",
+        "location": "The Hive Cafe",
+        "datetime": "Thu, 23 Jul • 6:00 PM",
+        "attendees": "4 people +8",
+        "availability": "6 seats left",
+        "price": "PKR 300",
+        "cta": "Join Table"
+      },
+      {
+        "category": "Deep Talks",
+        "title": "Past Deep Talks",
+        "location": "Rooftop Garden",
+        "datetime": "Fri, 24 Jul • 5:15 PM",
+        "attendees": "4 people +3",
+        "availability": "3 seats left",
+        "price": "Free",
+        "cta": "Join Table"
+      },
+      {
+        "category": "Coffee Chats",
+        "title": "Weekend Coffee",
+        "location": "The Coffee Club",
+        "datetime": "Sat, 25 Jul • 10:00 AM",
+        "attendees": "4 people +6",
+        "availability": "3 seats left",
+        "price": "Free",
+        "cta": "Join Table"
+      }
+    ],
+    "visible_cards": 4,
+    "pagination": true
+  },
+  "more_tables": {
+    "title": "More tables you might like",
+    "cards": [
+      {
+        "category": "Design"
+      },
+      {
+        "category": "Tech & AI"
+      },
+      {
+        "category": "Books"
+      },
+      {
+        "category": "Music"
+      }
+    ]
+  },
+  "right_sidebar": {
+    "trending": {
+      "title": "🔥 Trending now",
+      "action": "View all",
+      "items": [
+        [
+          "AI in Everyday Life",
+          "12 tables"
+        ],
+        [
+          "Mindful Conversations",
+          "9 tables"
+        ],
+        [
+          "Freelancers Connect",
+          "8 tables"
+        ],
+        [
+          "Women in Tech",
+          "6 tables"
+        ],
+        [
+          "Marketing Talks",
+          "6 tables"
+        ]
+      ]
+    },
+    "suggested": {
+      "title": "Suggested for you",
+      "subtitle": "Based on your interests",
+      "people": [
+        [
+          "Maria Ahmed",
+          "12 mutual friends"
+        ],
+        [
+          "Usman Ali",
+          "8 mutual friends"
+        ],
+        [
+          "Sara Khan",
+          "15 mutual friends"
+        ]
+      ],
+      "action": "Connect",
+      "footer": "View all"
+    },
+    "upcoming": {
+      "title": "Your upcoming",
+      "action": "View all",
+      "meetup": {
+        "title": "Language Exchange",
+        "time": "Tomorrow • 7:30 PM",
+        "location": "Blue Area Roasters",
+        "attendees": "+3"
+      }
+    },
+    "cities": {
+      "title": "Popular cities",
+      "action": "View all",
+      "items": [
+        [
+          "Islamabad",
+          "128 tables"
+        ],
+        [
+          "Lahore",
+          "96 tables"
+        ],
+        [
+          "Karachi",
+          "84 tables"
+        ],
+        [
+          "Rawalpindi",
+          "42 tables"
+        ]
+      ]
+    }
+  },
+  "meetup_card": {
+    "image": "top",
+    "category_badge": "top-left overlay",
+    "favorite": "top-right circular white heart button",
+    "content_order": [
+      "title",
+      "location",
+      "date/time",
+      "attendees",
+      "availability",
+      "price",
+      "Join Table"
+    ],
+    "cta": {
+      "background": "#10B89B",
+      "text": "#FFFFFF",
+      "radius": 9
+    }
+  },
+  "responsive": {
+    "desktop": "Three columns; four recommended cards visible.",
+    "tablet": "Filters become drawer; right sidebar moves below; two cards per row.",
+    "mobile": "Single column; horizontal filter/category scrolling; sidebar sections stacked."
+  },
+  "important": [
+    "Use Poppins, not Inter.",
+    "The uploaded Explore screenshot is the visual reference.",
+    "Do not use the earlier alternate Explore layout.",
+    "Keep the left Filters sidebar, central discovery content, and right recommendation/trending sidebar.",
+    "Keep the same section ordering shown in the reference."
+  ]
+}

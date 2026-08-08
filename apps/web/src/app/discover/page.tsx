@@ -430,19 +430,16 @@ export default function DiscoverPage() {
         <div className="min-w-0 space-y-8">
           {/* HERO */}
           <section className="bg-ink relative overflow-hidden rounded-3xl p-8 text-white shadow-glow">
-            {/* right-side cover image at low opacity */}
-            <div className="absolute inset-y-0 right-0 w-1/2 overflow-hidden">
-              <Cover
-                category="Coffee & chill"
-                className="h-full w-full object-cover opacity-20"
+            {/* café-conversation photo from the design, full-bleed on the right */}
+            <div aria-hidden className="pointer-events-none absolute inset-0">
+              {/* eslint-disable-next-line @next/next/no-img-element -- static bundled hero photo */}
+              <img
+                src="/hero-explore.jpg"
+                alt=""
+                className="ml-auto h-full w-3/5 object-cover sm:w-1/2"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/60 to-transparent" />
+              <div className="from-ink via-ink/85 to-ink/10 absolute inset-0 bg-gradient-to-r via-45%" />
             </div>
-            {/* blur blob */}
-            <div
-              aria-hidden
-              className="bg-gradient-hero pointer-events-none absolute -top-20 -right-16 size-72 rounded-full opacity-30 blur-3xl"
-            />
             <div className="relative">
               <p className="eyebrow flex items-center gap-1.5 text-white/60">
                 <i className="fa-solid fa-wand-magic-sparkles" /> Explore &amp; Connect
