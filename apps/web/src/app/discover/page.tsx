@@ -40,6 +40,7 @@ function matchesDistance(
   coords: { lat: number; lng: number } | null,
   maxKm: number,
 ): boolean {
+  if (maxKm >= 50) return true; // slider maxed = "50+ km" = no distance limit
   if (!coords) return true; // geolocation not available → pass all
   const tLat = t.lat ?? t.cafe?.lat ?? null;
   const tLng = t.lng ?? t.cafe?.lng ?? null;
@@ -154,7 +155,7 @@ export default function DiscoverPage() {
   const [priceTier, setPriceTier] = useState<PriceTier>('any');
   const [when, setWhen] = useState<WhenFilter>('anytime');
   const [customDate, setCustomDate] = useState('');
-  const [distanceKm, setDistanceKm] = useState(25);
+  const [distanceKm, setDistanceKm] = useState(50); // 50 = "50+" = no limit (show all)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
@@ -247,7 +248,7 @@ export default function DiscoverPage() {
     setPriceTier('any');
     setWhen('anytime');
     setCustomDate('');
-    setDistanceKm(25);
+    setDistanceKm(50);
   };
 
   const openCount = tables?.length ?? 0;
@@ -380,7 +381,9 @@ export default function DiscoverPage() {
               <p className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">
                 Distance
               </p>
-              <span className="text-xs font-semibold">{distanceKm} km</span>
+              <span className="text-xs font-semibold">
+                {distanceKm >= 50 ? '50+ km' : `${distanceKm} km`}
+              </span>
             </div>
             <input
               type="range"
@@ -392,7 +395,7 @@ export default function DiscoverPage() {
             />
             <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
               <span>0 km</span>
-              <span>50 km</span>
+              <span>50+ km</span>
             </div>
             {!coords && (
               <p className="text-muted-foreground mt-1.5 text-[10px]">
@@ -454,7 +457,7 @@ export default function DiscoverPage() {
               {tables && (
                 <span className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/20">
                   <span className="bg-primary inline-block size-2 rounded-full" />
-                  {openCount} Active now
+                  {openCount} {openCount === 1 ? 'table' : 'tables'} open now
                 </span>
               )}
             </div>
