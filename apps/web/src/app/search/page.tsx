@@ -14,7 +14,6 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
-import { SaveButton } from '@/components/save-button';
 import { ConnectButton } from '@/components/connect-button';
 import { UserLink } from '@/components/user-link';
 
@@ -209,7 +208,6 @@ function TableListRow({ t }: { t: TableDto }) {
       </div>
 
       {/* save */}
-      <SaveButton tableId={t.id} saved={t.saved} className="self-start mt-0.5 shrink-0" />
     </Link>
   );
 }
@@ -232,7 +230,6 @@ function TableCoverCard({ t }: { t: TableDto }) {
         <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
           <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
         </span>
-        <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
       <div className="p-4">
         <h3 className="font-heading line-clamp-1 text-base font-bold tracking-tight">
@@ -401,7 +398,6 @@ function MightLike({ tables }: { tables: TableDto[] }) {
                       <p className="text-primary text-xs font-semibold">{going} going</p>
                     )}
                   </div>
-                  <SaveButton tableId={t.id} saved={t.saved} className="shrink-0" />
                 </Link>
               </li>
             );

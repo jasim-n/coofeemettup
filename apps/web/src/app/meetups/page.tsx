@@ -11,7 +11,6 @@ import { Avatar } from '@/components/avatar';
 import { PageLoader } from '@/components/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { SaveButton } from '@/components/save-button';
 import { categoryIcon } from '@/lib/category-icon';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
@@ -151,8 +150,6 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
         <span className="glass absolute left-3 top-3 rounded-full px-2 py-0.5 text-xs font-semibold text-white ring-1 ring-white/20">
           {dayLabel(t.startAt)}
         </span>
-        {/* heart */}
-        <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
       <div className="p-4">
         <p className="text-muted-foreground mb-0.5 text-xs font-semibold">
@@ -304,7 +301,6 @@ function SuggestedRow({ t }: { t: TableDto }) {
           {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
         </p>
       </div>
-      <SaveButton tableId={t.id} saved={t.saved} className="shrink-0" />
     </Link>
   );
 }

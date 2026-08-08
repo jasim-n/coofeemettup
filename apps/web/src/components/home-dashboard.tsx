@@ -8,7 +8,6 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
-import { SaveButton } from '@/components/save-button';
 import { categoryIcon } from '@/lib/category-icon';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
@@ -357,7 +356,6 @@ function TableCoverCard({ t }: { t: TableDto }) {
         <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
           <i className={`fa-solid ${categoryIcon(t.category)}`} /> {t.category}
         </span>
-        <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
       </div>
       <div className="p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>
