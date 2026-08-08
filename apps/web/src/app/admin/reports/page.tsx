@@ -42,7 +42,7 @@ export default function AdminReportsPage() {
   const label = (u: ReportDto['reporter']) => u?.firstName ?? u?.phone ?? 'unknown';
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-10">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-10">
       <div className="flex gap-3 text-sm font-semibold">
         <Link href="/admin" className="text-muted-foreground hover:underline">
           ← Admin

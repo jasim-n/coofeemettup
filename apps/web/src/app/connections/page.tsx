@@ -135,7 +135,7 @@ export default function ConnectionsPage() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-6">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-6">
       {/* ── header ─────────────────────────────────────────────── */}
       <div className="mb-6">
         <p className="eyebrow text-primary">Your network</p>

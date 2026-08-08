@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-10">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-10">
       <div className="mb-8">
         <Wordmark className="text-base" />
         <p className="eyebrow text-primary mt-6">Legal</p>

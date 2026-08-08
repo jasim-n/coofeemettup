@@ -66,7 +66,7 @@ export function DesktopNav() {
 
   return (
     <header className="glass ring-border/60 sticky top-0 z-40 hidden border-b ring-1 md:block">
-      <nav className="mx-auto flex w-full max-w-[1508px] items-center gap-3 px-4 sm:px-6 py-3">
+      <nav className="mx-auto flex w-full max-w-[1508px] items-center gap-3 px-4 sm:px-6 lg:px-12 py-3">
         {/* brand */}
         <Link href="/" className="mr-1 flex shrink-0 items-center gap-2">
           <span className="bg-gradient-hero grid size-8 place-items-center rounded-xl text-white shadow-soft">

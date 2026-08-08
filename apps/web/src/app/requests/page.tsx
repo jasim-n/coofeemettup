@@ -82,7 +82,7 @@ export default function RequestsPage() {
     );
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-10">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-10">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="eyebrow text-primary">Host inbox</p>

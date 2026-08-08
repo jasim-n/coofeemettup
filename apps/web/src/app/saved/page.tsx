@@ -45,7 +45,7 @@ export default function SavedPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       {/* header */}
       <p className="eyebrow text-muted-foreground text-xs font-semibold uppercase tracking-widest">
         Bookmarks

@@ -121,7 +121,7 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       {/* Desktop: a real content dashboard (nav bar handles navigation) */}
       <div className="hidden md:block">
         <HomeDashboard user={user!} />

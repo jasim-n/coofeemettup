@@ -121,7 +121,7 @@ export default function TableDetailPage() {
   const venue = table.venueName ?? table.cafe?.name ?? table.venueAddress ?? 'See map';
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 py-8">
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       <Link href="/tables" className="text-primary text-sm font-semibold hover:underline">
         ← Back to all tables
       </Link>
