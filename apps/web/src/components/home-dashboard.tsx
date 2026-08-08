@@ -48,7 +48,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
     };
   }, []);
 
-  const upcoming = tables.slice(0, 4);
+  const upcoming = tables.slice(0, 6);
   const active = joined.filter(
     (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
   );
@@ -63,9 +63,9 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       {/* ---------- main column ---------- */}
-      <div className="space-y-6 lg:col-span-2">
+      <div className="min-w-0 space-y-6">
         {/* hero band — café illustration from the design, full-bleed on the right */}
         <section className="bg-ink relative overflow-hidden rounded-3xl shadow-glow">
           <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -153,7 +153,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {upcoming.map((t) => (
                 <TableCoverCard key={t.id} t={t} />
               ))}
