@@ -383,6 +383,7 @@ export default function MeetupsPage() {
   // filters
   const [when, setWhen] = useState<WhenFilter>('upcoming');
   const [category, setCategory] = useState('');
+  const [showAllCats, setShowAllCats] = useState(false);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [radiusKm, setRadiusKm] = useState(50);
@@ -627,11 +628,11 @@ export default function MeetupsPage() {
                       : 'hover:bg-muted text-foreground'
                   }`}
                 >
-                  <i className="fa-solid fa-th-large w-4 text-center" />
+                  <i className="fa-solid fa-table-cells-large w-4 text-center" />
                   All Categories
                 </button>
               </li>
-              {categories.map((cat) => (
+              {(showAllCats ? categories : categories.slice(0, 6)).map((cat) => (
                 <li key={cat}>
                   <button
                     type="button"
@@ -648,6 +649,15 @@ export default function MeetupsPage() {
                 </li>
               ))}
             </ul>
+            {categories.length > 6 && (
+              <button
+                type="button"
+                onClick={() => setShowAllCats((s) => !s)}
+                className="text-primary mt-2 pl-3 text-xs font-semibold hover:underline"
+              >
+                {showAllCats ? 'View less' : `View more (${categories.length - 6})`}
+              </button>
+            )}
           </div>
 
           {/* LOCATION */}
