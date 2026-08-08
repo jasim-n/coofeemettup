@@ -1,0 +1,360 @@
+{
+  "meta": {
+    "project": "Coffee Meetups",
+    "screen": "Nearby",
+    "source_file": "nearby(2).pdf",
+    "reference_dimensions": {
+      "width": 1024,
+      "height": 768
+    },
+    "font": "Poppins",
+    "source_of_truth": "The supplied reference screenshot/PDF page.",
+    "important_note": "This JSON describes the visible reference. Do not invent alternate content or layout."
+  },
+  "canvas": {
+    "width": 1024,
+    "height": 768,
+    "background": "#F8FAFC"
+  },
+  "visual_structure": {
+    "page_margin": 14,
+    "header": {
+      "x": 14,
+      "y": 8,
+      "width": 996,
+      "height": 48,
+      "background": "#FFFFFF",
+      "radius": 14,
+      "border": "#E5EAF0"
+    },
+    "main": {
+      "x": 18,
+      "y": 64,
+      "width": 988,
+      "height": 687,
+      "layout": "left filters / central map+table list / right summary"
+    },
+    "left_column": {
+      "x": 18,
+      "y": 64,
+      "width": 175,
+      "height": 687
+    },
+    "center_column": {
+      "x": 193,
+      "y": 64,
+      "width": 584
+    },
+    "right_column": {
+      "x": 793,
+      "y": 64,
+      "width": 213
+    }
+  },
+  "design_tokens": {
+    "font_family": "Poppins",
+    "primary": "#10B89B",
+    "primary_dark": "#087F70",
+    "primary_soft": "#E8F8F5",
+    "text": "#0F172A",
+    "secondary_text": "#64748B",
+    "border": "#E5EAF0",
+    "surface": "#FFFFFF",
+    "available": "#10B981",
+    "few_seats": "#F59E0B",
+    "full": "#EF476F",
+    "panel_radius": 10,
+    "card_radius": 8
+  },
+  "header": {
+    "brand": "Coffee Meetups",
+    "navigation": [
+      {
+        "label": "Home",
+        "active": false
+      },
+      {
+        "label": "Explore",
+        "active": false
+      },
+      {
+        "label": "Nearby",
+        "active": true
+      },
+      {
+        "label": "Meetups",
+        "active": false
+      },
+      {
+        "label": "Messages",
+        "active": false
+      }
+    ],
+    "search_placeholder": "Search meetups, people, vibes...",
+    "shortcut": "⌘ K",
+    "notification_count": 2,
+    "profile_avatar": true,
+    "chevron": true
+  },
+  "left_filters": {
+    "heading": "Find tables nearby",
+    "description_lines": [
+      "Discover conversations",
+      "happening around you."
+    ],
+    "location": {
+      "label": "LOCATION",
+      "value": "Blue Area, Islamabad",
+      "action": "Change"
+    },
+    "radius": {
+      "label": "RADIUS",
+      "options": [
+        "0.5 km",
+        "1 km",
+        "3 km",
+        "5 km",
+        "10 km"
+      ],
+      "selected": "0.5 km"
+    },
+    "vibes_topics": {
+      "label": "VIBES / TOPICS",
+      "items": [
+        {
+          "label": "All Vibes",
+          "selected": true
+        },
+        {
+          "label": "Coffee Chats",
+          "selected": false
+        },
+        {
+          "label": "Language Exchange",
+          "selected": false
+        },
+        {
+          "label": "Startup & Business",
+          "selected": false
+        },
+        {
+          "label": "Deep Talks",
+          "selected": false
+        },
+        {
+          "label": "Design & Creative",
+          "selected": false
+        },
+        {
+          "label": "Books & Writing",
+          "selected": false
+        },
+        {
+          "label": "Music",
+          "selected": false
+        }
+      ],
+      "more": "View more"
+    },
+    "table_status": {
+      "label": "TABLE STATUS",
+      "items": [
+        {
+          "label": "Available seats",
+          "selected": true
+        },
+        {
+          "label": "Few seats left",
+          "selected": false
+        },
+        {
+          "label": "Fully booked",
+          "selected": false
+        }
+      ]
+    },
+    "actions": [
+      "Apply Filters",
+      "Clear all filters"
+    ]
+  },
+  "center": {
+    "map": {
+      "height": 205,
+      "location_label": "Blue Area",
+      "markers": [
+        12,
+        8,
+        5,
+        7,
+        6
+      ],
+      "controls": [
+        "My location",
+        "List view",
+        "+",
+        "-",
+        "locate"
+      ]
+    },
+    "status_filter": [
+      {
+        "label": "All",
+        "active": true
+      },
+      {
+        "label": "Available",
+        "dot": "#10B981"
+      },
+      {
+        "label": "Few seats left",
+        "dot": "#F59E0B"
+      },
+      {
+        "label": "Full",
+        "dot": "#EF476F"
+      }
+    ],
+    "sort": "Sort by: Nearest",
+    "tables": [
+      {
+        "status": "AVAILABLE",
+        "title": "Language Exchange",
+        "venue": "Blue Area Roasters",
+        "distance": "0.2 km",
+        "seats": "3 / 8 seats",
+        "time": "Today • 7:30 PM",
+        "price": "PKR 99",
+        "tags": [
+          "Language",
+          "Social"
+        ]
+      },
+      {
+        "status": "FEW SEATS LEFT",
+        "title": "Startup Coffee",
+        "venue": "The Hive Cafe",
+        "distance": "0.4 km",
+        "seats": "2 / 6 seats",
+        "time": "Today • 6:00 PM",
+        "price": "PKR 300",
+        "tags": [
+          "Startup",
+          "Business"
+        ]
+      },
+      {
+        "status": "AVAILABLE",
+        "title": "Deep Talks",
+        "venue": "Rooftop Garden",
+        "distance": "0.5 km",
+        "seats": "4 / 10 seats",
+        "time": "Today • 8:00 PM",
+        "price": "Free",
+        "tags": [
+          "Deep Talks",
+          "Mindful"
+        ]
+      },
+      {
+        "status": "FEW SEATS LEFT",
+        "title": "Weekend Coffee",
+        "venue": "The Coffee Club",
+        "distance": "0.7 km",
+        "seats": "1 / 5 seats",
+        "time": "Tomorrow • 10:00 AM",
+        "price": "Free",
+        "tags": [
+          "Coffee",
+          "Social"
+        ]
+      },
+      {
+        "status": "AVAILABLE",
+        "title": "Books & Coffee",
+        "venue": "Chaaye Khana",
+        "distance": "0.9 km",
+        "seats": "3 / 7 seats",
+        "time": "Tomorrow • 5:00 PM",
+        "price": "PKR 150",
+        "tags": [
+          "Books",
+          "Writing"
+        ]
+      }
+    ],
+    "footer": "Load more tables"
+  },
+  "right_column": {
+    "nearby_summary": {
+      "title": "Nearby summary",
+      "rows": [
+        {
+          "value": 28,
+          "label": "Active tables",
+          "sub": "around you"
+        },
+        {
+          "value": 56,
+          "label": "Available seats",
+          "sub": "right now"
+        },
+        {
+          "value": 132,
+          "label": "People online",
+          "sub": "near you"
+        },
+        {
+          "value": 8,
+          "label": "Cafes hosting",
+          "sub": "conversations"
+        }
+      ]
+    },
+    "live_around_you": {
+      "title": "Live around you",
+      "rows": [
+        {
+          "name": "Usman Ali",
+          "activity": "joined Startup Coffee",
+          "time": "2 min ago"
+        },
+        {
+          "name": "Sara Khan",
+          "activity": "joined Deep Talks",
+          "time": "5 min ago"
+        },
+        {
+          "name": "Maria Ahmed",
+          "activity": "joined Books & Coffee",
+          "time": "12 min ago"
+        },
+        {
+          "name": "Ahmed Raza",
+          "activity": "created a new table",
+          "time": "20 min ago"
+        }
+      ]
+    },
+    "create_table": {
+      "title": "Can't find the right table?",
+      "description": [
+        "Create your own table and invite",
+        "people to join your conversation."
+      ],
+      "button": "Create a Table"
+    }
+  },
+  "implementation_rules": [
+    "Use Poppins, not Inter.",
+    "Keep the exact three-column desktop composition.",
+    "Do not replace the map with a generic map illustration.",
+    "Keep the left filter panel, center map/table list, and right sidebar as separate regions.",
+    "Keep five table rows in the same order.",
+    "Keep the visible status labels, prices, seats, venues, distances and times.",
+    "Keep the right sidebar sections in the order: Nearby summary, Live around you, Create a Table.",
+    "Do not add call/video controls or unrelated sections.",
+    "For pixel accuracy, use the supplied reference image as an overlay/reference while implementing."
+  ],
+  "claude_prompt": "Recreate the supplied nearby(2).pdf page exactly. The PDF contains the actual visual reference and must be treated as the source of truth. Use Poppins. Do not redesign or reinterpret the page. Preserve the 1024x768 reference proportions and the three-column structure: left Find tables nearby filters; center map, status filters, sort control and five table rows; right Nearby summary, Live around you and Create a Table. Preserve all visible labels and values from this JSON and the reference. Use the reference image for exact spacing, typography, card dimensions, icon placement and map appearance."
+}

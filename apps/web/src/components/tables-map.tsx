@@ -57,7 +57,7 @@ interface Pin {
 
 const POLL_MS = 15_000;
 
-export default function TablesMap() {
+export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {}) {
   const [tables, setTables] = useState<TableDto[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -182,6 +182,8 @@ export default function TablesMap() {
 
   return (
     <div className="space-y-3">
+      {!mapOnly && (
+      <>
       {/* filter bar */}
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -189,7 +191,7 @@ export default function TablesMap() {
           onClick={() => setShowFilters((s) => !s)}
           className="bg-card shadow-soft ring-border/60 hover:bg-muted flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold ring-1 transition-colors"
         >
-          <span aria-hidden>⚙</span> Filters
+          <i className="fa-solid fa-sliders" /> Filters
           {activeCount > 0 && (
             <span className="bg-primary text-primary-foreground ml-0.5 grid size-4 place-items-center rounded-full text-[10px]">
               {activeCount}
@@ -249,9 +251,12 @@ export default function TablesMap() {
           </div>
         </div>
       )}
+      </>
+      )}
 
-      <div className="flex flex-col gap-4 md:h-[74vh] md:flex-row">
+      <div className={`flex flex-col gap-4 ${mapOnly ? '' : 'md:h-[74vh] md:flex-row'}`}>
       {/* desktop list rail */}
+      {!mapOnly && (
       <aside className="hidden md:flex md:w-80 md:shrink-0 md:flex-col md:gap-2 md:overflow-y-auto md:pr-1">
         {/* header row */}
         <div className="flex items-center justify-between px-1 pb-1">
@@ -369,9 +374,10 @@ export default function TablesMap() {
           </div>
         )}
       </aside>
+      )}
 
       {/* map */}
-      <div className="relative h-[68vh] flex-1 overflow-hidden rounded-3xl border shadow-soft md:h-full">
+      <div className={`relative overflow-hidden rounded-3xl border shadow-soft ${mapOnly ? 'h-[320px] w-full' : 'h-[68vh] flex-1 md:h-full'}`}>
         {loading && (
           <div className="bg-background/60 absolute inset-0 z-10 grid place-items-center backdrop-blur-sm">
             <Spinner className="text-primary size-8" />
@@ -427,7 +433,7 @@ export default function TablesMap() {
         </MapGL>
 
         <div className="glass ring-border/60 absolute left-3 top-3 rounded-full px-3 py-1.5 text-xs font-bold ring-1">
-          🪑 {visible.length} table{visible.length === 1 ? '' : 's'} nearby
+          <i className="fa-solid fa-chair mr-1" />{visible.length} table{visible.length === 1 ? '' : 's'} nearby
         </div>
         <button
           type="button"
@@ -435,7 +441,7 @@ export default function TablesMap() {
           className="glass ring-border/60 absolute right-3 bottom-3 grid size-10 place-items-center rounded-full text-lg shadow-md ring-1 transition-transform hover:scale-105"
           title="Center on my location"
         >
-          📍
+          <i className="fa-solid fa-location-crosshairs" />
         </button>
         {error && <p className="text-destructive absolute left-3 top-14 text-sm">{error}</p>}
       </div>
