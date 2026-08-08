@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
+import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 import { Button } from '@/components/ui/button';
 
@@ -92,11 +93,13 @@ function InviteCard({
 
         {/* Inviter */}
         <div className="flex items-center gap-2">
-          <Avatar name={personName(inviter)} size={24} />
-          <span className="text-muted-foreground text-xs">
-            Invited by{' '}
-            <span className="text-foreground font-semibold">{personName(inviter)}</span>
-          </span>
+          <UserLink userId={inviter.id} className="flex items-center gap-2">
+            <Avatar name={personName(inviter)} size={24} />
+            <span className="text-muted-foreground text-xs">
+              Invited by{' '}
+              <span className="text-foreground font-semibold">{personName(inviter)}</span>
+            </span>
+          </UserLink>
         </div>
 
         {error && <p className="text-destructive text-xs">{error}</p>}

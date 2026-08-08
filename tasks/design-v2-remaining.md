@@ -21,10 +21,11 @@ tracks the **stubbed features** whose backend isn't built yet.
 6. **Reactions (❤️) + unread counts** in Messages. *Small–medium.*
 7. **Full calendar** page ("View full calendar"). *Small–medium.*
 
+- **Other-user public profile** ✅ — `GET /users/:id/profile` (public-safe fields, block-guard, viewer connectionState + stats) + `/u/[id]` page (hero, stats, About/Vibe, reviews). `UserLink` wraps every clickable avatar/name across connections, invites, requests, messages (+ `?dm=` deep link), table detail/chat, discover & search people rails.
+
 ## Profile extras
 8. **Achievements** — badges with real criteria. *Small–medium.*
 9. **Social links** — LinkedIn/Instagram/etc. *Small.*
-10. **Other-user public profile** — view a host/member's public page. *Medium.*
 
 ## Platform
 11. **True global search** — real server search across tables + people (nav search currently client-filters `/search`). *Medium.*

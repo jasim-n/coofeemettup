@@ -282,6 +282,32 @@ export interface UserReputation {
   recent: ReviewItem[];
 }
 
+export interface PublicProfile {
+  id: string;
+  firstName: string | null;
+  lastInitial: string | null;
+  city: string | null;
+  verificationStatus: VerificationStatus;
+  reliabilityScore: number;
+  canHost: boolean;
+  role: Role;
+  interests: string[];
+  occupation: string | null;
+  lifeStage: LifeStage | null;
+  socialEnergy: SocialEnergy | null;
+  intents: Intent[];
+  beveragePref: BeveragePref | null;
+  language: Language | null;
+  createdAt: string;
+}
+
+export interface PublicProfileDto {
+  user: PublicProfile;
+  stats: { hosted: number; joined: number; connections: number };
+  connectionState: ConnectionState;
+  isSelf: boolean;
+}
+
 export interface AuthResponse {
   user: PublicUser;
   csrfToken: string;

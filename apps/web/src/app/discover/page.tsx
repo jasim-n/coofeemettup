@@ -13,6 +13,7 @@ import { SaveButton } from '@/components/save-button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/spinner';
 import { ConnectButton } from '@/components/connect-button';
+import { UserLink } from '@/components/user-link';
 
 /* ─── types ──────────────────────────────────────────────────────── */
 
@@ -591,13 +592,15 @@ export default function DiscoverPage() {
                   const name = `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
                   return (
                     <li key={u.id} className="flex items-center gap-3">
-                      <Avatar name={name} size={34} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold truncate">{name}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}
-                        </p>
-                      </div>
+                      <UserLink userId={u.id} className="flex items-center gap-3 min-w-0 flex-1">
+                        <Avatar name={name} size={34} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold truncate">{name}</p>
+                          <p className="text-muted-foreground text-xs">
+                            {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}
+                          </p>
+                        </div>
+                      </UserLink>
                       <ConnectButton userId={u.id} size="xs" />
                     </li>
                   );

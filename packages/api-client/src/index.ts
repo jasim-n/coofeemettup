@@ -24,6 +24,7 @@ import type {
   NotificationsResponse,
   PendingVerification,
   CreateReviewInput,
+  PublicProfileDto,
   PublicUser,
   ReferralInfo,
   ReportDto,
@@ -436,6 +437,11 @@ export class ApiClient {
 
   adminCancelTable(id: string): Promise<{ ok: true }> {
     return this.request('POST', `/admin/tables/${id}/cancel`);
+  }
+
+  // ---- public profile ----
+  publicProfile(id: string): Promise<PublicProfileDto> {
+    return this.request('GET', `/users/${id}/profile`);
   }
 
   // ---- reviews ----

@@ -14,6 +14,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
+import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 import { formatDateTime } from '@/lib/format';
 
@@ -56,8 +57,12 @@ export default function MessagesPage() {
   const [connections, setConnections] = useState<PublicUser[]>([]);
   const [convoLoading, setConvoLoading] = useState(true);
 
-  // ---- selection ----
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  // ---- selection — seed from ?dm=<userId> if present ----
+  const [selectedKey, setSelectedKey] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const dm = new URLSearchParams(window.location.search).get('dm');
+    return dm ? `dm:${dm}` : null;
+  });
 
   // ---- DM thread state ----
   const [dmMsgs, setDmMsgs] = useState<DmMessage[]>([]);
@@ -433,27 +438,33 @@ export default function MessagesPage() {
           >
             {/* thread header */}
             <div className="flex items-center gap-3 border-b px-4 py-3">
-              <Avatar name={selected.name} size={38} />
-              <div className="min-w-0 flex-1">
-                <p className="font-heading truncate font-bold tracking-tight">{selected.name}</p>
-                {selected.kind === 'dm' ? (
-                  <p className="text-muted-foreground text-xs">
-                    <span className="text-primary font-semibold">● Online</span>
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground text-xs">
-                    Group · {selected.table.seats - selected.table.seatsLeft + 1} member
-                    {selected.table.seats - selected.table.seatsLeft + 1 === 1 ? '' : 's'}
-                  </p>
-                )}
-              </div>
-              {selected.kind === 'group' && (
-                <Link
-                  href={`/tables/${selected.table.id}`}
-                  className="text-muted-foreground hover:text-primary shrink-0 text-xs font-semibold transition-colors"
-                >
-                  <i className="fa-solid fa-arrow-up-right-from-square" />
-                </Link>
+              {selected.kind === 'dm' ? (
+                <UserLink userId={(selected as DmConvo).userId} className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar name={selected.name} size={38} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-heading truncate font-bold tracking-tight">{selected.name}</p>
+                    <p className="text-muted-foreground text-xs">
+                      <span className="text-primary font-semibold">● Online</span>
+                    </p>
+                  </div>
+                </UserLink>
+              ) : (
+                <>
+                  <Avatar name={selected.name} size={38} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-heading truncate font-bold tracking-tight">{selected.name}</p>
+                    <p className="text-muted-foreground text-xs">
+                      Group · {selected.table.seats - selected.table.seatsLeft + 1} member
+                      {selected.table.seats - selected.table.seatsLeft + 1 === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/tables/${selected.table.id}`}
+                    className="text-muted-foreground hover:text-primary shrink-0 text-xs font-semibold transition-colors"
+                  >
+                    <i className="fa-solid fa-arrow-up-right-from-square" />
+                  </Link>
+                </>
               )}
             </div>
 
@@ -517,7 +528,9 @@ export default function MessagesPage() {
                           className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}
                         >
                           {!mine && (
-                            <Avatar name={selected.name} size={28} className="mb-0.5 shrink-0" />
+                            <UserLink userId={(selected as DmConvo).userId}>
+                              <Avatar name={selected.name} size={28} className="mb-0.5 shrink-0" />
+                            </UserLink>
                           )}
                           <div
                             className={`flex max-w-[72%] flex-col ${mine ? 'items-end' : 'items-start'}`}
@@ -570,19 +583,23 @@ export default function MessagesPage() {
                         className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}
                       >
                         {!mine && (
-                          <Avatar
-                            name={m.firstName ?? 'Member'}
-                            size={28}
-                            className="mb-0.5 shrink-0"
-                          />
+                          <UserLink userId={m.userId}>
+                            <Avatar
+                              name={m.firstName ?? 'Member'}
+                              size={28}
+                              className="mb-0.5 shrink-0"
+                            />
+                          </UserLink>
                         )}
                         <div
                           className={`flex max-w-[72%] flex-col ${mine ? 'items-end' : 'items-start'}`}
                         >
                           {!mine && (
-                            <span className="text-muted-foreground mb-0.5 px-1 text-[10px] font-semibold">
-                              {m.firstName ?? 'Member'}
-                            </span>
+                            <UserLink userId={m.userId}>
+                              <span className="text-muted-foreground mb-0.5 px-1 text-[10px] font-semibold">
+                                {m.firstName ?? 'Member'}
+                              </span>
+                            </UserLink>
                           )}
                           <div
                             className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
@@ -681,12 +698,13 @@ export default function MessagesPage() {
               </div>
               <div className="flex gap-2">
                 {presencePool.map((person) => (
-                  <Avatar
-                    key={person.id}
-                    name={`${person.firstName ?? 'M'} ${person.lastInitial ?? ''}`.trim()}
-                    size={36}
-                    online
-                  />
+                  <UserLink key={person.id} userId={person.id}>
+                    <Avatar
+                      name={`${person.firstName ?? 'M'} ${person.lastInitial ?? ''}`.trim()}
+                      size={36}
+                      online
+                    />
+                  </UserLink>
                 ))}
               </div>
             </div>

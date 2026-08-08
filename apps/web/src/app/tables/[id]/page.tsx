@@ -21,6 +21,7 @@ import { Stars } from '@/components/stars';
 import TableReviews from '@/components/table-reviews';
 import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
+import { UserLink } from '@/components/user-link';
 
 const CAT_EMOJI: Record<string, string> = {
   'Deep talks': '💬',
@@ -152,15 +153,17 @@ export default function TableDetailPage() {
               <span>🗓️ {formatDateTime(table.startAt)}</span>
             </div>
             <div className="mt-3 flex items-center gap-2">
-              <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
-                {initial(table.host?.firstName)}
-              </span>
-              <span className="text-sm">
-                Hosted by{' '}
-                <span className="font-semibold">
-                  {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
+              <UserLink userId={table.hostId} className="flex items-center gap-2">
+                <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
+                  {initial(table.host?.firstName)}
                 </span>
-              </span>
+                <span className="text-sm">
+                  Hosted by{' '}
+                  <span className="font-semibold">
+                    {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
+                  </span>
+                </span>
+              </UserLink>
               {hostRep && hostRep.hostRating.count > 0 && (
                 <span className="text-muted-foreground flex items-center gap-1 text-xs">
                   <Stars value={Math.round(hostRep.hostRating.avg)} size="text-xs" />
@@ -200,19 +203,21 @@ export default function TableDetailPage() {
           <section className="bg-card shadow-soft rounded-3xl border p-6">
             <h2 className="font-heading mb-3 text-lg font-bold tracking-tight">About the host</h2>
             <div className="flex items-center gap-3">
-              <span className="bg-primary/10 text-primary font-heading grid size-12 place-items-center rounded-full text-lg font-bold">
-                {initial(table.host?.firstName)}
-              </span>
-              <div>
-                <p className="font-heading font-bold">
-                  {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  {hostRep && hostRep.hostRating.count > 0
-                    ? `⭐ ${hostRep.hostRating.avg} · ${hostRep.hostRating.count} review${hostRep.hostRating.count === 1 ? '' : 's'}`
-                    : 'New host'}
-                </p>
-              </div>
+              <UserLink userId={table.hostId} className="flex items-center gap-3">
+                <span className="bg-primary/10 text-primary font-heading grid size-12 place-items-center rounded-full text-lg font-bold">
+                  {initial(table.host?.firstName)}
+                </span>
+                <div>
+                  <p className="font-heading font-bold">
+                    {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    {hostRep && hostRep.hostRating.count > 0
+                      ? `⭐ ${hostRep.hostRating.avg} · ${hostRep.hostRating.count} review${hostRep.hostRating.count === 1 ? '' : 's'}`
+                      : 'New host'}
+                  </p>
+                </div>
+              </UserLink>
             </div>
           </section>
 
@@ -238,10 +243,21 @@ export default function TableDetailPage() {
                     className="flex items-center justify-between gap-2 rounded-2xl border p-3"
                   >
                     <span className="flex items-center gap-2 text-sm font-medium">
-                      <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
-                        {initial(r.user?.firstName)}
-                      </span>
-                      {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                      {(r.user?.id ?? r.userId) ? (
+                        <UserLink userId={(r.user?.id ?? r.userId)!} className="flex items-center gap-2">
+                          <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
+                            {initial(r.user?.firstName)}
+                          </span>
+                          {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                        </UserLink>
+                      ) : (
+                        <>
+                          <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
+                            {initial(r.user?.firstName)}
+                          </span>
+                          {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                        </>
+                      )}
                       {r.user && (
                         <span className="text-muted-foreground text-xs font-normal">
                           · ⭐ {r.user.reliabilityScore}
@@ -291,10 +307,10 @@ export default function TableDetailPage() {
                         key={conn.id}
                         className="flex items-center justify-between gap-3 rounded-2xl border p-3"
                       >
-                        <span className="flex items-center gap-2 text-sm font-medium">
+                        <UserLink userId={conn.id} className="flex items-center gap-2 text-sm font-medium">
                           <Avatar name={personName(conn)} size={32} />
                           {personName(conn)}
-                        </span>
+                        </UserLink>
                         <Button
                           size="xs"
                           variant={alreadyInvited ? 'secondary' : 'default'}

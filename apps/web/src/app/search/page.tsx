@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
 import { ConnectButton } from '@/components/connect-button';
+import { UserLink } from '@/components/user-link';
 
 /* ─── types ──────────────────────────────────────────────────────────── */
 
@@ -441,13 +442,15 @@ function PeopleYouMayKnow({ suggestions }: { suggestions: SuggestedPerson[] }) {
           const name = `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
           return (
             <li key={u.id} className="flex items-center gap-3">
-              <Avatar name={name} size={36} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold truncate">{name}</p>
-                <p className="text-muted-foreground text-xs">
-                  {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}
-                </p>
-              </div>
+              <UserLink userId={u.id} className="flex items-center gap-3 min-w-0 flex-1">
+                <Avatar name={name} size={36} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold truncate">{name}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}
+                  </p>
+                </div>
+              </UserLink>
               <ConnectButton userId={u.id} size="xs" />
             </li>
           );

@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
+import { UserLink } from '@/components/user-link';
 
 const POLL_MS = 6000;
 
@@ -105,9 +106,9 @@ export default function TableChatPage() {
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[78%] flex-col ${mine ? 'items-end' : 'items-start'}`}>
                 {!mine && (
-                  <span className="text-muted-foreground mb-0.5 px-1 text-xs font-semibold">
+                  <UserLink userId={m.userId} className="text-muted-foreground mb-0.5 px-1 text-xs font-semibold">
                     {m.firstName ?? 'Member'} {m.lastInitial ?? ''}
-                  </span>
+                  </UserLink>
                 )}
                 <div
                   className={`rounded-2xl px-3.5 py-2 text-sm ${

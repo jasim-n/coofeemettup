@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Avatar } from '@/components/avatar';
 import { ConnectButton } from '@/components/connect-button';
+import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 
 /* ─── helpers ────────────────────────────────────────────────── */
@@ -29,11 +30,13 @@ function PersonCard({
   const name = displayName(user);
   return (
     <div className="bg-card shadow-soft ring-border/60 flex flex-col items-center gap-3 rounded-3xl p-5 ring-1 text-center">
-      <Avatar name={name} size={56} />
-      <div className="min-w-0 w-full">
-        <p className="font-heading text-sm font-bold truncate">{name}</p>
-        {sub}
-      </div>
+      <UserLink userId={user.id} className="flex flex-col items-center gap-3">
+        <Avatar name={name} size={56} />
+        <div className="min-w-0 w-full">
+          <p className="font-heading text-sm font-bold truncate">{name}</p>
+          {sub}
+        </div>
+      </UserLink>
       {connectSlot}
     </div>
   );
@@ -43,11 +46,13 @@ function RequestRow({ req }: { req: ConnectionRequestDto }) {
   const name = displayName(req.user);
   return (
     <div className="bg-card shadow-soft ring-border/60 flex items-center gap-4 rounded-2xl p-4 ring-1">
-      <Avatar name={name} size={44} />
-      <div className="min-w-0 flex-1">
-        <p className="font-heading text-sm font-bold">{name}</p>
-        <p className="text-muted-foreground text-xs">wants to connect</p>
-      </div>
+      <UserLink userId={req.user.id} className="flex items-center gap-4 min-w-0 flex-1">
+        <Avatar name={name} size={44} />
+        <div className="min-w-0 flex-1">
+          <p className="font-heading text-sm font-bold">{name}</p>
+          <p className="text-muted-foreground text-xs">wants to connect</p>
+        </div>
+      </UserLink>
       <ConnectButton userId={req.user.id} initial="pending_received" />
     </div>
   );

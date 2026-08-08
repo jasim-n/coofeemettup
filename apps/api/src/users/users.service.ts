@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { toPublicProfile } from './user.serializer';
+
+type ConnectionState = 'none' | 'pending_sent' | 'pending_received' | 'connected';
 
 // Unambiguous alphabet (no O/0/I/1) for shareable referral codes.
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -65,6 +68,51 @@ export class UsersService {
       where: { referredByCode: user.referralCode },
     });
     return { code: user.referralCode!, count };
+  }
+
+  async getPublicProfile(viewerId: string, targetId: string) {
+    const u = await this.prisma.user.findUnique({ where: { id: targetId } });
+    if (!u) throw new NotFoundException('User not found');
+
+    if (u.blockedUserIds.includes(viewerId)) throw new NotFoundException('User not found');
+
+    const [hosted, joined, connections, pair] = await Promise.all([
+      this.prisma.table.count({ where: { hostId: targetId } }),
+      this.prisma.tableJoinRequest.count({ where: { userId: targetId, status: 'APPROVED' } }),
+      this.prisma.connection.count({
+        where: { status: 'ACCEPTED', OR: [{ requesterId: targetId }, { addresseeId: targetId }] },
+      }),
+      viewerId === targetId
+        ? Promise.resolve(null)
+        : this.prisma.connection.findFirst({
+            where: {
+              OR: [
+                { requesterId: viewerId, addresseeId: targetId },
+                { requesterId: targetId, addresseeId: viewerId },
+              ],
+            },
+          }),
+    ]);
+
+    let connectionState: ConnectionState;
+    if (!pair) {
+      connectionState = 'none';
+    } else if (pair.status === 'ACCEPTED') {
+      connectionState = 'connected';
+    } else if (pair.status === 'PENDING' && pair.addresseeId === viewerId) {
+      connectionState = 'pending_received';
+    } else if (pair.status === 'PENDING' && pair.requesterId === viewerId) {
+      connectionState = 'pending_sent';
+    } else {
+      connectionState = 'none';
+    }
+
+    return {
+      user: toPublicProfile(u),
+      stats: { hosted, joined, connections },
+      connectionState,
+      isSelf: viewerId === targetId,
+    };
   }
 
   updateProfile(userId: string, dto: UpdateProfileDto) {

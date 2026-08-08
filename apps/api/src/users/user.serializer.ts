@@ -36,3 +36,28 @@ export function toPublicUser(u: User) {
     updatedAt: u.updatedAt,
   };
 }
+
+/**
+ * Public-profile view — omits all private/sensitive fields.
+ * Safe to return to any authenticated viewer.
+ */
+export function toPublicProfile(u: User) {
+  return {
+    id: u.id,
+    firstName: u.firstName,
+    lastInitial: u.lastInitial,
+    city: u.city,
+    verificationStatus: u.verificationStatus,
+    reliabilityScore: u.reliabilityScore,
+    canHost: u.canHost,
+    role: u.role,
+    interests: u.interests,
+    occupation: u.occupation,
+    lifeStage: u.lifeStage,
+    socialEnergy: u.socialEnergy,
+    intents: u.intents,
+    beveragePref: u.beveragePref,
+    language: u.language,
+    createdAt: u.createdAt,
+  };
+}

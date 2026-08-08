@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { toPublicUser } from './user.serializer';
@@ -17,5 +17,10 @@ export class UsersController {
   @Get('me/referral')
   referral(@CurrentUser() user: AuthUser) {
     return this.users.getReferral(user.id);
+  }
+
+  @Get(':id/profile')
+  publicProfile(@CurrentUser() me: AuthUser, @Param('id') id: string) {
+    return this.users.getPublicProfile(me.id, id);
   }
 }

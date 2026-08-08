@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { useRequestsBadge } from '@/components/requests-badge';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
+import { UserLink } from '@/components/user-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -159,7 +160,10 @@ export default function RequestsPage() {
                   <p>🗓️ {r.table ? formatDateTime(r.table.startAt) : ''}</p>
                   <p>📍 {r.table?.venueName ?? '—'}</p>
                   <p>
-                    👤 {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                    👤{' '}
+                    <UserLink userId={r.userId}>
+                      {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                    </UserLink>
                     {r.user?.reliabilityScore != null && (
                       <> · ⭐ {r.user.reliabilityScore}</>
                     )}
