@@ -24,6 +24,15 @@ function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' });
 }
 
+const NOW = Date.now();
+function ago(iso: string): string {
+  const diff = NOW - new Date(iso).getTime();
+  if (diff < 60_000) return 'now';
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h`;
+  return `${Math.floor(diff / 86_400_000)}d`;
+}
+
 // ---- Unified conversation model ----
 type DmConvo = {
   kind: 'dm';
@@ -132,10 +141,13 @@ export default function MessagesPage() {
           }
         }
 
-        // merge + sort by time desc
-        const all: Convo[] = [...dmConvos, ...groupConvos].sort(
-          (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
-        );
+        // DMs are real 1:1 conversations → surface them first (most recent
+        // message on top); group/meetup chats follow (soonest meetup first).
+        // (Group `time` is the meetup startAt, which is often in the future, so
+        // groups must not be time-sorted against DMs or they'd bury them.)
+        dmConvos.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        groupConvos.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+        const all: Convo[] = [...dmConvos, ...groupConvos];
 
         setConvos(all);
         setConnections(conns);
@@ -406,7 +418,7 @@ export default function MessagesPage() {
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
                           <span className="text-muted-foreground text-[10px]">
-                            {c.time ? fmtTime(c.time) : ''}
+                            {c.time ? ago(c.time) : ''}
                           </span>
                           {c.unread > 0 && (
                             <span className="bg-primary text-primary-foreground flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold">
@@ -439,15 +451,24 @@ export default function MessagesPage() {
             {/* thread header */}
             <div className="flex items-center gap-3 border-b px-4 py-3">
               {selected.kind === 'dm' ? (
-                <UserLink userId={(selected as DmConvo).userId} className="flex items-center gap-3 flex-1 min-w-0">
-                  <Avatar name={selected.name} size={38} />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-heading truncate font-bold tracking-tight">{selected.name}</p>
-                    <p className="text-muted-foreground text-xs">
-                      <span className="text-primary font-semibold">● Online</span>
-                    </p>
-                  </div>
-                </UserLink>
+                <>
+                  <UserLink userId={(selected as DmConvo).userId} className="flex items-center gap-3 flex-1 min-w-0">
+                    <Avatar name={selected.name} size={38} />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-heading truncate font-bold tracking-tight">{selected.name}</p>
+                      <p className="text-muted-foreground text-xs">
+                        <span className="text-primary font-semibold">● Online</span>
+                      </p>
+                    </div>
+                  </UserLink>
+                  <Link
+                    href={`/u/${(selected as DmConvo).userId}`}
+                    className="text-muted-foreground hover:bg-muted grid size-9 shrink-0 place-items-center rounded-full transition-colors"
+                    aria-label="View profile"
+                  >
+                    <i className="fa-solid fa-ellipsis" />
+                  </Link>
+                </>
               ) : (
                 <>
                   <Avatar name={selected.name} size={38} />
@@ -460,9 +481,10 @@ export default function MessagesPage() {
                   </div>
                   <Link
                     href={`/tables/${selected.table.id}`}
-                    className="text-muted-foreground hover:text-primary shrink-0 text-xs font-semibold transition-colors"
+                    className="text-muted-foreground hover:bg-muted grid size-9 shrink-0 place-items-center rounded-full transition-colors"
+                    aria-label="View meetup"
                   >
-                    <i className="fa-solid fa-arrow-up-right-from-square" />
+                    <i className="fa-solid fa-ellipsis" />
                   </Link>
                 </>
               )}
@@ -547,10 +569,16 @@ export default function MessagesPage() {
                             <div className="text-muted-foreground/70 mt-0.5 flex items-center gap-1 px-1 text-[10px]">
                               <span>{fmtTime(m.createdAt)}</span>
                               {mine && m.readAt && (
-                                <i className="fa-solid fa-check-double text-primary" />
+                                <>
+                                  <i className="fa-solid fa-check-double text-primary" />
+                                  <span className="text-primary">Read</span>
+                                </>
                               )}
                               {mine && !m.readAt && (
-                                <i className="fa-solid fa-check text-muted-foreground/50" />
+                                <>
+                                  <i className="fa-solid fa-check text-muted-foreground/50" />
+                                  <span className="text-muted-foreground/50">Sent</span>
+                                </>
                               )}
                             </div>
                           </div>
@@ -612,7 +640,6 @@ export default function MessagesPage() {
                           </div>
                           <div className="text-muted-foreground/70 mt-0.5 flex items-center gap-1 px-1 text-[10px]">
                             <span>{fmtTime(m.createdAt)}</span>
-                            {mine && <i className="fa-solid fa-check-double text-primary" />}
                           </div>
                         </div>
                       </div>
@@ -755,10 +782,13 @@ export default function MessagesPage() {
                   onClick={() => setPickerOpen((v) => !v)}
                   className="text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-xl p-2 text-sm transition-colors hover:bg-muted/50"
                 >
-                  <span className="bg-primary/10 text-primary grid size-7 place-items-center rounded-lg">
+                  <span className="bg-primary/10 text-primary grid size-7 shrink-0 place-items-center rounded-lg">
                     <i className="fa-solid fa-comment text-xs" />
                   </span>
-                  New Message
+                  <div className="min-w-0 text-left">
+                    <p className="font-semibold">New Message</p>
+                    <p className="text-muted-foreground/70 text-xs font-normal">Start a conversation</p>
+                  </div>
                 </button>
               </li>
               <li>
@@ -766,10 +796,13 @@ export default function MessagesPage() {
                   href="/tables/new"
                   className="text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-xl p-2 text-sm transition-colors hover:bg-muted/50"
                 >
-                  <span className="bg-primary/10 text-primary grid size-7 place-items-center rounded-lg">
+                  <span className="bg-primary/10 text-primary grid size-7 shrink-0 place-items-center rounded-lg">
                     <i className="fa-solid fa-user-group text-xs" />
                   </span>
-                  Create Group
+                  <div className="min-w-0 text-left">
+                    <p className="font-semibold">Create Group</p>
+                    <p className="text-muted-foreground/70 text-xs font-normal">Start a group chat</p>
+                  </div>
                 </Link>
               </li>
               <li>
@@ -777,10 +810,13 @@ export default function MessagesPage() {
                   href="/invite"
                   className="text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-xl p-2 text-sm transition-colors hover:bg-muted/50"
                 >
-                  <span className="bg-primary/10 text-primary grid size-7 place-items-center rounded-lg">
+                  <span className="bg-primary/10 text-primary grid size-7 shrink-0 place-items-center rounded-lg">
                     <i className="fa-solid fa-user-plus text-xs" />
                   </span>
-                  Invite Friends
+                  <div className="min-w-0 text-left">
+                    <p className="font-semibold">Invite Friends</p>
+                    <p className="text-muted-foreground/70 text-xs font-normal">Bring more people</p>
+                  </div>
                 </Link>
               </li>
             </ul>

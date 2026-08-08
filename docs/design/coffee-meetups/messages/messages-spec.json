@@ -1,0 +1,377 @@
+{
+  "meta": {
+    "project": "Coffee Meetups",
+    "screen": "Messages",
+    "source_file": "messages.pdf",
+    "reference_dimensions": {
+      "width": 1536,
+      "height": 1024
+    },
+    "font": "Poppins",
+    "source_of_truth": "Supplied Messages PDF reference",
+    "accuracy_note": "The SVG preserves the supplied rendered reference exactly. This JSON describes the visible UI for editable recreation."
+  },
+  "design_tokens": {
+    "font_family": "Poppins",
+    "font_weights": [
+      400,
+      500,
+      600,
+      700
+    ],
+    "colors": {
+      "background": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "text_primary": "#0F172A",
+      "text_secondary": "#64748B",
+      "border": "#E5EAF0",
+      "primary": "#10B89B",
+      "primary_soft": "#E8F8F5",
+      "online": "#10B981",
+      "message_incoming": "#F1F3F5",
+      "message_outgoing": "#E8F8F5",
+      "purple": "#7C5CFC",
+      "pink": "#F05A8A",
+      "orange": "#F59E0B"
+    },
+    "radii": {
+      "header": 16,
+      "panel": 12,
+      "card": 10,
+      "input": 10,
+      "message": 16,
+      "pill": 999
+    }
+  },
+  "canvas": {
+    "width": 1536,
+    "height": 1024,
+    "page_padding": 14
+  },
+  "layout": {
+    "header": {
+      "x": 14,
+      "y": 8,
+      "width": 1508,
+      "height": 66
+    },
+    "left_panel": {
+      "x": 18,
+      "y": 86,
+      "width": 344,
+      "height": 908
+    },
+    "conversation_panel": {
+      "x": 370,
+      "y": 86,
+      "width": 770,
+      "height": 908
+    },
+    "right_panel": {
+      "x": 1148,
+      "y": 86,
+      "width": 364,
+      "height": 908
+    },
+    "gaps": {
+      "left_center": 8,
+      "center_right": 8
+    }
+  },
+  "header": {
+    "brand": "Coffee Meetups",
+    "navigation": [
+      {
+        "label": "Home",
+        "active": false
+      },
+      {
+        "label": "Explore",
+        "active": false
+      },
+      {
+        "label": "Nearby",
+        "active": false
+      },
+      {
+        "label": "Meetups",
+        "active": false
+      },
+      {
+        "label": "Messages",
+        "active": true
+      }
+    ],
+    "search": {
+      "placeholder": "Search messages...",
+      "shortcut": "⌘ K"
+    },
+    "notifications": {
+      "count": 2
+    },
+    "profile": {
+      "avatar": true,
+      "chevron": true
+    },
+    "call_controls": false,
+    "video_call_controls": false
+  },
+  "left_panel": {
+    "title": "Messages",
+    "compose_icon": true,
+    "search": "Search conversations...",
+    "tabs": [
+      {
+        "label": "All",
+        "active": true
+      },
+      {
+        "label": "Unread",
+        "active": false
+      },
+      {
+        "label": "Groups",
+        "active": false
+      }
+    ],
+    "conversation_list": [
+      {
+        "name": "Sara Khan",
+        "preview": "Can't wait for tomorrow's language exchange! ☕",
+        "time": "2m",
+        "unread": 2,
+        "selected": true,
+        "online": true,
+        "type": "person"
+      },
+      {
+        "name": "Usman Ali",
+        "preview": "Thanks for organizing the Startup Coffee meetup!",
+        "time": "1h",
+        "unread": 1,
+        "selected": false,
+        "online": true,
+        "type": "person"
+      },
+      {
+        "name": "Startup Coffee Group",
+        "preview": "Ahmed: See you all at 6 PM tomorrow!",
+        "time": "1h",
+        "unread": 5,
+        "selected": false,
+        "type": "group"
+      },
+      {
+        "name": "Maria Ahmed",
+        "preview": "That was such a great conversation!",
+        "time": "3h",
+        "unread": 0,
+        "selected": false,
+        "online": false,
+        "type": "person"
+      },
+      {
+        "name": "Deep Talks Community",
+        "preview": "New meetup added: Mindful Conversations",
+        "time": "5h",
+        "unread": 3,
+        "selected": false,
+        "type": "group"
+      },
+      {
+        "name": "Hassan Raza",
+        "preview": "Let's plan another one soon.",
+        "time": "1d",
+        "unread": 0,
+        "selected": false,
+        "online": true,
+        "type": "person"
+      },
+      {
+        "name": "Designers’ Meetup",
+        "preview": "Ayesha: Shared a photo",
+        "time": "1d",
+        "unread": 2,
+        "selected": false,
+        "type": "group"
+      },
+      {
+        "name": "Ali Raza",
+        "preview": "Sounds good!",
+        "time": "2d",
+        "unread": 0,
+        "selected": false,
+        "online": false,
+        "type": "person"
+      }
+    ],
+    "bottom_action": "View archived chats"
+  },
+  "conversation": {
+    "header": {
+      "name": "Sara Khan",
+      "status": "Online",
+      "online": true,
+      "call_button": false,
+      "video_button": false,
+      "more_button": true
+    },
+    "meetup_context_card": {
+      "title": "Language Exchange",
+      "venue": "Blue Area Roasters",
+      "date_time": "Wed, 22 Jul • 7:30 PM",
+      "action": "View Meetup",
+      "image": true
+    },
+    "day_divider": "Today",
+    "messages": [
+      {
+        "sender": "Sara Khan",
+        "side": "incoming",
+        "text": "Hey Ahmed! 👋",
+        "time": "7:45 PM"
+      },
+      {
+        "sender": "Ahmed",
+        "side": "outgoing",
+        "text": "Hey Sara! Great to see you here 😊",
+        "time": "7:46 PM",
+        "read": true
+      },
+      {
+        "sender": "Sara Khan",
+        "side": "incoming",
+        "text": "I'm really looking forward to tomorrow's language exchange meetup. Are you?",
+        "time": "7:47 PM"
+      },
+      {
+        "sender": "Ahmed",
+        "side": "outgoing",
+        "text": "Absolutely! I've been practicing some new phrases to share with everyone 😄",
+        "time": "7:48 PM",
+        "read": true
+      },
+      {
+        "sender": "Sara Khan",
+        "side": "incoming",
+        "text": "Can't wait for tomorrow's language exchange! ☕",
+        "time": "7:50 PM",
+        "reaction": "❤️ 1"
+      },
+      {
+        "sender": "Ahmed",
+        "side": "outgoing",
+        "text": "See you there! 🚀",
+        "time": "7:51 PM",
+        "read": true
+      }
+    ],
+    "composer": {
+      "placeholder": "Type a message...",
+      "attachment": true,
+      "emoji": true,
+      "send_button": true
+    }
+  },
+  "right_panel": {
+    "active_now": {
+      "title": "Active now",
+      "action": "See all",
+      "people": [
+        {
+          "name": "Usman Ali",
+          "online": true
+        },
+        {
+          "name": "Maria Ahmed",
+          "online": true
+        },
+        {
+          "name": "Hassan Raza",
+          "online": true
+        },
+        {
+          "name": "Ayesha Malik",
+          "online": true
+        },
+        {
+          "name": "Ali Raza",
+          "online": true
+        }
+      ]
+    },
+    "group_chats": {
+      "title": "Group chats",
+      "action": "See all",
+      "groups": [
+        {
+          "name": "Startup Coffee",
+          "preview": "Ahmed: See you all at 6 PM",
+          "time": "1h",
+          "unread": 5
+        },
+        {
+          "name": "Deep Talks Community",
+          "preview": "Maria: That was amazing!",
+          "time": "3h",
+          "unread": 3
+        },
+        {
+          "name": "Designers’ Meetup",
+          "preview": "Ayesha: Shared a photo",
+          "time": "1d",
+          "unread": 2
+        },
+        {
+          "name": "Book Lovers",
+          "preview": "Usman: Any good reads?",
+          "time": "2d",
+          "unread": 1
+        }
+      ]
+    },
+    "quick_actions": {
+      "title": "Quick actions",
+      "actions": [
+        {
+          "title": "New Message",
+          "subtitle": "Start a conversation",
+          "icon": "message"
+        },
+        {
+          "title": "Create Group",
+          "subtitle": "Start a group chat",
+          "icon": "group"
+        },
+        {
+          "title": "Invite Friends",
+          "subtitle": "Bring more people",
+          "icon": "person_add"
+        }
+      ]
+    }
+  },
+  "interaction_rules": {
+    "active_conversation": "Sara Khan",
+    "selected_tab": "All",
+    "message_alignment": "Incoming left, outgoing right",
+    "unread_badges": "Show only where count is greater than zero",
+    "online_indicator": "Small teal dot on avatar",
+    "call_controls": "Not present",
+    "video_call_controls": "Not present"
+  },
+  "implementation_rules": [
+    "Use Poppins throughout; do not use Inter.",
+    "Treat messages.pdf as the visual source of truth.",
+    "Preserve the 1536x1024 desktop canvas.",
+    "Preserve the three-column structure and proportions.",
+    "Do not add call or video-call buttons.",
+    "Keep the selected Sara Khan conversation.",
+    "Keep the exact visible conversation text and timestamps.",
+    "Keep the meetup context card above the conversation.",
+    "Keep Active now, Group chats and Quick actions in the right panel.",
+    "Match the white panels, very light gray page background, subtle borders, rounded corners and teal accent.",
+    "Use the supplied reference image for exact spacing, typography, icon placement and sizing."
+  ],
+  "claude_prompt": "Recreate the supplied messages.pdf screen exactly in React/Tailwind. Use Poppins, not Inter. The PDF/reference image is the source of truth. Preserve the 1536x1024 canvas and three-column desktop composition: left Messages/conversation list, center Sara Khan conversation, right Active now/Group chats/Quick actions. Preserve the exact visible names, previews, unread counts, meetup card, messages, timestamps and composer from this JSON. Do NOT add call or video-call buttons. Do not redesign, simplify, rearrange, or substitute another messaging layout. Use the reference image as a pixel-comparison target."
+}
