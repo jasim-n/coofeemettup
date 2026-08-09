@@ -602,6 +602,37 @@ export interface MatchGenerateResult {
   groups: GroupSuggestion[];
 }
 
+// ---- Admin: table participants + review moderation ----
+export interface AdminParticipant {
+  user: { id: string; firstName: string | null; lastInitial: string | null; photoUrl: string | null };
+  status: JoinStatus;
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+}
+
+export interface AdminTableParticipants {
+  host: { id: string; firstName: string | null; lastInitial: string | null; photoUrl: string | null };
+  seats: number;
+  seatsLeft: number;
+  participants: AdminParticipant[];
+}
+
+export interface AdminReviewDto {
+  id: string;
+  rating: number;
+  comment: string | null;
+  role: ReviewRole;
+  createdAt: string;
+  reviewer: { firstName: string | null; lastInitial: string | null };
+  subject: { id: string; firstName: string | null; lastInitial: string | null; photoUrl: string | null };
+  tableTitle: string | null;
+}
+
+export interface AdminReviewsResponse {
+  reviews: AdminReviewDto[];
+  total: number;
+}
+
 // ---- Table invitations ----
 export type InviteStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'MAYBE';
 

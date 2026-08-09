@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
@@ -180,5 +180,53 @@ export class AdminController {
     @Body() dto: ResolveReportDto,
   ) {
     return this.admin.resolveReport(user.id, id, dto.status, dto.banSubject);
+  }
+
+  // ── Table moderation ──────────────────────────────────────────────────────
+
+  @Get('admin/tables/:id/participants')
+  listParticipants(@Param('id') id: string) {
+    return this.admin.listParticipants(id);
+  }
+
+  @Delete('admin/tables/:id/participants/:userId')
+  @HttpCode(200)
+  removeParticipant(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.admin.removeParticipant(user.id, id, userId);
+  }
+
+  @Delete('admin/tables/:id')
+  @HttpCode(200)
+  deleteTable(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
+    return this.admin.deleteTable(user.id, id);
+  }
+
+  // ── Review moderation ─────────────────────────────────────────────────────
+
+  @Get('admin/reviews')
+  listReviews(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    return this.admin.listReviews({
+      limit: limit !== undefined ? Number(limit) : 30,
+      offset: offset !== undefined ? Number(offset) : 0,
+    });
+  }
+
+  @Delete('admin/reviews/:id')
+  @HttpCode(200)
+  deleteReview(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
+    return this.admin.deleteReview(user.id, id);
   }
 }

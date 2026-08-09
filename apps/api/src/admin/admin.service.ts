@@ -7,6 +7,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import type { AttendanceStatus, UserStatus, Role } from '../../generated/prisma/client';
 
+const SLIM_USER = {
+  id: true,
+  firstName: true,
+  lastInitial: true,
+  photoUrl: true,
+} as const;
+
 const NO_SHOW_PENALTY = 10;
 
 @Injectable()
@@ -348,6 +355,190 @@ export class AdminService {
       where: { id },
       data: { status: 'CANCELLED' },
     });
+    return { ok: true as const };
+  }
+
+  // ── Table moderation ──────────────────────────────────────────────────────
+
+  async listParticipants(tableId: string) {
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+      select: {
+        id: true,
+        seats: true,
+        seatsLeft: true,
+        hostId: true,
+      },
+    });
+    if (!table) throw new NotFoundException('Table not found');
+
+    const requests = await this.prisma.tableJoinRequest.findMany({
+      where: { tableId, status: { in: ['APPROVED', 'PENDING'] } },
+      orderBy: { createdAt: 'desc' },
+      select: { userId: true, status: true, paymentStatus: true, createdAt: true },
+    });
+
+    // Batch-fetch users (host + participants) — no N+1
+    const userIds = Array.from(
+      new Set([table.hostId, ...requests.map((r) => r.userId)]),
+    );
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: SLIM_USER,
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return {
+      host: userMap.get(table.hostId) ?? null,
+      seats: table.seats,
+      seatsLeft: table.seatsLeft,
+      participants: requests.map((r) => ({
+        user: userMap.get(r.userId) ?? null,
+        status: r.status,
+        paymentStatus: r.paymentStatus,
+        createdAt: r.createdAt,
+      })),
+    };
+  }
+
+  async removeParticipant(actorId: string, tableId: string, userId: string) {
+    await this.prisma.$transaction(async (tx) => {
+      const req = await tx.tableJoinRequest.findUnique({
+        where: { tableId_userId: { tableId, userId } },
+        select: { id: true, status: true },
+      });
+
+      if (!req || req.status === 'CANCELLED') {
+        throw new BadRequestException('No active join request found for this participant');
+      }
+
+      const wasApproved = req.status === 'APPROVED';
+
+      await tx.tableJoinRequest.update({
+        where: { id: req.id },
+        data: { status: 'CANCELLED' },
+      });
+
+      if (wasApproved) {
+        const updated = await tx.table.update({
+          where: { id: tableId },
+          data: { seatsLeft: { increment: 1 } },
+          select: { status: true, seatsLeft: true },
+        });
+        if (updated.status === 'FULL' && updated.seatsLeft > 0) {
+          await tx.table.update({
+            where: { id: tableId },
+            data: { status: 'OPEN' },
+          });
+        }
+      }
+    });
+
+    void this.audit.log({
+      actorId,
+      action: 'table.participant.removed',
+      targetType: 'table',
+      targetId: tableId,
+      meta: { userId },
+    });
+
+    return { ok: true as const };
+  }
+
+  async deleteTable(actorId: string, tableId: string) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+
+    await this.prisma.$transaction([
+      this.prisma.tableJoinRequest.deleteMany({ where: { tableId } }),
+      this.prisma.review.deleteMany({ where: { tableId } }),
+      this.prisma.groupMessage.deleteMany({ where: { groupId: tableId } }),
+      // TableInvite cascades via onDelete:Cascade on the Table FK
+      this.prisma.table.delete({ where: { id: tableId } }),
+    ]);
+
+    void this.audit.log({
+      actorId,
+      action: 'table.deleted',
+      targetType: 'table',
+      targetId: tableId,
+    });
+
+    return { ok: true as const };
+  }
+
+  // ── Review moderation ─────────────────────────────────────────────────────
+
+  async listReviews({ limit = 30, offset = 0 }: { limit?: number; offset?: number }) {
+    const [reviews, total] = await Promise.all([
+      this.prisma.review.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          role: true,
+          createdAt: true,
+          tableId: true,
+          reviewerId: true,
+          subjectId: true,
+        },
+      }),
+      this.prisma.review.count(),
+    ]);
+
+    if (reviews.length === 0) return { reviews: [], total };
+
+    // Batch-fetch users and tables — no N+1
+    const userIds = Array.from(
+      new Set([...reviews.map((r) => r.reviewerId), ...reviews.map((r) => r.subjectId)]),
+    );
+    const tableIds = Array.from(new Set(reviews.map((r) => r.tableId)));
+
+    const [users, tables] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: SLIM_USER,
+      }),
+      this.prisma.table.findMany({
+        where: { id: { in: tableIds } },
+        select: { id: true, title: true },
+      }),
+    ]);
+
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    const tableMap = new Map(tables.map((t) => [t.id, t.title ?? null]));
+
+    return {
+      reviews: reviews.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        role: r.role,
+        createdAt: r.createdAt,
+        reviewer: userMap.get(r.reviewerId) ?? null,
+        subject: userMap.get(r.subjectId) ?? null,
+        tableTitle: tableMap.get(r.tableId) ?? null,
+      })),
+      total,
+    };
+  }
+
+  async deleteReview(actorId: string, id: string) {
+    const review = await this.prisma.review.findUnique({ where: { id } });
+    if (!review) throw new NotFoundException('Review not found');
+
+    await this.prisma.review.delete({ where: { id } });
+
+    void this.audit.log({
+      actorId,
+      action: 'review.deleted',
+      targetType: 'review',
+      targetId: id,
+    });
+
     return { ok: true as const };
   }
 

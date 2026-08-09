@@ -1,4 +1,8 @@
 import type {
+  AdminParticipant,
+  AdminReviewDto,
+  AdminReviewsResponse,
+  AdminTableParticipants,
   AdminUserDto,
   AdminUsersResponse,
   AttendanceStatus,
@@ -494,6 +498,27 @@ export class ApiClient {
 
   adminCancelTable(id: string): Promise<{ ok: true }> {
     return this.request('POST', `/admin/tables/${id}/cancel`);
+  }
+
+  adminTableParticipants(tableId: string): Promise<AdminTableParticipants> {
+    return this.request('GET', `/admin/tables/${tableId}/participants`);
+  }
+
+  adminRemoveParticipant(tableId: string, userId: string): Promise<{ ok: true }> {
+    return this.request('DELETE', `/admin/tables/${tableId}/participants/${userId}`);
+  }
+
+  adminDeleteTable(tableId: string): Promise<{ ok: true }> {
+    return this.request('DELETE', `/admin/tables/${tableId}`);
+  }
+
+  adminListReviews(limit = 30, offset = 0): Promise<AdminReviewsResponse> {
+    const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) }).toString();
+    return this.request('GET', `/admin/reviews?${qs}`);
+  }
+
+  adminDeleteReview(id: string): Promise<{ ok: true }> {
+    return this.request('DELETE', `/admin/reviews/${id}`);
   }
 
   // ---- public profile ----
