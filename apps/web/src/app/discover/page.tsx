@@ -691,9 +691,8 @@ export default function DiscoverPage() {
 
           {/* POPULAR CITIES */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3">
               <p className="font-heading font-bold tracking-tight">Popular cities</p>
-              <span className="text-muted-foreground text-xs">View all</span>
             </div>
             <ul className="space-y-2">
               {CITIES.map((city) => (
