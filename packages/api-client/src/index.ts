@@ -138,19 +138,20 @@ export class ApiClient {
   }
 
   // ---- auth ----
-  requestOtp(phone: string): Promise<{ ok: true; devCode?: string }> {
-    return this.request('POST', '/auth/request-otp', { phone });
+  requestOtp(email: string): Promise<{ ok: true; isNewUser: boolean; devCode?: string }> {
+    return this.request('POST', '/auth/request-otp', { email });
   }
 
   async verifyOtp(
-    phone: string,
+    email: string,
     code: string,
-    referralCode?: string,
+    opts?: { phone?: string; referralCode?: string },
   ): Promise<AuthResponse> {
     const res = await this.request<AuthResponse>('POST', '/auth/verify-otp', {
-      phone,
+      email,
       code,
-      ...(referralCode ? { referralCode } : {}),
+      phone: opts?.phone,
+      referralCode: opts?.referralCode,
     });
     this.csrfToken = res.csrfToken;
     if (this.clientType === 'mobile' && res.token) this.authToken = res.token;

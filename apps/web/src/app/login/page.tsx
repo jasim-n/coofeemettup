@@ -9,22 +9,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Wordmark } from '@/components/wordmark';
 
+// Accepts: 03XXXXXXXXX, +923XXXXXXXXX, 923XXXXXXXXX (10 digits after the 3)
+const PK_PHONE_RE = /^(?:\+92|92|0)(3\d{9})$/;
+
+function normalisePkPhone(raw: string): string | null {
+  const m = raw.replace(/\s/g, '').match(PK_PHONE_RE);
+  if (!m) return null;
+  return `+92${m[1]}`;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { requestOtp, verifyOtp } = useAuth();
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
-  const [phone, setPhone] = useState('');
+
+  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [isNewUser, setIsNewUser] = useState(false);
   const [devCode, setDevCode] = useState<string | null>(null);
   const [ref, setRef] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  // Capture an invite code from a shared link (/login?ref=CODE) once on mount.
+  // Capture referral code from URL (/login?ref=CODE) once on mount.
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('ref');
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the URL on mount
-    if (code) setRef(code.toUpperCase());
+    const refCode = new URLSearchParams(window.location.search).get('ref');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of URL on mount
+    if (refCode) setRef(refCode.toUpperCase());
   }, []);
 
   async function handleRequest(e: React.FormEvent) {
@@ -32,7 +45,10 @@ export default function LoginPage() {
     setError(null);
     setBusy(true);
     try {
-      const dev = await requestOtp(phone);
+      const { isNewUser: newUser, devCode: dev } = await requestOtp(
+        email.trim().toLowerCase(),
+      );
+      setIsNewUser(newUser);
       if (dev) {
         setDevCode(dev);
         setCode(dev); // dev convenience: prefill so you can just tap Verify
@@ -48,9 +64,25 @@ export default function LoginPage() {
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setPhoneError(null);
+
+    // Client-side PK phone validation for new users
+    if (isNewUser) {
+      const normalised = normalisePkPhone(phone);
+      if (!normalised) {
+        setPhoneError(
+          'Enter a valid Pakistani mobile number (e.g. 03XX XXXXXXX or +923XXXXXXXXX)',
+        );
+        return;
+      }
+    }
+
     setBusy(true);
     try {
-      await verifyOtp(phone, code, ref ?? undefined);
+      await verifyOtp(email, code, {
+        phone: isNewUser ? normalisePkPhone(phone) ?? phone : undefined,
+        referralCode: ref ?? undefined,
+      });
       router.push('/');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -84,16 +116,21 @@ export default function LoginPage() {
         <div className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6">
           <div className="space-y-1 text-center">
             <p className="eyebrow text-primary">
-              {step === 'phone' ? 'Step 1 of 2' : 'Step 2 of 2'}
+              {step === 'email' ? 'Step 1 of 2' : 'Step 2 of 2'}
             </p>
             <h1 className="display text-2xl uppercase">
-              {step === 'phone' ? 'Sign in' : 'Check your phone'}
+              {step === 'email' ? 'Sign in' : 'Check your email'}
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {step === 'phone'
-                ? 'Enter your mobile number — we’ll send a one-time code.'
-                : `We sent a 6-digit code to ${phone}.`}
+              {step === 'email'
+                ? "Enter your email — we'll send a one-time code."
+                : `We sent a 6-digit code to ${email}.`}
             </p>
+            {step === 'code' && isNewUser && (
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                New here? Add your phone number to finish signup.
+              </p>
+            )}
             {ref && (
               <p className="bg-secondary text-secondary-foreground mx-auto w-fit rounded-full px-3 py-1 text-xs font-semibold">
                 🎁 Invited with code {ref}
@@ -101,16 +138,16 @@ export default function LoginPage() {
             )}
           </div>
 
-          {step === 'phone' ? (
+          {step === 'email' ? (
             <form onSubmit={handleRequest} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="phone" className="font-semibold">Mobile number</Label>
+                <Label htmlFor="email" className="font-semibold">Email address</Label>
                 <Input
-                  id="phone"
-                  inputMode="tel"
-                  placeholder="03XX XXXXXXX"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email ?? ''}
+                  onChange={(e) => setEmail(e.target.value)}
                   autoFocus
                   required
                 />
@@ -121,11 +158,11 @@ export default function LoginPage() {
               </Button>
               <button
                 type="button"
-                onClick={() => setPhone('03001112222')}
+                onClick={() => setEmail('admin@coffeemeetups.dev')}
                 className="bg-secondary text-secondary-foreground w-full rounded-2xl px-4 py-2.5 text-center text-xs transition-[filter] hover:brightness-95"
               >
                 Testing? Tap to use admin:{' '}
-                <span className="font-mono font-bold">03001112222</span>
+                <span className="font-mono font-bold">admin@coffeemeetups.dev</span>
               </button>
             </form>
           ) : (
@@ -137,12 +174,35 @@ export default function LoginPage() {
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="000000"
-                  value={code}
+                  value={code ?? ''}
                   onChange={(e) => setCode(e.target.value)}
                   autoFocus
                   required
                 />
               </div>
+              {isNewUser && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="font-semibold">Phone number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="03XX XXXXXXX"
+                    value={phone ?? ''}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setPhoneError(null);
+                    }}
+                    required
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Pakistani mobile — required to finish signup
+                  </p>
+                  {phoneError && (
+                    <p className="text-destructive text-sm font-medium">{phoneError}</p>
+                  )}
+                </div>
+              )}
               {devCode && (
                 <p className="bg-secondary text-secondary-foreground rounded-2xl px-4 py-2.5 text-center text-sm">
                   Dev code: <span className="font-mono font-bold">{devCode}</span>
@@ -158,12 +218,14 @@ export default function LoginPage() {
                 size="sm"
                 className="w-full text-muted-foreground"
                 onClick={() => {
-                  setStep('phone');
+                  setStep('email');
                   setCode('');
+                  setDevCode(null);
                   setError(null);
+                  setPhoneError(null);
                 }}
               >
-                ← Use a different number
+                ← Use a different email
               </Button>
             </form>
           )}

@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -21,7 +20,6 @@ import { Public } from './decorators/public.decorator';
 import { SkipCsrf } from './decorators/skip-csrf.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
-import { normalizePhone } from './phone.util';
 import {
   CSRF_COOKIE,
   SESSION_COOKIE,
@@ -46,14 +44,15 @@ export class AuthController {
   @HttpCode(200)
   async requestOtp(
     @Body() dto: RequestOtpDto,
-  ): Promise<{ ok: true; devCode?: string }> {
-    const code = await this.auth.requestOtp(this.parsePhone(dto.phone));
-    // Return the code in the response for dev, or on a pilot deploy that opts in
-    // via EXPOSE_DEV_OTP (no SMS provider yet). Otherwise keep it server-side.
+  ): Promise<{ ok: true; isNewUser: boolean; devCode?: string }> {
+    const email = dto.email.trim().toLowerCase();
+    const { code, isNewUser } = await this.auth.requestOtp(email);
     const isDev = this.config.get('NODE_ENV', { infer: true }) !== 'production';
     const exposeOtp =
       isDev || this.config.get('EXPOSE_DEV_OTP', { infer: true }) === 'true';
-    return exposeOtp ? { ok: true, devCode: code } : { ok: true };
+    return exposeOtp
+      ? { ok: true, isNewUser, devCode: code }
+      : { ok: true, isNewUser };
   }
 
   @Public()
@@ -65,11 +64,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Headers('x-client') client?: string,
   ) {
-    const { user, token } = await this.auth.verifyOtp(
-      this.parsePhone(dto.phone),
-      dto.code,
-      dto.referralCode,
-    );
+    const email = dto.email.trim().toLowerCase();
+    const { user, token } = await this.auth.verifyOtp(email, dto.code, {
+      phone: dto.phone,
+      referralCode: dto.referralCode,
+    });
     res.cookie(SESSION_COOKIE, token, sessionCookieOptions(this.config));
     const csrfToken = this.issueCsrf(res);
     void this.audit.log({ actorId: user.id, action: 'auth.login' });
@@ -103,13 +102,5 @@ export class AuthController {
     const csrfToken = randomBytes(32).toString('hex');
     res.cookie(CSRF_COOKIE, csrfToken, csrfCookieOptions(this.config));
     return csrfToken;
-  }
-
-  private parsePhone(raw: string): string {
-    try {
-      return normalizePhone(raw);
-    } catch {
-      throw new BadRequestException('Invalid Pakistani mobile number');
-    }
   }
 }

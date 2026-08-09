@@ -1,13 +1,17 @@
-import { IsOptional, IsString, Length, Matches } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Length, Matches } from 'class-validator';
 
 export class VerifyOtpDto {
-  @IsString()
-  @Length(10, 16)
-  phone!: string;
+  @IsEmail()
+  email!: string;
 
   @IsString()
   @Matches(/^\d{6}$/, { message: 'code must be 6 digits' })
   code!: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(7, 20)
+  phone?: string;
 
   @IsOptional()
   @IsString()

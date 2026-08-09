@@ -50,6 +50,29 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
+  findByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  findByPhone(phone: string) {
+    return this.prisma.user.findUnique({ where: { phone } });
+  }
+
+  /** Create a new user identified by email + phone (signup path). */
+  async createWithEmail(email: string, phone: string, referredByCode?: string) {
+    // Only honour a referral code that belongs to a real, different user.
+    let referredBy: string | null = null;
+    if (referredByCode) {
+      const referrer = await this.prisma.user.findUnique({
+        where: { referralCode: referredByCode },
+      });
+      if (referrer && referrer.email !== email) referredBy = referredByCode;
+    }
+    return this.prisma.user.create({
+      data: { email, phone, referredByCode: referredBy },
+    });
+  }
+
   /** The user's shareable code (generated once) + how many signed up with it. */
   async getReferral(userId: string): Promise<{ code: string; count: number }> {
     let user = await this.prisma.user.findUnique({ where: { id: userId } });

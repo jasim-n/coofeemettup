@@ -128,7 +128,8 @@ enum ComeAgain {
 // ---------- Models ----------
 model User {
   id                 String             @id @default(cuid())
-  phone              String             @unique
+  email              String?            @unique // login identity (OTP sent here)
+  phone              String             @unique // required, validated PK mobile
   role               Role               @default(USER)
   canHost            Boolean            @default(false)
   verificationStatus VerificationStatus @default(PENDING)

@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomInt } from 'node:crypto';
 import { RedisService } from '../redis/redis.service';
+import { MailService } from '../mail/mail.service';
 import type { Env } from '../config/env';
 
 @Injectable()
@@ -14,21 +15,22 @@ export class OtpService {
   constructor(
     private readonly redis: RedisService,
     private readonly config: ConfigService<Env, true>,
+    private readonly mail: MailService,
   ) {}
 
-  private codeKey(phone: string): string {
-    return `otp:code:${phone}`;
+  private codeKey(email: string): string {
+    return `otp:code:${email}`;
   }
 
-  private throttleKey(phone: string): string {
-    return `otp:throttle:${phone}`;
+  private throttleKey(email: string): string {
+    return `otp:throttle:${email}`;
   }
 
-  async request(phone: string): Promise<string> {
-    const attempts = await this.redis.client.incr(this.throttleKey(phone));
+  async request(email: string): Promise<string> {
+    const attempts = await this.redis.client.incr(this.throttleKey(email));
     if (attempts === 1) {
       await this.redis.client.expire(
-        this.throttleKey(phone),
+        this.throttleKey(email),
         this.windowSeconds,
       );
     }
@@ -41,23 +43,25 @@ export class OtpService {
 
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
     await this.redis.client.set(
-      this.codeKey(phone),
+      this.codeKey(email),
       code,
       'EX',
       this.ttlSeconds,
     );
 
     if (this.config.get('NODE_ENV', { infer: true }) !== 'production') {
-      // Dev delivery only. Real SMS provider is Phase 2.
-      this.logger.log(`DEV OTP for ${phone}: ${code}`);
+      this.logger.log(`DEV OTP for ${email}: ${code}`);
     }
+
+    await this.mail.sendOtp(email, code);
+
     return code;
   }
 
-  async verify(phone: string, code: string): Promise<boolean> {
-    const stored = await this.redis.client.get(this.codeKey(phone));
+  async verify(email: string, code: string): Promise<boolean> {
+    const stored = await this.redis.client.get(this.codeKey(email));
     if (!stored || stored !== code) return false;
-    await this.redis.client.del(this.codeKey(phone));
+    await this.redis.client.del(this.codeKey(email));
     return true;
   }
 }
