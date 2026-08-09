@@ -22,6 +22,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { DmModule } from './dm/dm.module';
 import { InvitesModule } from './invites/invites.module';
+import { ReactionsModule } from './reactions/reactions.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -48,6 +49,7 @@ import { HealthController } from './health/health.controller';
     ConnectionsModule,
     DmModule,
     InvitesModule,
+    ReactionsModule,
   ],
   controllers: [HealthController],
 })

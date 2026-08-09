@@ -234,6 +234,7 @@ export interface ChatMessage {
   createdAt: string;
   firstName: string | null;
   lastInitial: string | null;
+  reactions?: ReactionSummary[];
 }
 
 export interface ChatResponse {
@@ -600,6 +601,10 @@ export interface SuggestedPerson {
   mutuals: number;
 }
 
+// ---- Reactions ----
+export interface ReactionSummary { emoji: string; count: number; mine: boolean; }
+export type ReactionKind = 'dm' | 'group';
+
 // ---- Direct messages ----
 export interface DmMessage {
   id: string;
@@ -608,6 +613,7 @@ export interface DmMessage {
   body: string;
   createdAt: string;
   readAt: string | null;
+  reactions?: ReactionSummary[];
 }
 
 export interface DmThread {

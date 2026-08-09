@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
+import { ReactionsService } from '../reactions/reactions.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { toPublicUser } from '../users/user.serializer';
 
@@ -19,6 +20,7 @@ export class TablesService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
+    private readonly reactions: ReactionsService,
   ) {}
 
   // ---------- hosting ----------
@@ -388,16 +390,20 @@ export class TablesService {
       select: { id: true, firstName: true, lastInitial: true },
     });
     const byId = new Map(users.map((u) => [u.id, u]));
-    const messages = rows
-      .filter((r) => !blocked.has(r.userId))
-      .map((r) => ({
-        id: r.id,
-        userId: r.userId,
-        body: r.body,
-        createdAt: r.createdAt.toISOString(),
-        firstName: byId.get(r.userId)?.firstName ?? null,
-        lastInitial: byId.get(r.userId)?.lastInitial ?? null,
-      }));
+    const filtered = rows.filter((r) => !blocked.has(r.userId));
+    const reactionMap = await this.reactions.forMessages(
+      filtered.map((r) => r.id),
+      userId,
+    );
+    const messages = filtered.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      body: r.body,
+      createdAt: r.createdAt.toISOString(),
+      firstName: byId.get(r.userId)?.firstName ?? null,
+      lastInitial: byId.get(r.userId)?.lastInitial ?? null,
+      reactions: reactionMap.get(r.id) ?? [],
+    }));
     return { member: true, messages };
   }
 

@@ -94,6 +94,11 @@ export default function MessagesPage() {
   // ---- new-message picker ----
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  // ---- reaction picker ----
+  const [reactPickerId, setReactPickerId] = useState<string | null>(null);
+
+  const QUICK_EMOJIS = ['❤️', '👍', '😂', '🎉', '☕', '😮'];
+
   const endRef = useRef<HTMLDivElement | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -200,8 +205,10 @@ export default function MessagesPage() {
       active = false;
       if (pollRef.current) clearInterval(pollRef.current);
     };
+    // Re-run when auth resolves too: with ?dm= the key is seeded before `user`
+    // loads, so the first run bails on `!user` — depend on user?.id to retry.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedKey]);
+  }, [selectedKey, user?.id]);
 
   // ---- scroll to bottom on new messages ----
   useEffect(() => {
@@ -246,6 +253,24 @@ export default function MessagesPage() {
     } finally {
       setSending(false);
     }
+  }
+
+  // ---- reaction toggle ----
+  async function toggleReaction(messageId: string, emoji: string) {
+    const kind = selected?.kind === 'dm' ? 'dm' : 'group';
+    try {
+      const updated = await api.toggleReaction(kind, messageId, emoji);
+      if (kind === 'dm') {
+        setDmMsgs((prev) => prev.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)));
+      } else {
+        setGroupChat((prev) =>
+          prev
+            ? { ...prev, messages: prev.messages.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)) }
+            : prev,
+        );
+      }
+    } catch { /* ignore */ }
+    setReactPickerId(null);
   }
 
   // ---- derived ----
@@ -547,7 +572,7 @@ export default function MessagesPage() {
                       return (
                         <div
                           key={m.id}
-                          className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}
+                          className={`group flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}
                         >
                           {!mine && (
                             <UserLink userId={(selected as DmConvo).userId}>
@@ -557,15 +582,65 @@ export default function MessagesPage() {
                           <div
                             className={`flex max-w-[72%] flex-col ${mine ? 'items-end' : 'items-start'}`}
                           >
-                            <div
-                              className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
-                                mine
-                                  ? 'bg-secondary text-secondary-foreground rounded-br-md'
-                                  : 'bg-muted text-foreground rounded-bl-md'
-                              }`}
-                            >
-                              {m.body}
+                            <div className="relative">
+                              <div
+                                className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                                  mine
+                                    ? 'bg-secondary text-secondary-foreground rounded-br-md'
+                                    : 'bg-muted text-foreground rounded-bl-md'
+                                }`}
+                              >
+                                {m.body}
+                              </div>
+                              {/* add-reaction button — visible on row hover */}
+                              {user && (
+                                <div className={`absolute top-1/2 -translate-y-1/2 ${mine ? '-left-8' : '-right-8'}`}>
+                                  <div className="relative">
+                                    <button
+                                      type="button"
+                                      onClick={() => setReactPickerId(reactPickerId === m.id ? null : m.id)}
+                                      className="text-muted-foreground/50 hover:text-muted-foreground grid size-6 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+                                      aria-label="Add reaction"
+                                    >
+                                      <i className="fa-regular fa-face-smile text-xs" />
+                                    </button>
+                                    {reactPickerId === m.id && (
+                                      <div className={`absolute z-10 flex gap-1 rounded-full border bg-card px-2 py-1 shadow-soft ${mine ? 'right-0 bottom-8' : 'left-0 bottom-8'}`}>
+                                        {QUICK_EMOJIS.map((emoji) => (
+                                          <button
+                                            key={emoji}
+                                            type="button"
+                                            onClick={() => void toggleReaction(m.id, emoji)}
+                                            className="rounded-full p-0.5 text-base transition-transform hover:scale-125"
+                                          >
+                                            {emoji}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
+                            {/* reaction pills */}
+                            {m.reactions && m.reactions.length > 0 && (
+                              <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                                {m.reactions.map((r) => (
+                                  <button
+                                    key={r.emoji}
+                                    type="button"
+                                    onClick={() => void toggleReaction(m.id, r.emoji)}
+                                    className={`rounded-full px-2 py-0.5 text-xs ring-1 transition-colors ${
+                                      r.mine
+                                        ? 'bg-secondary text-primary ring-primary/40 font-semibold'
+                                        : 'bg-card text-muted-foreground ring-border/60'
+                                    }`}
+                                  >
+                                    {r.emoji} {r.count}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                             <div className="text-muted-foreground/70 mt-0.5 flex items-center gap-1 px-1 text-[10px]">
                               <span>{fmtTime(m.createdAt)}</span>
                               {mine && m.readAt && (
@@ -608,7 +683,7 @@ export default function MessagesPage() {
                     return (
                       <div
                         key={m.id}
-                        className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}
+                        className={`group flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}
                       >
                         {!mine && (
                           <UserLink userId={m.userId}>
@@ -629,15 +704,65 @@ export default function MessagesPage() {
                               </span>
                             </UserLink>
                           )}
-                          <div
-                            className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
-                              mine
-                                ? 'bg-secondary text-secondary-foreground rounded-br-md'
-                                : 'bg-muted text-foreground rounded-bl-md'
-                            }`}
-                          >
-                            {m.body}
+                          <div className="relative">
+                            <div
+                              className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                                mine
+                                  ? 'bg-secondary text-secondary-foreground rounded-br-md'
+                                  : 'bg-muted text-foreground rounded-bl-md'
+                              }`}
+                            >
+                              {m.body}
+                            </div>
+                            {/* add-reaction button — visible on row hover */}
+                            {user && (
+                              <div className={`absolute top-1/2 -translate-y-1/2 ${mine ? '-left-8' : '-right-8'}`}>
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    onClick={() => setReactPickerId(reactPickerId === m.id ? null : m.id)}
+                                    className="text-muted-foreground/50 hover:text-muted-foreground grid size-6 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+                                    aria-label="Add reaction"
+                                  >
+                                    <i className="fa-regular fa-face-smile text-xs" />
+                                  </button>
+                                  {reactPickerId === m.id && (
+                                    <div className={`absolute z-10 flex gap-1 rounded-full border bg-card px-2 py-1 shadow-soft ${mine ? 'right-0 bottom-8' : 'left-0 bottom-8'}`}>
+                                      {QUICK_EMOJIS.map((emoji) => (
+                                        <button
+                                          key={emoji}
+                                          type="button"
+                                          onClick={() => void toggleReaction(m.id, emoji)}
+                                          className="rounded-full p-0.5 text-base transition-transform hover:scale-125"
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
+                          {/* reaction pills */}
+                          {m.reactions && m.reactions.length > 0 && (
+                            <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                              {m.reactions.map((r) => (
+                                <button
+                                  key={r.emoji}
+                                  type="button"
+                                  onClick={() => void toggleReaction(m.id, r.emoji)}
+                                  className={`rounded-full px-2 py-0.5 text-xs ring-1 transition-colors ${
+                                    r.mine
+                                      ? 'bg-secondary text-primary ring-primary/40 font-semibold'
+                                      : 'bg-card text-muted-foreground ring-border/60'
+                                  }`}
+                                >
+                                  {r.emoji} {r.count}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                           <div className="text-muted-foreground/70 mt-0.5 flex items-center gap-1 px-1 text-[10px]">
                             <span>{fmtTime(m.createdAt)}</span>
                           </div>

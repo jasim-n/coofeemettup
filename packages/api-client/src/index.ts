@@ -26,6 +26,8 @@ import type {
   CreateReviewInput,
   PublicProfileDto,
   PublicUser,
+  ReactionKind,
+  ReactionSummary,
   ReferralInfo,
   ReportDto,
   ReviewTargetsResponse,
@@ -501,6 +503,11 @@ export class ApiClient {
 
   sendDm(userId: string, body: string): Promise<DmMessage> {
     return this.request('POST', `/dm/${userId}`, { body });
+  }
+
+  // ---- reactions ----
+  toggleReaction(kind: ReactionKind, messageId: string, emoji: string): Promise<ReactionSummary[]> {
+    return this.request('POST', `/reactions/${kind}/${messageId}`, { emoji });
   }
 
   // ---- table invitations ----

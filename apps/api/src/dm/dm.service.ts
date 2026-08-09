@@ -5,10 +5,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { toPublicUser } from '../users/user.serializer';
+import { ReactionsService } from '../reactions/reactions.service';
 
 @Injectable()
 export class DmService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reactions: ReactionsService,
+  ) {}
 
   async send(me: string, other: string, body: string) {
     if (me === other) throw new BadRequestException('Cannot message yourself');
@@ -40,7 +44,13 @@ export class DmService {
       data: { readAt: new Date() },
     });
 
-    return messages;
+    const ids = messages.map((m) => m.id);
+    const reactionMap = await this.reactions.forMessages(ids, me);
+
+    return messages.map((m) => ({
+      ...m,
+      reactions: reactionMap.get(m.id) ?? [],
+    }));
   }
 
   async threads(me: string) {
