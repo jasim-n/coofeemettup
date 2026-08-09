@@ -38,6 +38,30 @@ function matchesDistance(
 
 const CITIES = ['Islamabad', 'Lahore', 'Karachi', 'Rawalpindi'] as const;
 
+// City centers — a table is attributed to the nearest one by its coordinates.
+const CITY_COORDS: Record<(typeof CITIES)[number], { lat: number; lng: number }> = {
+  Islamabad: { lat: 33.6844, lng: 73.0479 },
+  Lahore: { lat: 31.5497, lng: 74.3436 },
+  Karachi: { lat: 24.8607, lng: 67.0011 },
+  Rawalpindi: { lat: 33.5651, lng: 73.0169 },
+};
+
+function nearestCity(t: TableDto): string | null {
+  const lat = t.lat ?? t.cafe?.lat ?? null;
+  const lng = t.lng ?? t.cafe?.lng ?? null;
+  if (lat == null || lng == null) return null;
+  let best: string | null = null;
+  let bestKm = Infinity;
+  for (const [city, c] of Object.entries(CITY_COORDS)) {
+    const d = haversineKm(lat, lng, c.lat, c.lng);
+    if (d < bestKm) {
+      bestKm = d;
+      best = city;
+    }
+  }
+  return best;
+}
+
 const NOW = Date.now();
 
 function matchesPrice(t: TableDto, tier: PriceTier): boolean {
@@ -74,11 +98,7 @@ function matchesWhen(t: TableDto, when: WhenFilter, customDate: string): boolean
 }
 
 function cityCount(tables: TableDto[], city: string): number {
-  const lc = city.toLowerCase();
-  return tables.filter((t) => {
-    const hay = `${t.venueName ?? ''} ${t.cafe?.name ?? ''}`.toLowerCase();
-    return hay.includes(lc);
-  }).length;
+  return tables.filter((t) => nearestCity(t) === city).length;
 }
 
 /* ─── TableCoverCard ─────────────────────────────────────────────── */
