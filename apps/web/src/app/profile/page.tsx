@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ApiError, Intent, type TableDto, type UserReputation, type UpdateProfileInput } from '@jrst/api-client';
+import { ApiError, Intent, type TableDto, type UserReputation, type UpdateProfileInput, type NotificationsResponse } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { parseList, formatDateTime } from '@/lib/format';
@@ -54,6 +54,19 @@ type Section = 'overview' | 'settings' | 'reviews' | 'identity';
 
 function formatJoinDate(createdAt: string): string {
   return new Date(createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+const NOW = Date.now();
+
+function ago(iso: string): string {
+  const diff = NOW - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
 }
 
 function splitScore(total: number): [number, number, number, number] {
@@ -244,6 +257,9 @@ export default function ProfilePage() {
   const [myReviewsData, setMyReviewsData] = useState<UserReputation | null>(null);
   const [connectionsCount, setConnectionsCount] = useState<number | null>(null);
 
+  // Notifications (for Activity Feed)
+  const [notifications, setNotifications] = useState<NotificationsResponse>({ items: [], unread: 0 });
+
   // Tab for overview section
   const [overviewTab, setOverviewTab] = useState<'about' | 'achievements' | 'reviews' | 'activity'>('about');
 
@@ -297,6 +313,16 @@ export default function ProfilePage() {
       active = false;
     };
   }, [user]);
+
+  /* notifications useEffect */
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const data = await api.notifications().catch(() => ({ items: [], unread: 0 } as NotificationsResponse));
+      if (active) setNotifications(data);
+    })();
+    return () => { active = false; };
+  }, []);
 
   if (loading) return <PageLoader />;
   if (!user)
@@ -406,26 +432,19 @@ export default function ProfilePage() {
     href?: string;
     icon: string;
     label: string;
+    tab?: typeof overviewTab;
   }[] = [
     { id: 'overview', icon: 'fa-user', label: 'Overview' },
     { href: '/meetups', icon: 'fa-calendar-days', label: 'My Meetups' },
     { id: 'reviews', icon: 'fa-star', label: 'Reviews & Ratings' },
     { href: '/saved', icon: 'fa-bookmark', label: 'Saved Tables' },
     { href: '/connections', icon: 'fa-user-group', label: 'Connections' },
-    { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity' },
+    { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity', tab: 'activity' },
     { href: '/invites', icon: 'fa-envelope-open', label: 'Invitations' },
     { id: 'identity', icon: 'fa-shield-halved', label: 'Identity Verification' },
     { id: 'settings', icon: 'fa-gear', label: 'Account Settings' },
   ];
 
-  /* ── stub badge list ─────────────────────────────────────────────── */
-
-  const BADGES = [
-    { icon: 'fa-mug-hot', label: 'Great Host', color: 'text-primary' },
-    { icon: 'fa-link', label: 'Connector', color: 'text-[oklch(0.62_0.21_259)]' },
-    { icon: 'fa-seedling', label: 'Early Member', color: 'text-[oklch(0.72_0.15_163)]' },
-    { icon: 'fa-medal', label: 'Top Rated', color: 'text-[oklch(0.8_0.14_75)]' },
-  ];
 
   /* ─────────────────────────────────────────────────────────────────
      RENDER
@@ -443,7 +462,12 @@ export default function ProfilePage() {
           <div className="rounded-3xl border bg-card p-5 shadow-soft flex flex-col items-center gap-3 text-center">
             <Avatar name={displayName} src={user.photoUrl} size={64} online />
             <div>
-              <p className="font-heading font-bold text-sm leading-tight">{displayName}</p>
+              <p className="font-heading font-bold text-sm leading-tight flex items-center justify-center gap-1">
+                {displayName}
+                {user.verificationStatus === 'VERIFIED' && (
+                  <i className="fa-solid fa-circle-check text-primary text-xs" title="Verified" />
+                )}
+              </p>
               <p className="text-muted-foreground text-xs">@{user.phone}</p>
               <p className="text-primary text-xs font-semibold mt-0.5">● Online</p>
             </div>
@@ -451,7 +475,7 @@ export default function ProfilePage() {
 
           {/* Vertical nav */}
           <nav className="rounded-3xl border bg-card p-2 shadow-soft">
-            {NAV_ITEMS.map(({ id, href, icon, label }) => {
+            {NAV_ITEMS.map(({ id, href, icon, label, tab }) => {
               const isActive = id !== undefined && section === id && !href;
               const cls = `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
@@ -467,7 +491,10 @@ export default function ProfilePage() {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => id && setSection(id)}
+                  onClick={() => {
+                    if (id) setSection(id);
+                    if (tab) setOverviewTab(tab);
+                  }}
                   className={cls}
                 >
                   <i className={`fa-solid ${icon} w-4 text-center text-xs`} />
@@ -558,21 +585,20 @@ export default function ProfilePage() {
                 {/* Stat tiles */}
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
                   {[
-                    { icon: 'fa-mug-hot', label: 'Hosted', value: myHostedTables.length },
-                    { icon: 'fa-users', label: 'Joined', value: activeJoinedCount },
-                    { icon: 'fa-star', label: 'Reliability', value: user.reliabilityScore },
-                    { icon: 'fa-heart', label: 'Connections', value: connectionsCount ?? '—' },
-                    { icon: 'fa-medal', label: 'Avg Rating', value: avgRating },
-                  ].map(({ icon, label, value }) => (
+                    { icon: 'fa-mug-hot', label: 'Meetups Hosted', value: myHostedTables.length, accent: 'text-purple-400' },
+                    { icon: 'fa-users', label: 'Meetups Joined', value: activeJoinedCount, accent: 'text-teal-400' },
+                    { icon: 'fa-star', label: 'Reliability Score', value: user.reliabilityScore, accent: 'text-amber-400' },
+                    { icon: 'fa-heart', label: 'Connections', value: connectionsCount ?? '—', accent: 'text-pink-400' },
+                    { icon: 'fa-medal', label: 'Average Rating', value: avgRating, accent: 'text-blue-400' },
+                  ].map(({ icon, label, value, accent }) => (
                     <div
                       key={label}
                       className="flex flex-col items-center rounded-2xl p-3 text-center"
                       style={{ background: 'oklch(1 0 0 / 0.08)' }}
                     >
-                      <span className="text-lg leading-none"><i className={`fa-solid ${icon}`} /></span>
+                      <span className={`text-lg leading-none ${accent}`}><i className={`fa-solid ${icon}`} /></span>
                       <span
-                        className="mt-1.5 font-heading text-xl font-extrabold leading-none"
-                        style={{ color: 'var(--ink-foreground)' }}
+                        className={`mt-1.5 font-heading text-xl font-extrabold leading-none ${accent}`}
                       >
                         {value}
                       </span>
@@ -664,36 +690,99 @@ export default function ProfilePage() {
                     </div>
                   )}
 
-                  {/* Achievements tab — stub */}
-                  {overviewTab === 'achievements' && (
-                    <div className="rounded-3xl border bg-card p-5 shadow-soft">
-                      <p className="eyebrow text-primary mb-4">Achievements</p>
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        {BADGES.map(({ icon, label, color }) => (
-                          <div
-                            key={label}
-                            className="flex flex-col items-center gap-2 rounded-2xl bg-muted/50 p-4 text-center opacity-50"
-                          >
-                            <i className={`fa-solid ${icon} text-2xl ${color}`} />
-                            <span className="text-xs font-semibold">{label}</span>
-                            <span className="text-muted-foreground text-[10px]">coming soon</span>
-                          </div>
-                        ))}
+                  {/* Achievements tab — earned from real stats */}
+                  {overviewTab === 'achievements' && (() => {
+                    const accountAgeDays = (NOW - new Date(user.createdAt).getTime()) / 86_400_000;
+                    const earnedBadges = [
+                      {
+                        icon: 'fa-mug-hot',
+                        label: 'Great Host',
+                        color: 'text-primary',
+                        earned: myHostedTables.length >= 10,
+                        subtitle: myHostedTables.length >= 10 ? 'Hosted 10+ meetups' : `${myHostedTables.length}/10 meetups hosted`,
+                      },
+                      {
+                        icon: 'fa-link',
+                        label: 'Connector',
+                        color: 'text-[oklch(0.62_0.21_259)]',
+                        earned: (connectionsCount ?? 0) >= 20,
+                        subtitle: (connectionsCount ?? 0) >= 20 ? 'Made 20+ connections' : `${connectionsCount ?? 0}/20 connections`,
+                      },
+                      {
+                        icon: 'fa-seedling',
+                        label: 'Early Member',
+                        color: 'text-[oklch(0.72_0.15_163)]',
+                        earned: accountAgeDays >= 30,
+                        subtitle: accountAgeDays >= 30 ? 'Joined early' : 'Join date < 30 days ago',
+                      },
+                      {
+                        icon: 'fa-medal',
+                        label: 'Top Rated',
+                        color: 'text-[oklch(0.8_0.14_75)]',
+                        earned: user.reliabilityScore >= 95,
+                        subtitle: user.reliabilityScore >= 95 ? 'High reliability' : `Score: ${user.reliabilityScore}/95`,
+                      },
+                    ];
+                    return (
+                      <div className="rounded-3xl border bg-card p-5 shadow-soft">
+                        <p className="eyebrow text-primary mb-4">Achievements</p>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                          {earnedBadges.map(({ icon, label, color, earned, subtitle }) => (
+                            <div
+                              key={label}
+                              className={`flex flex-col items-center gap-2 rounded-2xl bg-muted/50 p-4 text-center transition-opacity ${earned ? 'opacity-100' : 'opacity-40'}`}
+                            >
+                              <div className="relative">
+                                <i className={`fa-solid ${icon} text-2xl ${color}`} />
+                                {earned && (
+                                  <i className="fa-solid fa-circle-check text-primary text-xs absolute -top-1 -right-2" />
+                                )}
+                              </div>
+                              <span className="text-xs font-semibold">{label}</span>
+                              <span className="text-muted-foreground text-[10px]">{subtitle}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Reviews tab */}
                   {overviewTab === 'reviews' && <MyReviews />}
 
-                  {/* Activity feed — stub */}
+                  {/* Activity feed — real notifications */}
                   {overviewTab === 'activity' && (
-                    <div className="rounded-3xl border border-dashed py-16 text-center">
-                      <p className="text-4xl"><i className="fa-solid fa-clipboard-list text-muted-foreground" /></p>
-                      <p className="font-heading mt-3 font-bold">No activity yet</p>
-                      <p className="text-muted-foreground mt-1 text-sm">
-                        Your recent actions will appear here.
-                      </p>
+                    <div className="rounded-3xl border bg-card shadow-soft overflow-hidden">
+                      <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
+                        <p className="eyebrow text-primary">Activity Feed</p>
+                        {notifications.unread > 0 && (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                            {notifications.unread} new
+                          </span>
+                        )}
+                      </div>
+                      {notifications.items.length === 0 ? (
+                        <div className="py-16 text-center">
+                          <p className="text-4xl"><i className="fa-solid fa-clipboard-list text-muted-foreground" /></p>
+                          <p className="font-heading mt-3 font-bold">No activity yet</p>
+                          <p className="text-muted-foreground mt-1 text-sm">Your recent actions will appear here.</p>
+                        </div>
+                      ) : (
+                        <ul className="divide-y divide-border/60">
+                          {notifications.items.slice(0, 10).map((n) => (
+                            <li key={n.id} className={`flex items-start gap-3 px-5 py-3.5 ${!n.readAt ? 'bg-primary/5' : ''}`}>
+                              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs">
+                                <i className="fa-solid fa-bell" />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium leading-snug">{n.title}</p>
+                                {n.body && <p className="text-muted-foreground text-xs mt-0.5 line-clamp-1">{n.body}</p>}
+                              </div>
+                              <span className="shrink-0 text-[10px] text-muted-foreground whitespace-nowrap mt-1">{ago(n.createdAt)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   )}
                 </div>
@@ -731,7 +820,7 @@ export default function ProfilePage() {
                     </Link>
                   </div>
                   <div className="rounded-3xl border bg-card p-5 shadow-soft">
-                    {myHostedTables.map((t) => (
+                    {myHostedTables.slice(0, 3).map((t) => (
                       <HostedMeetupRow key={t.id} t={t} />
                     ))}
                   </div>
@@ -1002,9 +1091,20 @@ export default function ProfilePage() {
             <div className="flex items-center gap-4">
               <ReliabilityGauge score={user.reliabilityScore} />
               <div>
-                <p className="font-heading text-2xl font-extrabold">{user.reliabilityScore}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-heading text-2xl font-extrabold">{user.reliabilityScore}</p>
+                  {user.reliabilityScore >= 95 && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      Top Rated
+                    </span>
+                  )}
+                </div>
                 <p className="text-muted-foreground text-xs">/ 100 points</p>
-                <p className="text-primary text-xs font-semibold mt-1">You&apos;re a reliable member</p>
+                <p className="text-primary text-xs font-semibold mt-1">
+                  {user.reliabilityScore >= 95
+                    ? "You're one of our most reliable community members."
+                    : "You're a reliable member — keep it up!"}
+                </p>
               </div>
             </div>
 
@@ -1062,35 +1162,53 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* Achievements card — stub */}
-          <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="eyebrow text-primary">Achievements</p>
-              <button
-                type="button"
-                className="text-primary text-xs font-semibold hover:underline"
-                onClick={() => { setSection('overview'); setOverviewTab('achievements'); }}
-              >
-                View all
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {BADGES.map(({ icon, label, color }) => (
-                <div
-                  key={label}
-                  className="flex flex-col items-center gap-1.5 rounded-2xl bg-muted/50 p-3 text-center opacity-50"
-                >
-                  <i className={`fa-solid ${icon} text-xl ${color}`} />
-                  <span className="text-[10px] font-semibold leading-tight">{label}</span>
+          {/* Achievements card — earned from real stats */}
+          {(() => {
+            const accountAgeDays = (NOW - new Date(user.createdAt).getTime()) / 86_400_000;
+            const railBadges = [
+              { icon: 'fa-mug-hot', label: 'Great Host', color: 'text-primary', earned: myHostedTables.length >= 10 },
+              { icon: 'fa-link', label: 'Connector', color: 'text-[oklch(0.62_0.21_259)]', earned: (connectionsCount ?? 0) >= 20 },
+              { icon: 'fa-seedling', label: 'Early Member', color: 'text-[oklch(0.72_0.15_163)]', earned: accountAgeDays >= 30 },
+              { icon: 'fa-medal', label: 'Top Rated', color: 'text-[oklch(0.8_0.14_75)]', earned: user.reliabilityScore >= 95 },
+            ];
+            return (
+              <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="eyebrow text-primary">Achievements</p>
+                  <button
+                    type="button"
+                    className="text-primary text-xs font-semibold hover:underline"
+                    onClick={() => { setSection('overview'); setOverviewTab('achievements'); }}
+                  >
+                    View all
+                  </button>
                 </div>
-              ))}
-            </div>
-            <p className="text-muted-foreground text-[10px] text-center">Coming soon</p>
-          </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {railBadges.map(({ icon, label, color, earned }) => (
+                    <div
+                      key={label}
+                      className={`flex flex-col items-center gap-1.5 rounded-2xl bg-muted/50 p-3 text-center transition-opacity ${earned ? 'opacity-100' : 'opacity-40'}`}
+                    >
+                      <div className="relative">
+                        <i className={`fa-solid ${icon} text-xl ${color}`} />
+                        {earned && (
+                          <i className="fa-solid fa-circle-check text-primary text-[8px] absolute -top-1 -right-2" />
+                        )}
+                      </div>
+                      <span className="text-[10px] font-semibold leading-tight">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Connect your socials — stub */}
           <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-3">
-            <p className="eyebrow text-primary">Connect Socials</p>
+            <div>
+              <p className="eyebrow text-primary">Connect your socials</p>
+              <p className="text-muted-foreground text-xs mt-1">Grow your network and never miss an update.</p>
+            </div>
             <div className="flex gap-2 flex-wrap">
               {[
                 { icon: 'fa-brands fa-linkedin', label: 'LinkedIn' },

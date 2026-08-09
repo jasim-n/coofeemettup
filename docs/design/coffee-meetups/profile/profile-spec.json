@@ -1,0 +1,404 @@
+{
+  "meta": {
+    "project": "Coffee Meetups",
+    "screen": "Profile",
+    "source_file": "profile.pdf",
+    "reference_dimensions": {
+      "width": 1536,
+      "height": 1024
+    },
+    "font": "Poppins",
+    "source_of_truth": "Supplied Profile PDF reference",
+    "accuracy_note": "SVG preserves the rendered reference exactly; JSON documents the visible UI for editable recreation."
+  },
+  "design_tokens": {
+    "font_family": "Poppins",
+    "font_weights": [
+      400,
+      500,
+      600,
+      700
+    ],
+    "colors": {
+      "background": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "text_primary": "#0F172A",
+      "text_secondary": "#64748B",
+      "border": "#E5EAF0",
+      "primary": "#10B89B",
+      "primary_soft": "#E8F8F5",
+      "purple": "#7C5CFC",
+      "pink": "#F05A8A",
+      "orange": "#F59E0B"
+    },
+    "radii": {
+      "header": 16,
+      "panel": 12,
+      "card": 10,
+      "pill": 999
+    }
+  },
+  "canvas": {
+    "width": 1536,
+    "height": 1024,
+    "page_padding": 14
+  },
+  "layout": {
+    "header": {
+      "x": 14,
+      "y": 8,
+      "width": 1508,
+      "height": 66
+    },
+    "left_sidebar": {
+      "x": 18,
+      "y": 86,
+      "width": 260,
+      "height": 925
+    },
+    "center": {
+      "x": 294,
+      "y": 96,
+      "width": 814,
+      "height": 910
+    },
+    "right_sidebar": {
+      "x": 1129,
+      "y": 96,
+      "width": 377,
+      "height": 910
+    }
+  },
+  "header": {
+    "brand": "Coffee Meetups",
+    "navigation": [
+      {
+        "label": "Home",
+        "active": false
+      },
+      {
+        "label": "Explore",
+        "active": false
+      },
+      {
+        "label": "Nearby",
+        "active": false
+      },
+      {
+        "label": "Meetups",
+        "active": false
+      },
+      {
+        "label": "Messages",
+        "active": false
+      }
+    ],
+    "search_placeholder": "Search meetups, people, vibes...",
+    "shortcut": "⌘ K",
+    "notification_count": 2,
+    "profile_avatar": true,
+    "chevron": true
+  },
+  "left_sidebar": {
+    "profile_summary": {
+      "name": "Ahmed",
+      "username": "@ahmed_khan",
+      "status": "Online",
+      "verified": true,
+      "avatar": true
+    },
+    "navigation": [
+      {
+        "label": "Overview",
+        "active": true
+      },
+      {
+        "label": "My Meetups",
+        "active": false
+      },
+      {
+        "label": "Reviews & Ratings",
+        "active": false
+      },
+      {
+        "label": "Saved Tables",
+        "active": false
+      },
+      {
+        "label": "Connections",
+        "active": false
+      },
+      {
+        "label": "Activity",
+        "active": false
+      },
+      {
+        "label": "Invitations",
+        "active": false
+      },
+      {
+        "label": "Identity Verification",
+        "active": false
+      },
+      {
+        "label": "Account Settings",
+        "active": false
+      }
+    ],
+    "invite_card": {
+      "title": "Invite friends",
+      "description": "Bring more people to the table and earn rewards!",
+      "button": "Invite Now",
+      "illustration": true
+    }
+  },
+  "profile_hero": {
+    "name": "Ahmed Khan",
+    "verified": true,
+    "username": "@ahmed_khan",
+    "headline": "Coffee enthusiast ☕ | Love meaningful conversations and meeting new people.",
+    "location": "Islamabad, Pakistan",
+    "joined": "Joined March 2024",
+    "edit_button": "Edit Profile",
+    "camera_button": true,
+    "background": "dark teal gradient with abstract line/leaf pattern",
+    "avatar": true
+  },
+  "stats": [
+    {
+      "value": 12,
+      "label": "Meetups Hosted",
+      "icon": "coffee",
+      "tone": "purple"
+    },
+    {
+      "value": 24,
+      "label": "Meetups Joined",
+      "icon": "people",
+      "tone": "green"
+    },
+    {
+      "value": 100,
+      "label": "Reliability Score",
+      "icon": "star",
+      "tone": "yellow"
+    },
+    {
+      "value": 98,
+      "label": "Connections",
+      "icon": "heart",
+      "tone": "pink"
+    },
+    {
+      "value": 4.8,
+      "label": "Average Rating",
+      "icon": "award",
+      "tone": "blue"
+    }
+  ],
+  "tabs": [
+    {
+      "label": "About",
+      "active": true
+    },
+    {
+      "label": "Achievements",
+      "active": false
+    },
+    {
+      "label": "Reviews",
+      "active": false
+    },
+    {
+      "label": "Activity Feed",
+      "active": false
+    }
+  ],
+  "about": {
+    "about_me": {
+      "title": "About me",
+      "text": "I enjoy deep conversations, language exchange, and learning from people with different perspectives. Always up for a good coffee and interesting talks!",
+      "tags": [
+        "Language Exchange",
+        "Startup Enthusiast",
+        "Books",
+        "Mindful Conversations",
+        "Travel",
+        "+"
+      ]
+    },
+    "interests_vibes": {
+      "title": "Interests & Vibes",
+      "action": "Manage",
+      "items": [
+        {
+          "label": "Language Exchange",
+          "icon": "globe"
+        },
+        {
+          "label": "Deep Talks",
+          "icon": "chat"
+        },
+        {
+          "label": "Startup & Business",
+          "icon": "rocket"
+        },
+        {
+          "label": "Books & Writing",
+          "icon": "book"
+        },
+        {
+          "label": "Coffee Chats",
+          "icon": "coffee"
+        },
+        {
+          "label": "Mindfulness",
+          "icon": "leaf"
+        }
+      ]
+    }
+  },
+  "upcoming_meetups": [
+    {
+      "date_badge": "Tomorrow",
+      "title": "Language Exchange",
+      "venue": "Blue Area Roasters",
+      "time": "Tomorrow • 7:30 PM",
+      "seats": "3 seats left",
+      "avatars": "+5",
+      "image": true
+    },
+    {
+      "date_badge": "Sat, 25 May",
+      "title": "Deep Talks",
+      "venue": "Rooftop Garden",
+      "time": "Sat, 25 May • 5:15 PM",
+      "seats": "4 seats left",
+      "avatars": "+3",
+      "image": true
+    },
+    {
+      "date_badge": "Sun, 26 May",
+      "title": "Weekend Coffee",
+      "venue": "The Coffee Club",
+      "time": "Sun, 26 May • 10:00 AM",
+      "seats": "5 seats left",
+      "avatars": "+6",
+      "image": true
+    }
+  ],
+  "upcoming_section": {
+    "title": "My Upcoming Meetups",
+    "action": "View all"
+  },
+  "hosted_meetups": [
+    {
+      "title": "Startup Coffee",
+      "venue": "The Hive Cafe",
+      "date_time": "Thu, 23 May • 6:00 PM",
+      "attendance": "6 / 8 seats filled",
+      "avatars": 5,
+      "more_menu": true
+    }
+  ],
+  "hosted_section": {
+    "title": "My Hosted Meetups",
+    "action": "View all"
+  },
+  "right_sidebar": {
+    "reliability": {
+      "title": "Reliability Score",
+      "action": "View details",
+      "score": 100,
+      "rating": "Top Rated",
+      "criteria": [
+        {
+          "label": "Great communication",
+          "score": "25/25"
+        },
+        {
+          "label": "Shows up on time",
+          "score": "25/25"
+        },
+        {
+          "label": "Respectful & friendly",
+          "score": "25/25"
+        },
+        {
+          "label": "Organized meetups",
+          "score": "25/25"
+        }
+      ],
+      "message": "Amazing! You're one of our most reliable community members."
+    },
+    "identity_verification": {
+      "title": "Identity Verification",
+      "status": "Verified",
+      "items": [
+        {
+          "label": "Phone Number",
+          "status": "Verified"
+        },
+        {
+          "label": "Email Address",
+          "status": "Verified"
+        },
+        {
+          "label": "Government ID",
+          "status": "Verified"
+        }
+      ],
+      "button": "View Verification Details"
+    },
+    "achievements": {
+      "title": "Achievements",
+      "action": "View all",
+      "items": [
+        {
+          "title": "Great Host",
+          "subtitle": "Hosted 10 meetups",
+          "icon": "coffee"
+        },
+        {
+          "title": "Connector",
+          "subtitle": "Made 20 connections",
+          "icon": "people"
+        },
+        {
+          "title": "Early Member",
+          "subtitle": "Joined early",
+          "icon": "calendar"
+        },
+        {
+          "title": "Top Rated",
+          "subtitle": "High reliability",
+          "icon": "star"
+        }
+      ]
+    },
+    "socials": {
+      "title": "Connect your socials",
+      "description": "Grow your network and never miss an update.",
+      "platforms": [
+        "LinkedIn",
+        "Instagram",
+        "Twitter",
+        "Spotify",
+        "Link"
+      ],
+      "button": "Manage Connections"
+    }
+  },
+  "implementation_rules": [
+    "Use Poppins throughout; never substitute Inter.",
+    "Treat profile.pdf as the visual source of truth.",
+    "Preserve the 1536x1024 desktop canvas.",
+    "Preserve the left navigation sidebar, central profile content, and right information sidebar.",
+    "Keep Ahmed Khan profile content and all visible values exactly as shown.",
+    "Keep the dark teal profile hero, overlapping stats row, tabs, About/Interests cards, upcoming meetup cards and hosted meetup row.",
+    "Keep the right sidebar sections in order: Reliability Score, Identity Verification, Achievements, Connect your socials.",
+    "Do not add call/video-call controls or unrelated content.",
+    "Match card proportions, spacing, borders, shadows, typography hierarchy and teal accent to the reference."
+  ],
+  "claude_prompt": "Recreate the supplied profile.pdf screen exactly in React/Tailwind. Use Poppins, not Inter. Treat the PDF/reference image as the source of truth. Preserve the 1536x1024 desktop composition: top navigation; left profile/navigation sidebar; center Ahmed Khan profile hero, stats, tabs, About and Interests & Vibes, My Upcoming Meetups and My Hosted Meetups; right Reliability Score, Identity Verification, Achievements and Connect your socials. Preserve all visible text, numbers and labels from this JSON. Do not redesign, simplify, rearrange or invent sections. Use the supplied reference image as the pixel-comparison target."
+}
