@@ -1,17 +1,51 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { UsersService } from './users.service';
+import { MediaService } from '../media/media.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { toPublicUser } from './user.serializer';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/auth.types';
 
+const photoUpload = FileInterceptor('file', {
+  storage: memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('image/')),
+});
+
 @Controller('users')
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly media: MediaService,
+  ) {}
 
   @Patch('me')
   async updateMe(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
     return toPublicUser(await this.users.updateProfile(user.id, dto));
+  }
+
+  @Post('me/photo')
+  @UseInterceptors(photoUpload)
+  async uploadPhoto(
+    @CurrentUser() user: AuthUser,
+    @UploadedFile() file?: Express.Multer.File,
+  ): Promise<{ photoUrl: string }> {
+    if (!file) throw new BadRequestException('No file');
+    const url = await this.media.uploadImage(file.buffer);
+    await this.users.setPhoto(user.id, url);
+    return { photoUrl: url };
   }
 
   @Get('me/referral')

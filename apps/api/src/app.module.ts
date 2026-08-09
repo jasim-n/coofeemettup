@@ -24,6 +24,7 @@ import { DmModule } from './dm/dm.module';
 import { InvitesModule } from './invites/invites.module';
 import { ReactionsModule } from './reactions/reactions.module';
 import { MailModule } from './mail/mail.module';
+import { MediaModule } from './media/media.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -32,6 +33,7 @@ import { HealthController } from './health/health.controller';
     PrismaModule,
     RedisModule,
     MailModule,
+    MediaModule,
     UsersModule,
     AuthModule,
     EventsModule,

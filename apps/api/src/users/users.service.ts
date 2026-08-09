@@ -138,6 +138,14 @@ export class UsersService {
     };
   }
 
+  async setPhoto(userId: string, photoUrl: string) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { photoUrl },
+    });
+    return updated;
+  }
+
   updateProfile(userId: string, dto: UpdateProfileDto) {
     const { agreeCodeOfConduct, ...rest } = dto;
     return this.prisma.user.update({

@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable react-hooks/set-state-in-effect -- hydrating the form once from the async-loaded profile */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ApiError, Intent, type TableDto, type UserReputation, type UpdateProfileInput, type NotificationsResponse } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
@@ -250,6 +250,9 @@ export default function ProfilePage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [cnicMsg, setCnicMsg] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Stats
   const [myHostedTables, setMyHostedTables] = useState<TableDto[]>([]);
@@ -425,6 +428,22 @@ export default function ProfilePage() {
     }
   }
 
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoError(null);
+    setPhotoBusy(true);
+    try {
+      await api.uploadPhoto(file);
+      await refresh();
+    } catch (err) {
+      setPhotoError(err instanceof ApiError ? err.message : 'Upload failed');
+    } finally {
+      e.target.value = '';
+      setPhotoBusy(false);
+    }
+  }
+
   /* ── nav items ──────────────────────────────────────────────────── */
 
   const NAV_ITEMS: {
@@ -537,14 +556,32 @@ export default function ProfilePage() {
                 <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
                   {/* Large avatar with camera badge */}
                   <div className="relative shrink-0">
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePhotoUpload}
+                    />
                     <Avatar name={displayName} src={user.photoUrl} size={96} />
                     <button
                       type="button"
                       aria-label="Change photo"
-                      className="absolute bottom-0 right-0 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-2 ring-card text-xs transition-transform hover:scale-110"
+                      disabled={photoBusy}
+                      onClick={() => photoInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-2 ring-card text-xs transition-transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <i className="fa-solid fa-camera" />
+                      {photoBusy ? (
+                        <i className="fa-solid fa-spinner fa-spin text-[10px]" />
+                      ) : (
+                        <i className="fa-solid fa-camera" />
+                      )}
                     </button>
+                    {photoError && (
+                      <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-destructive">
+                        {photoError}
+                      </p>
+                    )}
                   </div>
 
                   <div className="min-w-0 flex-1">
