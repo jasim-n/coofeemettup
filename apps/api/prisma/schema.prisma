@@ -20,6 +20,18 @@ enum Role {
   ADMIN
 }
 
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  ACTIONED
+}
+
 enum Gender {
   WOMAN
   MAN
@@ -131,6 +143,7 @@ model User {
   email              String?            @unique // login identity (OTP sent here)
   phone              String             @unique // required, validated PK mobile
   role               Role               @default(USER)
+  status             UserStatus         @default(ACTIVE) // admin can SUSPEND/BAN → access revoked
   canHost            Boolean            @default(false)
   verificationStatus VerificationStatus @default(PENDING)
   cnicImagePath      String?
@@ -422,9 +435,12 @@ model Report {
   subjectId    String
   eventId      String?
   reason       String
+  status       ReportStatus @default(OPEN)
+  resolvedAt   DateTime?
   createdAt    DateTime @default(now())
 
   @@index([subjectId])
+  @@index([status])
 }
 
 model Connection {

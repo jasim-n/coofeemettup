@@ -1,8 +1,12 @@
-import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
 import { SetHostByPhoneDto, SetHostDto } from './dto/set-host.dto';
+import { ListUsersDto } from './dto/list-users.dto';
+import { SetUserStatusDto } from './dto/set-user-status.dto';
+import { SetUserRoleDto } from './dto/set-user-role.dto';
+import { ResolveReportDto } from './dto/resolve-report.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -128,5 +132,53 @@ export class AdminController {
       meta: { status: dto.status },
     });
     return booking;
+  }
+
+  @Get('admin/users')
+  listUsers(@Query() dto: ListUsersDto) {
+    return this.admin.listUsers({
+      q: dto.q,
+      limit: dto.limit ?? 30,
+      offset: dto.offset ?? 0,
+    });
+  }
+
+  @Post('admin/users/:id/status')
+  @HttpCode(200)
+  setUserStatus(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SetUserStatusDto,
+  ) {
+    return this.admin.setUserStatus(user.id, id, dto.status);
+  }
+
+  @Post('admin/users/:id/role')
+  @HttpCode(200)
+  setUserRole(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SetUserRoleDto,
+  ) {
+    return this.admin.setUserRole(user.id, id, dto.role);
+  }
+
+  @Post('admin/users/:id/revoke-verification')
+  @HttpCode(200)
+  revokeVerification(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
+    return this.admin.revokeVerification(user.id, id);
+  }
+
+  @Patch('admin/reports/:id')
+  @HttpCode(200)
+  resolveReport(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: ResolveReportDto,
+  ) {
+    return this.admin.resolveReport(user.id, id, dto.status, dto.banSubject);
   }
 }

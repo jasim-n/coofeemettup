@@ -4,13 +4,250 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import type { AttendanceStatus } from '../../generated/prisma/client';
+import { AuditService } from '../audit/audit.service';
+import type { AttendanceStatus, UserStatus, Role } from '../../generated/prisma/client';
 
 const NO_SHOW_PENALTY = 10;
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
+
+  async listUsers({
+    q,
+    limit = 30,
+    offset = 0,
+  }: {
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const where = q
+      ? {
+          OR: [
+            { firstName: { contains: q, mode: 'insensitive' as const } },
+            { lastInitial: { contains: q, mode: 'insensitive' as const } },
+            { email: { contains: q, mode: 'insensitive' as const } },
+            { phone: { contains: q, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
+    const select = {
+      id: true,
+      email: true,
+      phone: true,
+      firstName: true,
+      lastInitial: true,
+      role: true,
+      status: true,
+      canHost: true,
+      verificationStatus: true,
+      reliabilityScore: true,
+      city: true,
+      photoUrl: true,
+      createdAt: true,
+    };
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return { users, total };
+  }
+
+  async setUserStatus(actorId: string, targetId: string, status: UserStatus) {
+    if (actorId === targetId) {
+      throw new BadRequestException('You cannot change your own status');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { role: true },
+    });
+    if (!target) throw new NotFoundException('User not found');
+
+    if (target.role === 'ADMIN' && status !== 'ACTIVE') {
+      const otherActiveAdmins = await this.prisma.user.count({
+        where: { role: 'ADMIN', status: 'ACTIVE', id: { not: targetId } },
+      });
+      if (otherActiveAdmins < 1) {
+        throw new BadRequestException('Cannot suspend/ban the last active admin');
+      }
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: targetId },
+      data: { status },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        firstName: true,
+        lastInitial: true,
+        role: true,
+        status: true,
+        canHost: true,
+        verificationStatus: true,
+        reliabilityScore: true,
+        city: true,
+        photoUrl: true,
+        createdAt: true,
+      },
+    });
+
+    void this.audit.log({
+      actorId,
+      action: `user.status.${status}`,
+      targetType: 'user',
+      targetId,
+    });
+
+    return updated;
+  }
+
+  async setUserRole(actorId: string, targetId: string, role: Role) {
+    if (actorId === targetId) {
+      throw new BadRequestException('You cannot change your own role');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { role: true },
+    });
+    if (!target) throw new NotFoundException('User not found');
+
+    if (target.role === 'ADMIN' && role !== 'ADMIN') {
+      const otherActiveAdmins = await this.prisma.user.count({
+        where: { role: 'ADMIN', status: 'ACTIVE', id: { not: targetId } },
+      });
+      if (otherActiveAdmins < 1) {
+        throw new BadRequestException('Cannot demote the last admin');
+      }
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: targetId },
+      data: { role },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        firstName: true,
+        lastInitial: true,
+        role: true,
+        status: true,
+        canHost: true,
+        verificationStatus: true,
+        reliabilityScore: true,
+        city: true,
+        photoUrl: true,
+        createdAt: true,
+      },
+    });
+
+    void this.audit.log({
+      actorId,
+      action: `user.role.${role}`,
+      targetType: 'user',
+      targetId,
+    });
+
+    return updated;
+  }
+
+  async revokeVerification(actorId: string, targetId: string) {
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+    });
+    if (!target) throw new NotFoundException('User not found');
+
+    const updated = await this.prisma.user.update({
+      where: { id: targetId },
+      data: { verificationStatus: 'PENDING' },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        firstName: true,
+        lastInitial: true,
+        role: true,
+        status: true,
+        canHost: true,
+        verificationStatus: true,
+        reliabilityScore: true,
+        city: true,
+        photoUrl: true,
+        createdAt: true,
+      },
+    });
+
+    void this.audit.log({
+      actorId,
+      action: 'verification.revoked',
+      targetType: 'user',
+      targetId,
+    });
+
+    return updated;
+  }
+
+  async resolveReport(
+    actorId: string,
+    reportId: string,
+    status: 'RESOLVED' | 'ACTIONED',
+    banSubject?: boolean,
+  ) {
+    const report = await this.prisma.report.findUnique({
+      where: { id: reportId },
+      select: { id: true, subjectId: true, subject: { select: { role: true } } },
+    });
+    if (!report) throw new NotFoundException('Report not found');
+
+    if (banSubject) {
+      if (report.subject.role === 'ADMIN') {
+        const otherActiveAdmins = await this.prisma.user.count({
+          where: { role: 'ADMIN', status: 'ACTIVE', id: { not: report.subjectId } },
+        });
+        if (otherActiveAdmins < 1) {
+          throw new BadRequestException('Cannot suspend/ban the last active admin');
+        }
+      }
+      await this.prisma.user.update({
+        where: { id: report.subjectId },
+        data: { status: 'BANNED' },
+      });
+    }
+
+    const updated = await this.prisma.report.update({
+      where: { id: reportId },
+      data: { status, resolvedAt: new Date() },
+      include: {
+        reporter: true,
+        subject: true,
+      },
+    });
+
+    void this.audit.log({
+      actorId,
+      action: `report.${status}`,
+      targetType: 'report',
+      targetId: reportId,
+      meta: banSubject ? { banSubject: true, subjectId: report.subjectId } : undefined,
+    });
+
+    return updated;
+  }
 
   async setHost(userId: string, canHost: boolean) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });

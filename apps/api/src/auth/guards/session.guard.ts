@@ -9,12 +9,14 @@ import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { SESSION_COOKIE, type SessionPayload } from '../auth.types';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly jwt: JwtService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -36,9 +38,20 @@ export class SessionGuard implements CanActivate {
 
     try {
       const payload = await this.jwt.verifyAsync<SessionPayload>(token);
+
+      // Enforce account status — bans/suspensions take effect immediately.
+      const dbUser = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { status: true },
+      });
+      if (!dbUser || dbUser.status !== 'ACTIVE') {
+        throw new UnauthorizedException('Your account has been suspended');
+      }
+
       req.user = { id: payload.sub, role: payload.role };
       return true;
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException('Invalid session');
     }
   }

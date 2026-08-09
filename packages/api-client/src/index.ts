@@ -1,4 +1,6 @@
 import type {
+  AdminUserDto,
+  AdminUsersResponse,
   AttendanceStatus,
   AuditEntry,
   AuthResponse,
@@ -30,7 +32,9 @@ import type {
   ReactionSummary,
   ReferralInfo,
   ReportDto,
+  ReportStatus,
   ReviewTargetsResponse,
+  Role,
   SuggestedPerson,
   TableChatResponse,
   AdminTableDto,
@@ -41,6 +45,7 @@ import type {
   UpdateEventInput,
   SubmitFeedbackInput,
   UpdateProfileInput,
+  UserStatus,
   InviteDto,
 } from '@jrst/types';
 
@@ -398,6 +403,28 @@ export class ApiClient {
 
   adminSetHostByPhone(phone: string, canHost: boolean): Promise<{ id: string; phone: string; canHost: boolean }> {
     return this.request('POST', '/admin/host', { phone, canHost });
+  }
+
+  // ---- admin user management ----
+  adminListUsers(q = '', limit = 30, offset = 0): Promise<AdminUsersResponse> {
+    const qs = new URLSearchParams({ q, limit: String(limit), offset: String(offset) }).toString();
+    return this.request('GET', `/admin/users?${qs}`);
+  }
+
+  adminSetUserStatus(id: string, status: UserStatus): Promise<AdminUserDto> {
+    return this.request('POST', `/admin/users/${id}/status`, { status });
+  }
+
+  adminSetUserRole(id: string, role: Role): Promise<AdminUserDto> {
+    return this.request('POST', `/admin/users/${id}/role`, { role });
+  }
+
+  adminRevokeVerification(id: string): Promise<AdminUserDto> {
+    return this.request('POST', `/admin/users/${id}/revoke-verification`);
+  }
+
+  adminResolveReport(id: string, status: ReportStatus, banSubject = false): Promise<unknown> {
+    return this.request('PATCH', `/admin/reports/${id}`, { status, banSubject });
   }
 
   // ---- tables (host-created, approval-based join) ----

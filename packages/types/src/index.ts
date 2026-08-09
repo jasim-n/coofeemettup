@@ -546,12 +546,38 @@ export interface MyGroup {
   members: GroupMember[];
 }
 
+export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED';
+export type ReportStatus = 'OPEN' | 'RESOLVED' | 'ACTIONED';
+
+export interface AdminUserDto {
+  id: string;
+  email: string | null;
+  phone: string;
+  firstName: string | null;
+  lastInitial: string | null;
+  role: Role;
+  status: UserStatus;
+  canHost: boolean;
+  verificationStatus: VerificationStatus;
+  reliabilityScore: number;
+  city: string | null;
+  photoUrl: string | null;
+  createdAt: string;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUserDto[];
+  total: number;
+}
+
 export interface ReportDto {
   id: string;
   reporterId: string;
   subjectId: string;
   eventId: string | null;
   reason: string;
+  status: ReportStatus;
+  resolvedAt: string | null;
   createdAt: string;
   reporter?: PublicUser;
   subject?: PublicUser;

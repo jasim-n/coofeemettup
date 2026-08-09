@@ -44,6 +44,9 @@ export default function AdminPage() {
           <Link href="/admin/tables" className="text-primary hover:underline">
             Tables
           </Link>
+          <Link href="/admin/users" className="text-primary hover:underline">
+            Users
+          </Link>
           <Link href="/admin/activity" className="text-muted-foreground hover:underline">
             Activity
           </Link>
