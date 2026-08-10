@@ -44,6 +44,9 @@ export default function AdminPage() {
           <Link href="/admin/tables" className="text-primary hover:underline">
             Tables
           </Link>
+          <Link href="/admin/events" className="text-primary hover:underline">
+            Events
+          </Link>
           <Link href="/admin/reviews" className="text-primary hover:underline">
             Reviews
           </Link>
