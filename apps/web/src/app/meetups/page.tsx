@@ -364,6 +364,38 @@ function SuggestedRow({ t }: { t: TableDto }) {
   );
 }
 
+/* ─── skeleton card ─────────────────────────────────────────────── */
+
+function SkeletonCard() {
+  return (
+    <div className="bg-card shadow-soft ring-border/60 animate-pulse overflow-hidden rounded-3xl ring-1">
+      <div className="bg-muted h-36 w-full" />
+      <div className="p-4 space-y-2">
+        <div className="bg-muted h-3 w-1/3 rounded-full" />
+        <div className="bg-muted h-4 w-2/3 rounded-full" />
+        <div className="bg-muted h-3 w-1/2 rounded-full" />
+        <div className="mt-3 bg-muted h-4 w-1/4 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonTableRow() {
+  return (
+    <div className="animate-pulse flex items-center gap-4 py-3">
+      <div className="bg-muted h-10 w-10 shrink-0 rounded-xl" />
+      <div className="flex-1 space-y-2">
+        <div className="bg-muted h-3 w-1/3 rounded-full" />
+        <div className="bg-muted h-3 w-1/4 rounded-full" />
+      </div>
+      <div className="bg-muted h-3 w-20 rounded-full" />
+      <div className="bg-muted h-3 w-16 rounded-full" />
+      <div className="bg-muted h-5 w-16 rounded-full" />
+      <div className="bg-muted h-7 w-16 rounded-full" />
+    </div>
+  );
+}
+
 /* ─── tabs ──────────────────────────────────────────────────────── */
 
 // TABS is derived inside the component to get the live invite count.
@@ -379,6 +411,7 @@ export default function MeetupsPage() {
   const [invites, setInvites] = useState<InviteDto[]>([]);
   const [inviteBusy, setInviteBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [listsLoading, setListsLoading] = useState(true);
 
   // filters
   const [when, setWhen] = useState<WhenFilter>('upcoming');
@@ -397,6 +430,7 @@ export default function MeetupsPage() {
   useEffect(() => {
     if (!user) return;
     let active = true;
+    // listsLoading starts true; the finally below clears it after this one-shot load.
     void (async () => {
       try {
         const [b, j, h] = await Promise.all([
@@ -411,6 +445,8 @@ export default function MeetupsPage() {
         }
       } catch (err) {
         if (active) setError(err instanceof ApiError ? err.message : 'Failed to load meetups');
+      } finally {
+        if (active) setListsLoading(false);
       }
     })();
     return () => {
@@ -711,12 +747,14 @@ export default function MeetupsPage() {
                 Discover, join and manage your coffee conversations.
               </p>
             </div>
-            <Link
-              href="/tables/new"
-              className="bg-primary text-primary-foreground hover:brightness-110 hover:shadow-glow hover:-translate-y-0.5 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold shadow-soft transition-all"
-            >
-              + Create Meetup
-            </Link>
+            {user?.canHost === true && (
+              <Link
+                href="/tables/new"
+                className="bg-primary text-primary-foreground hover:brightness-110 hover:shadow-glow hover:-translate-y-0.5 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold shadow-soft transition-all"
+              >
+                + Create Meetup
+              </Link>
+            )}
           </div>
 
           {/* tabs */}
@@ -755,7 +793,11 @@ export default function MeetupsPage() {
                     View all →
                   </Link>
                 </div>
-                {upcomingCards.length === 0 ? (
+                {listsLoading ? (
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {Array.from({ length: 4 }, (_, i) => <SkeletonCard key={i} />)}
+                  </div>
+                ) : upcomingCards.length === 0 ? (
                   <div className="rounded-3xl border border-dashed py-12 text-center">
                     <i className="fa-solid fa-chair text-muted-foreground text-3xl" />
                     <p className="text-muted-foreground mt-2 text-sm">
@@ -776,20 +818,28 @@ export default function MeetupsPage() {
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="font-heading text-lg font-bold tracking-tight">My Meetups</h2>
                 </div>
-                <MeetupTable
-                  rows={activeJoined}
-                  emptyMsg="You aren't hosting or attending any meetups yet."
-                  meId={user?.id}
-                  coords={coords}
-                />
-                {activeJoined.length > 0 && (
-                  <Link
-                    href="/meetups"
-                    className="text-primary mt-3 block text-sm font-semibold hover:underline"
-                    onClick={() => setTab('my')}
-                  >
-                    View all my meetups →
-                  </Link>
+                {listsLoading ? (
+                  <div className="bg-card shadow-soft rounded-3xl border p-5 divide-y divide-border/60">
+                    {Array.from({ length: 3 }, (_, i) => <SkeletonTableRow key={i} />)}
+                  </div>
+                ) : (
+                  <>
+                    <MeetupTable
+                      rows={activeJoined}
+                      emptyMsg="You aren't hosting or attending any meetups yet."
+                      meId={user?.id}
+                      coords={coords}
+                    />
+                    {activeJoined.length > 0 && (
+                      <Link
+                        href="/meetups"
+                        className="text-primary mt-3 block text-sm font-semibold hover:underline"
+                        onClick={() => setTab('my')}
+                      >
+                        View all my meetups →
+                      </Link>
+                    )}
+                  </>
                 )}
               </section>
             </div>
@@ -799,12 +849,18 @@ export default function MeetupsPage() {
           {tab === 'my' && (
             <div className="space-y-4">
               <h2 className="font-heading text-lg font-bold tracking-tight">My Meetups</h2>
-              <MeetupTable
-                rows={activeJoined}
-                emptyMsg="You aren't hosting or attending any meetups yet."
-                meId={user?.id}
-                coords={coords}
-              />
+              {listsLoading ? (
+                <div className="bg-card shadow-soft rounded-3xl border p-5 divide-y divide-border/60">
+                  {Array.from({ length: 3 }, (_, i) => <SkeletonTableRow key={i} />)}
+                </div>
+              ) : (
+                <MeetupTable
+                  rows={activeJoined}
+                  emptyMsg="You aren't hosting or attending any meetups yet."
+                  meId={user?.id}
+                  coords={coords}
+                />
+              )}
             </div>
           )}
 
@@ -990,24 +1046,26 @@ export default function MeetupsPage() {
             )}
           </div>
 
-          {/* Host your own meetup */}
-          <div className="bg-secondary rounded-3xl p-5">
-            <div className="mb-3 text-center text-4xl">
-              <i className="fa-solid fa-mug-hot text-primary" />
+          {/* Host your own meetup — only shown to users with host permission */}
+          {user?.canHost === true && (
+            <div className="bg-secondary rounded-3xl p-5">
+              <div className="mb-3 text-center text-4xl">
+                <i className="fa-solid fa-mug-hot text-primary" />
+              </div>
+              <p className="font-heading text-secondary-foreground text-center font-bold tracking-tight">
+                Host your own meetup
+              </p>
+              <p className="text-secondary-foreground/80 mt-2 text-center text-sm">
+                Bring people together over coffee &amp; good conversations.
+              </p>
+              <Link
+                href="/tables/new"
+                className="bg-primary text-primary-foreground hover:brightness-110 mt-4 block rounded-full py-2.5 text-center text-sm font-semibold transition-[filter]"
+              >
+                Create Meetup
+              </Link>
             </div>
-            <p className="font-heading text-secondary-foreground text-center font-bold tracking-tight">
-              Host your own meetup
-            </p>
-            <p className="text-secondary-foreground/80 mt-2 text-center text-sm">
-              Bring people together over coffee &amp; good conversations.
-            </p>
-            <Link
-              href="/tables/new"
-              className="bg-primary text-primary-foreground hover:brightness-110 mt-4 block rounded-full py-2.5 text-center text-sm font-semibold transition-[filter]"
-            >
-              Create Meetup
-            </Link>
-          </div>
+          )}
         </aside>
       </div>
     </main>

@@ -4,18 +4,17 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { type SuggestedPerson, type TableDto } from '@jrst/api-client';
+import { type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { categoryIcon } from '@/lib/category-icon';
+import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
-import { ConnectButton } from '@/components/connect-button';
-import { UserLink } from '@/components/user-link';
 
 /* ─── types ──────────────────────────────────────────────────────────── */
 
@@ -212,9 +211,15 @@ function TableListRow({ t }: { t: TableDto }) {
   );
 }
 
-function TableCoverCard({ t }: { t: TableDto }) {
+function TableCoverCard({ t, coords }: { t: TableDto; coords: { lat: number; lng: number } | null }) {
   const going = t.seats - t.seatsLeft;
   const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
+  const tLat = t.lat ?? t.cafe?.lat ?? null;
+  const tLng = t.lng ?? t.cafe?.lng ?? null;
+  const distance =
+    coords && tLat != null && tLng != null
+      ? formatDistance(haversineKm(coords.lat, coords.lng, tLat, tLng))
+      : null;
   return (
     <Link
       href={`/tables/${t.id}`}
@@ -236,7 +241,23 @@ function TableCoverCard({ t }: { t: TableDto }) {
           {t.title ?? t.category}
         </h3>
         <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
-          <i className="fa-solid fa-location-dot" />{t.venueName ?? t.cafe?.name ?? 'See map'}
+          <i className="fa-solid fa-location-dot" />
+          {t.venueName ?? t.cafe?.name ?? 'See map'}
+          {distance && <span className="text-muted-foreground"> · {distance}</span>}
+          {tLat != null && tLng != null && (
+            <button
+              type="button"
+              aria-label="Open location in Google Maps"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(googleMapsUrl(tLat as number, tLng as number), '_blank', 'noopener');
+              }}
+              className="text-primary hover:text-primary/80 ml-1"
+            >
+              <i className="fa-solid fa-map-pin" />
+            </button>
+          )}
         </p>
         <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
           <i className="fa-solid fa-calendar-day" />{formatDateTime(t.startAt)}
@@ -404,41 +425,6 @@ function MightLike({ tables }: { tables: TableDto[] }) {
           })}
         </ul>
       )}
-    </div>
-  );
-}
-
-/* ─── right rail: people you may know (real) ─────────────────────────── */
-
-function PeopleYouMayKnow({ suggestions }: { suggestions: SuggestedPerson[] }) {
-  if (suggestions.length === 0) return null;
-  return (
-    <div className="bg-card shadow-soft rounded-3xl border p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="font-heading font-bold tracking-tight">People you may know</p>
-        <Link href="/connections" className="text-primary text-xs font-semibold hover:underline">
-          View all
-        </Link>
-      </div>
-      <ul className="space-y-3">
-        {suggestions.slice(0, 4).map(({ user: u, mutuals }) => {
-          const name = `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
-          return (
-            <li key={u.id} className="flex items-center gap-3">
-              <UserLink userId={u.id} className="flex items-center gap-3 min-w-0 flex-1">
-                <Avatar name={name} src={u.photoUrl} size={36} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold truncate">{name}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}
-                  </p>
-                </div>
-              </UserLink>
-              <ConnectButton userId={u.id} size="xs" />
-            </li>
-          );
-        })}
-      </ul>
     </div>
   );
 }
@@ -665,7 +651,7 @@ function SearchInner() {
   const params = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
   const [tables, setTables] = useState<TableDto[] | null>(null);
-  const [suggestions, setSuggestions] = useState<SuggestedPerson[]>([]);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // filter state
   const [location, setLocation] = useState('Islamabad, Pakistan');
@@ -693,18 +679,18 @@ function SearchInner() {
   };
 
   useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (p) => setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {},
+    );
+  }, []);
+
+  useEffect(() => {
     let active = true;
     void (async () => {
       try {
-        const tablesPromise = api.browseTables();
-        const suggestionsPromise = user
-          ? api.connectionSuggestions().catch(() => [] as SuggestedPerson[])
-          : Promise.resolve([] as SuggestedPerson[]);
-        const [list, suggs] = await Promise.all([tablesPromise, suggestionsPromise]);
-        if (active) {
-          setTables(list);
-          setSuggestions(suggs);
-        }
+        const list = await api.browseTables();
+        if (active) setTables(list);
       } catch {
         if (active) setTables([]);
       }
@@ -860,7 +846,7 @@ function SearchInner() {
           {results.length > 0 && view === 'grid' && (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {results.map((t) => (
-                <TableCoverCard key={t.id} t={t} />
+                <TableCoverCard key={t.id} t={t} coords={coords} />
               ))}
             </div>
           )}
@@ -870,7 +856,6 @@ function SearchInner() {
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <MapPreview results={results} />
           <MightLike tables={tables ?? []} />
-          <PeopleYouMayKnow suggestions={suggestions} />
         </aside>
       </div>
     </main>

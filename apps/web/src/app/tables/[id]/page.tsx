@@ -341,12 +341,7 @@ export default function TableDetailPage() {
             <section className="bg-card shadow-soft rounded-3xl border p-6">
               <h2 className="font-heading mb-3 text-lg font-bold tracking-tight">Invite people</h2>
               {connections.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  Connect with people to invite them.{' '}
-                  <Link href="/connections" className="text-primary font-semibold hover:underline">
-                    Find connections →
-                  </Link>
-                </p>
+                <p className="text-muted-foreground text-sm">No connections to invite yet.</p>
               ) : (
                 <div className="space-y-2">
                   {connections.map((conn) => {

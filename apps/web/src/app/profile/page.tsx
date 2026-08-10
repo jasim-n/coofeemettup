@@ -457,7 +457,6 @@ export default function ProfilePage() {
     { href: '/meetups', icon: 'fa-calendar-days', label: 'My Meetups' },
     { id: 'reviews', icon: 'fa-star', label: 'Reviews & Ratings' },
     { href: '/saved', icon: 'fa-bookmark', label: 'Saved Tables' },
-    { href: '/connections', icon: 'fa-user-group', label: 'Connections' },
     { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity', tab: 'activity' },
     { href: '/invites', icon: 'fa-envelope-open', label: 'Invitations' },
     { id: 'identity', icon: 'fa-shield-halved', label: 'Identity Verification' },
@@ -1266,12 +1265,6 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
-            <Link
-              href="/connections"
-              className="block w-full rounded-full border border-primary/40 py-2 text-center text-xs font-semibold text-primary hover:bg-secondary transition-colors"
-            >
-              Manage Connections
-            </Link>
           </div>
         </aside>
       </div>

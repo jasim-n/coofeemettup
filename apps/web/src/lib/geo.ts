@@ -15,3 +15,11 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
 export function formatDistance(km: number): string {
   return km < 1 ? `${Math.round(km * 1000)} m away` : `${km.toFixed(1)} km away`;
 }
+
+/**
+ * Google Maps URL that drops a pin at the given coordinates (free — opens the
+ * Google Maps web/app, no API key needed). Use for a "view location" link.
+ */
+export function googleMapsUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+}

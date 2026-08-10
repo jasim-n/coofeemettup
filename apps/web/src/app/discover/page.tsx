@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ApiError, type SuggestedPerson, type TableDto } from '@jrst/api-client';
+import { ApiError, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
@@ -11,10 +11,8 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/spinner';
-import { ConnectButton } from '@/components/connect-button';
-import { UserLink } from '@/components/user-link';
 import { categoryIcon } from '@/lib/category-icon';
-import { haversineKm } from '@/lib/geo';
+import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
 
 /* ─── types ──────────────────────────────────────────────────────── */
 
@@ -103,8 +101,10 @@ function cityCount(tables: TableDto[], city: string): number {
 
 /* ─── TableCoverCard ─────────────────────────────────────────────── */
 
-function TableCoverCard({ t }: { t: TableDto }) {
+function TableCoverCard({ t, coords }: { t: TableDto; coords: { lat: number; lng: number } | null }) {
   const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
+  const tLat = t.lat ?? t.cafe?.lat ?? null;
+  const tLng = t.lng ?? t.cafe?.lng ?? null;
   return (
     <Link
       href={`/tables/${t.id}`}
@@ -124,7 +124,28 @@ function TableCoverCard({ t }: { t: TableDto }) {
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>
         <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
-          <i className="fa-solid fa-location-dot" /> {t.venueName ?? t.cafe?.name ?? 'See map'}
+          <i className="fa-solid fa-calendar-day" /> {formatDateTime(t.startAt)}
+        </p>
+        <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
+          <i className="fa-solid fa-location-dot" />
+          {t.venueName ?? t.cafe?.name ?? 'See map'}
+          {coords && tLat != null && tLng != null && (
+            <> · {formatDistance(haversineKm(coords.lat, coords.lng, tLat, tLng))}</>
+          )}
+          {tLat != null && tLng != null && (() => {
+            const lat = tLat;
+            const lng = tLng;
+            return (
+              <button
+                type="button"
+                aria-label="Open location in Google Maps"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(googleMapsUrl(lat, lng), '_blank', 'noopener'); }}
+                className="text-primary hover:text-primary/80 ml-1"
+              >
+                <i className="fa-solid fa-map-pin" />
+              </button>
+            );
+          })()}
         </p>
         <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
           <Avatar name={t.host?.firstName ?? 'H'} size={22} />
@@ -153,7 +174,6 @@ export default function DiscoverPage() {
 
   const [tables, setTables] = useState<TableDto[] | null>(null);
   const [myJoined, setMyJoined] = useState<TableDto[]>([]);
-  const [suggestions, setSuggestions] = useState<SuggestedPerson[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // filters
@@ -173,14 +193,10 @@ export default function DiscoverPage() {
         const joinedPromise = user
           ? api.myJoinedTables().catch(() => [] as TableDto[])
           : Promise.resolve([] as TableDto[]);
-        const suggestionsPromise = user
-          ? api.connectionSuggestions().catch(() => [] as SuggestedPerson[])
-          : Promise.resolve([] as SuggestedPerson[]);
-        const [list, joined, suggs] = await Promise.all([browsePromise, joinedPromise, suggestionsPromise]);
+        const [list, joined] = await Promise.all([browsePromise, joinedPromise]);
         if (active) {
           setTables(list);
           setMyJoined(joined);
-          setSuggestions(suggs);
         }
       } catch (err) {
         if (active) setError(err instanceof ApiError ? err.message : 'Failed to load tables');
@@ -548,7 +564,7 @@ export default function DiscoverPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recommended.map((t) => (
-                  <TableCoverCard key={t.id} t={t} />
+                  <TableCoverCard key={t.id} t={t} coords={coords} />
                 ))}
               </div>
             </section>
@@ -564,7 +580,7 @@ export default function DiscoverPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {more.map((t) => (
-                  <TableCoverCard key={t.id} t={t} />
+                  <TableCoverCard key={t.id} t={t} coords={coords} />
                 ))}
               </div>
             </section>
@@ -575,11 +591,8 @@ export default function DiscoverPage() {
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           {/* TRENDING NOW */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3">
               <p className="font-heading font-bold tracking-tight">🔥 Trending now</p>
-              <Link href="/discover" className="text-primary text-xs font-semibold hover:underline">
-                View all
-              </Link>
             </div>
             {catCounts.length === 0 ? (
               <p className="text-muted-foreground text-sm">Loading…</p>
@@ -608,38 +621,6 @@ export default function DiscoverPage() {
               </ul>
             )}
           </div>
-
-          {/* SUGGESTED FOR YOU */}
-          {suggestions.length > 0 && (
-            <div className="bg-card shadow-soft rounded-3xl border p-5">
-              <div className="mb-1 flex items-center justify-between">
-                <p className="font-heading font-bold tracking-tight">Suggested for you</p>
-                <Link href="/connections" className="text-primary text-xs font-semibold hover:underline">
-                  View all
-                </Link>
-              </div>
-              <p className="text-muted-foreground mb-4 text-xs">Based on your interests</p>
-              <ul className="space-y-3">
-                {suggestions.slice(0, 3).map(({ user: u, mutuals }) => {
-                  const name = `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
-                  return (
-                    <li key={u.id} className="flex items-center gap-3">
-                      <UserLink userId={u.id} className="flex items-center gap-3 min-w-0 flex-1">
-                        <Avatar name={name} src={u.photoUrl} size={34} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold truncate">{name}</p>
-                          <p className="text-muted-foreground text-xs">
-                            {mutuals} {mutuals === 1 ? 'mutual' : 'mutuals'}
-                          </p>
-                        </div>
-                      </UserLink>
-                      <ConnectButton userId={u.id} size="xs" />
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
 
           {/* YOUR UPCOMING */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">

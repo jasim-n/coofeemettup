@@ -320,14 +320,7 @@ export default function MessagesPage() {
                   <div className="max-h-60 overflow-y-auto">
                     {connections.length === 0 ? (
                       <div className="px-4 py-5 text-center text-sm">
-                        <p className="text-muted-foreground mb-2">Connect with people first</p>
-                        <Link
-                          href="/connections"
-                          onClick={() => setPickerOpen(false)}
-                          className="bg-primary text-primary-foreground rounded-full px-3 py-1.5 text-xs font-semibold"
-                        >
-                          Find connections
-                        </Link>
+                        <p className="text-muted-foreground">No connections yet</p>
                       </div>
                     ) : (
                       <ul>
