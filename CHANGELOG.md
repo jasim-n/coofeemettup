@@ -4,6 +4,24 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-10 — Discover sidebars, profile deep-link + photo upload
+
+- **Discover sticky sidebars** (Filters, Trending/Upcoming/Cities) now have their
+  own capped height + independent scroll (`lg:max-h-[calc(100vh-7rem)]
+  lg:overflow-y-auto`), so their last items are reachable without scrolling the
+  whole page. Mobile unchanged; no scrollbar unless content overflows.
+  (`discover/page.tsx`)
+- **Profile "#code-of-conduct" deep-link fixed.** The table "Accept in profile"
+  CTA links to `/profile#code-of-conduct`, but the section was chosen in a
+  `useState` initializer that runs during SSR (window undefined) and isn't
+  re-run on hydration → the hash was ignored and you landed on Overview. Now a
+  client effect reads the hash, opens the settings section, and scrolls the
+  consent checkbox into view. (`profile/page.tsx`)
+- **Profile photo upload restrictions.** Client now enforces image type
+  (JPG/PNG/WebP) + ≤5 MB before upload (matches the backend), with a clear
+  inline error instead of a failed round-trip. (`profile/page.tsx`)
+
+
 ### 2026-08-10 — Logout + OTP delivery fixes
 
 - **Logout was stuck / kept you on the same screen.** `logout()` awaited the

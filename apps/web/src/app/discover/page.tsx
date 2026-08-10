@@ -298,7 +298,7 @@ export default function DiscoverPage() {
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-6 sm:px-6">
       <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
         {/* ── LEFT RAIL ─────────────────────────────────────────────── */}
-        <aside className="bg-card shadow-soft rounded-3xl border p-5 lg:sticky lg:top-24 lg:self-start">
+        <aside className="bg-card shadow-soft rounded-3xl border p-5 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
           {/* heading + clear */}
           <div className="mb-5 flex items-center justify-between">
             <p className="font-heading font-bold tracking-tight">Filters</p>
@@ -588,7 +588,7 @@ export default function DiscoverPage() {
         </div>
 
         {/* ── RIGHT RAIL ────────────────────────────────────────────── */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
           {/* TRENDING NOW */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
             <div className="mb-3">

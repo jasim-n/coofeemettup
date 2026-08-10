@@ -234,12 +234,23 @@ function HostedMeetupRow({ t }: { t: TableDto }) {
 export default function ProfilePage() {
   const { user, loading, refresh } = useAuth();
 
-  // Section state — hash-init so #code-of-conduct deep-link from table page still works
-  const [section, setSection] = useState<Section>(() =>
-    typeof window !== 'undefined' && window.location.hash === '#code-of-conduct'
-      ? 'settings'
-      : 'overview',
-  );
+  // Section state. Default 'overview' (SSR-safe — a useState initializer runs on
+  // the server where window is undefined and is NOT re-run on hydration, so the
+  // #code-of-conduct hash must be honoured in a client effect instead).
+  const [section, setSection] = useState<Section>('overview');
+
+  // Honour the #code-of-conduct deep-link from the table "Accept in profile" CTA:
+  // open the settings section and scroll the consent checkbox into view.
+  useEffect(() => {
+    if (window.location.hash !== '#code-of-conduct') return;
+    setSection('settings');
+    const t = setTimeout(() => {
+      document
+        .getElementById('code-of-conduct')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+    return () => clearTimeout(t);
+  }, []);
 
   // Form state
   const [form, setForm] = useState<Record<string, string>>({});
@@ -432,6 +443,18 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoError(null);
+    // Client-side restrictions (backend enforces the same): images only, ≤5 MB.
+    const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!ALLOWED.includes(file.type)) {
+      setPhotoError('Please choose a JPG, PNG, or WebP image.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Image must be 5 MB or smaller.');
+      e.target.value = '';
+      return;
+    }
     setPhotoBusy(true);
     try {
       await api.uploadPhoto(file);
@@ -558,7 +581,7 @@ export default function ProfilePage() {
                     <input
                       ref={photoInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       onChange={handlePhotoUpload}
                     />
