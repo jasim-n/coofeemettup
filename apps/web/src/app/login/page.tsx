@@ -158,11 +158,11 @@ export default function LoginPage() {
               </Button>
               <button
                 type="button"
-                onClick={() => setEmail('admin@coffeemeetups.dev')}
+                onClick={() => setEmail('coffeemeetupsadmin@yopmail.com')}
                 className="bg-secondary text-secondary-foreground w-full rounded-2xl px-4 py-2.5 text-center text-xs transition-[filter] hover:brightness-95"
               >
                 Testing? Tap to use admin:{' '}
-                <span className="font-mono font-bold">admin@coffeemeetups.dev</span>
+                <span className="font-mono font-bold">coffeemeetupsadmin@yopmail.com</span>
               </button>
             </form>
           ) : (

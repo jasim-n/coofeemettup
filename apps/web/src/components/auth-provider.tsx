@@ -64,9 +64,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    await api.logout();
+    // Logging out locally must always succeed, even if the server call fails
+    // (e.g. an expired session → CSRF 403). Clear client state regardless, then
+    // hard-redirect to /login so no in-memory/route state lingers.
+    try {
+      await api.logout();
+    } catch {
+      /* ignore — proceed to clear + redirect */
+    }
     window.localStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    window.location.href = '/login';
   }, []);
 
   return (

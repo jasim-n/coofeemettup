@@ -53,7 +53,11 @@ export class OtpService {
       this.logger.log(`DEV OTP for ${email}: ${code}`);
     }
 
-    await this.mail.sendOtp(email, code);
+    // Fire-and-forget: the code is already persisted (Redis) and verifiable, so
+    // never block the HTTP response on SMTP. sendOtp is best-effort (never
+    // throws); awaiting it made request-otp hang when the SMTP host stalls
+    // (common on cloud hosts). void it so the response returns immediately.
+    void this.mail.sendOtp(email, code);
 
     return code;
   }

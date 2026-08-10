@@ -70,6 +70,11 @@ export class MailService {
         port: c.port,
         secure: c.port === 465,
         auth: { user: c.user, pass: c.pass },
+        // Fail fast if the SMTP host stalls (cloud hosts often throttle SMTP)
+        // rather than hanging a connection forever.
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 15_000,
       });
     }
     return this.transports[provider] ?? null;
