@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { MailService, type MailProvider } from '../mail/mail.service';
 import type { AttendanceStatus, UserStatus, Role } from '../../generated/prisma/client';
 
 const SLIM_USER = {
@@ -21,7 +22,35 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly mail: MailService,
   ) {}
+
+  // ── Mail provider (OTP sender) ──────────────────────────────────────────────
+
+  mailProviderStatus() {
+    return this.mail.status();
+  }
+
+  async setMailProvider(provider: MailProvider) {
+    if (!this.mail.configuredProviders().includes(provider)) {
+      throw new BadRequestException(
+        `Provider "${provider}" has no SMTP credentials configured.`,
+      );
+    }
+    await this.mail.setProvider(provider);
+    return this.mail.status();
+  }
+
+  async sendTestMail(email: string) {
+    try {
+      const provider = await this.mail.sendTest(email);
+      return { ok: true, provider };
+    } catch (err) {
+      throw new BadRequestException(
+        err instanceof Error ? err.message : 'Test email failed',
+      );
+    }
+  }
 
   async listUsers({
     q,

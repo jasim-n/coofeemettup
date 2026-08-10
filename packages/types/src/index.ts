@@ -679,3 +679,20 @@ export interface DmThread {
   lastAt: string;
   unread: number;
 }
+
+// ── Mail provider (admin: OTP sender) ────────────────────────────────────────
+export type MailProvider = 'brevo' | 'gmail';
+
+export interface MailProviderStatus {
+  /** Provider used for the next send (null = none configured). */
+  active: MailProvider | null;
+  /** Env-configured default (null when unset). */
+  default: MailProvider | null;
+  /** Providers with complete SMTP credentials. */
+  configured: MailProvider[];
+}
+
+export interface TestMailResult {
+  ok: boolean;
+  provider: MailProvider;
+}

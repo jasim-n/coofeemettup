@@ -59,6 +59,9 @@ export default function AdminPage() {
           <Link href="/admin/reports" className="text-muted-foreground hover:underline">
             Reports
           </Link>
+          <Link href="/admin/settings" className="text-muted-foreground hover:underline">
+            Settings
+          </Link>
         </nav>
       </div>
 

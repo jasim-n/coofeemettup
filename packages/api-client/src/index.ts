@@ -24,9 +24,12 @@ import type {
   FeedbackDto,
   GenderTrack,
   GroupDto,
+  MailProvider,
+  MailProviderStatus,
   MatchGenerateResult,
   MatchResult,
   MyGroup,
+  TestMailResult,
   NotificationsResponse,
   PendingVerification,
   CreateReviewInput,
@@ -429,6 +432,19 @@ export class ApiClient {
 
   adminResolveReport(id: string, status: ReportStatus, banSubject = false): Promise<unknown> {
     return this.request('PATCH', `/admin/reports/${id}`, { status, banSubject });
+  }
+
+  // ---- mail provider (OTP sender) ----
+  adminGetMailProvider(): Promise<MailProviderStatus> {
+    return this.request('GET', '/admin/mail/provider');
+  }
+
+  adminSetMailProvider(provider: MailProvider): Promise<MailProviderStatus> {
+    return this.request('POST', '/admin/mail/provider', { provider });
+  }
+
+  adminSendTestMail(email: string): Promise<TestMailResult> {
+    return this.request('POST', '/admin/mail/test', { email });
   }
 
   // ---- tables (host-created, approval-based join) ----

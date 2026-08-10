@@ -509,3 +509,11 @@ model TableInvite {
   @@index([inviteeId])
   @@index([tableId])
 }
+
+/// Generic key/value app settings (admin-tunable at runtime). Currently holds
+/// `mailProvider` = 'brevo' | 'gmail' so admins can switch the OTP sender.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

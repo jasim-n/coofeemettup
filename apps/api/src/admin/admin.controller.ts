@@ -7,6 +7,8 @@ import { ListUsersDto } from './dto/list-users.dto';
 import { SetUserStatusDto } from './dto/set-user-status.dto';
 import { SetUserRoleDto } from './dto/set-user-role.dto';
 import { ResolveReportDto } from './dto/resolve-report.dto';
+import { SetMailProviderDto } from './dto/set-mail-provider.dto';
+import { TestMailDto } from './dto/test-mail.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -228,5 +230,46 @@ export class AdminController {
     @Param('id') id: string,
   ) {
     return this.admin.deleteReview(user.id, id);
+  }
+
+  // ── Mail provider (OTP sender) ─────────────────────────────────────────────
+
+  @Get('admin/mail/provider')
+  mailProvider() {
+    return this.admin.mailProviderStatus();
+  }
+
+  @Post('admin/mail/provider')
+  @HttpCode(200)
+  async setMailProvider(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: SetMailProviderDto,
+  ) {
+    const status = await this.admin.setMailProvider(dto.provider);
+    void this.audit.log({
+      actorId: user.id,
+      action: 'mail.provider.changed',
+      targetType: 'setting',
+      targetId: 'mailProvider',
+      meta: { provider: dto.provider },
+    });
+    return status;
+  }
+
+  @Post('admin/mail/test')
+  @HttpCode(200)
+  async testMail(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: TestMailDto,
+  ) {
+    const result = await this.admin.sendTestMail(dto.email);
+    void this.audit.log({
+      actorId: user.id,
+      action: 'mail.test.sent',
+      targetType: 'setting',
+      targetId: 'mailProvider',
+      meta: { email: dto.email, provider: result.provider },
+    });
+    return result;
   }
 }
