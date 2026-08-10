@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { categoryIcon } from '@/lib/category-icon';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
+import { tableCta } from '@/lib/table-cta';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -211,9 +212,18 @@ function TableListRow({ t }: { t: TableDto }) {
   );
 }
 
-function TableCoverCard({ t, coords }: { t: TableDto; coords: { lat: number; lng: number } | null }) {
+function TableCoverCard({
+  t,
+  coords,
+  viewerId,
+}: {
+  t: TableDto;
+  coords: { lat: number; lng: number } | null;
+  viewerId?: string | null;
+}) {
   const going = t.seats - t.seatsLeft;
   const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
+  const cta = tableCta(t, viewerId);
   const tLat = t.lat ?? t.cafe?.lat ?? null;
   const tLng = t.lng ?? t.cafe?.lng ?? null;
   const distance =
@@ -275,8 +285,12 @@ function TableCoverCard({ t, coords }: { t: TableDto; coords: { lat: number; lng
             {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
           </span>
         </div>
-        <div className="bg-primary text-primary-foreground mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110">
-          Join Table
+        <div
+          className={`mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110 ${
+            cta.primary ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary'
+          }`}
+        >
+          {cta.label}
         </div>
       </div>
     </Link>
@@ -846,7 +860,7 @@ function SearchInner() {
           {results.length > 0 && view === 'grid' && (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {results.map((t) => (
-                <TableCoverCard key={t.id} t={t} coords={coords} />
+                <TableCoverCard key={t.id} t={t} coords={coords} viewerId={user?.id} />
               ))}
             </div>
           )}

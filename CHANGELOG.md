@@ -4,6 +4,18 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-10 — Table card CTA state + invite search
+
+- **Table card button now reflects the viewer's relationship** instead of always
+  saying "Join Table": shows "Hosting" (you host it), "Going" (approved),
+  "Requested" (pending), or "Full", else "Join Table". Fixes hosts/admins seeing
+  "Join Table" on their own tables and already-joined members seeing it too.
+  Shared `lib/table-cta.ts` helper used by the Discover, Search, and Home cards.
+- **Invite people is now a searchable box.** The host invite list on the table
+  detail page gained a search input that filters people by name (scrollable
+  results), instead of a long static list. (`tables/[id]/page.tsx`)
+
+
 ### 2026-08-10 — Host requests nav + profile email
 
 - **Host "Requests" inbox reachable on desktop.** The approve/decline page

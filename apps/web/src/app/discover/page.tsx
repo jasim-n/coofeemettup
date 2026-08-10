@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/spinner';
 import { categoryIcon } from '@/lib/category-icon';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
+import { tableCta } from '@/lib/table-cta';
 
 /* ─── types ──────────────────────────────────────────────────────── */
 
@@ -101,8 +102,17 @@ function cityCount(tables: TableDto[], city: string): number {
 
 /* ─── TableCoverCard ─────────────────────────────────────────────── */
 
-function TableCoverCard({ t, coords }: { t: TableDto; coords: { lat: number; lng: number } | null }) {
+function TableCoverCard({
+  t,
+  coords,
+  viewerId,
+}: {
+  t: TableDto;
+  coords: { lat: number; lng: number } | null;
+  viewerId?: string | null;
+}) {
   const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
+  const cta = tableCta(t, viewerId);
   const tLat = t.lat ?? t.cafe?.lat ?? null;
   const tLng = t.lng ?? t.cafe?.lng ?? null;
   return (
@@ -159,8 +169,12 @@ function TableCoverCard({ t, coords }: { t: TableDto; coords: { lat: number; lng
             {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
           </span>
         </div>
-        <div className="bg-primary text-primary-foreground mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110">
-          Join Table
+        <div
+          className={`mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110 ${
+            cta.primary ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary'
+          }`}
+        >
+          {cta.label}
         </div>
       </div>
     </Link>
@@ -564,7 +578,7 @@ export default function DiscoverPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recommended.map((t) => (
-                  <TableCoverCard key={t.id} t={t} coords={coords} />
+                  <TableCoverCard key={t.id} t={t} coords={coords} viewerId={user?.id} />
                 ))}
               </div>
             </section>
@@ -580,7 +594,7 @@ export default function DiscoverPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {more.map((t) => (
-                  <TableCoverCard key={t.id} t={t} coords={coords} />
+                  <TableCoverCard key={t.id} t={t} coords={coords} viewerId={user?.id} />
                 ))}
               </div>
             </section>

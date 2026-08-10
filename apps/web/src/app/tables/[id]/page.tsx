@@ -17,6 +17,7 @@ import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Stars } from '@/components/stars';
 import TableReviews from '@/components/table-reviews';
 import { PageLoader } from '@/components/spinner';
@@ -38,6 +39,7 @@ export default function TableDetailPage() {
   const [hostRep, setHostRep] = useState<UserReputation | null>(null);
   const [connections, setConnections] = useState<PublicUser[]>([]);
   const [invited, setInvited] = useState<Set<string>>(new Set());
+  const [inviteQuery, setInviteQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -342,9 +344,29 @@ export default function TableDetailPage() {
               <h2 className="font-heading mb-3 text-lg font-bold tracking-tight">Invite people</h2>
               {connections.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No connections to invite yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {connections.map((conn) => {
+              ) : (() => {
+                const q = inviteQuery.trim().toLowerCase();
+                const filtered = q
+                  ? connections.filter((c) => personName(c).toLowerCase().includes(q))
+                  : connections;
+                return (
+                <>
+                <div className="relative mb-3">
+                  <i className="fa-solid fa-magnifying-glass text-muted-foreground pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm" />
+                  <Input
+                    value={inviteQuery}
+                    onChange={(e) => setInviteQuery(e.target.value)}
+                    placeholder="Search people to invite…"
+                    className="pl-10"
+                  />
+                </div>
+                {filtered.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    No people match &ldquo;{inviteQuery}&rdquo;.
+                  </p>
+                ) : (
+                <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                  {filtered.map((conn) => {
                     const alreadyInvited = invited.has(conn.id);
                     return (
                       <div
@@ -367,7 +389,10 @@ export default function TableDetailPage() {
                     );
                   })}
                 </div>
-              )}
+                )}
+                </>
+                );
+              })()}
             </section>
           )}
 

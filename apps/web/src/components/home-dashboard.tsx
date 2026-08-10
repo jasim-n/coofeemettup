@@ -9,6 +9,7 @@ import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { categoryIcon } from '@/lib/category-icon';
+import { tableCta } from '@/lib/table-cta';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
 
@@ -54,6 +55,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
     };
   }, []);
 
+  const viewerId = user.id;
   const upcoming = tables.slice(0, 6);
   const verified = user.verificationStatus === 'VERIFIED';
   const vibes = [...new Set(tables.map((t) => t.category))].slice(0, 6);
@@ -187,7 +189,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {upcoming.map((t) => (
-                <TableCoverCard key={t.id} t={t} />
+                <TableCoverCard key={t.id} t={t} viewerId={viewerId} />
               ))}
             </div>
           )}
@@ -378,8 +380,9 @@ function SkeletonCard() {
   );
 }
 
-function TableCoverCard({ t }: { t: TableDto }) {
+function TableCoverCard({ t, viewerId }: { t: TableDto; viewerId?: string | null }) {
   const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
+  const cta = tableCta(t, viewerId);
   return (
     <Link
       href={`/tables/${t.id}`}
@@ -415,8 +418,14 @@ function TableCoverCard({ t }: { t: TableDto }) {
             {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
           </span>
         </div>
-        <div className="bg-primary text-primary-foreground mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110">
-          Join Table
+        <div
+          className={`mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110 ${
+            cta.primary
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-primary'
+          }`}
+        >
+          {cta.label}
         </div>
       </div>
     </Link>
