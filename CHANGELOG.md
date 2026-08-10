@@ -4,6 +4,14 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-10 — Home dashboard skeletons
+
+- **Home dashboard** now shows skeleton loaders while data fetches, instead of
+  flashing the "No open tables" empty state + zeroed stats before content
+  arrives. Added a `busy` flag and pulse placeholders for "Popular vibes" and
+  the "Tables near you" cards. (`components/home-dashboard.tsx`)
+
+
 ### 2026-08-10 — Discover sidebars, profile deep-link + photo upload
 
 - **Discover sticky sidebars** (Filters, Trending/Upcoming/Cities) now have their

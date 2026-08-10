@@ -25,6 +25,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   const [joined, setJoined] = useState<TableDto[]>([]);
   const [hosted, setHosted] = useState<TableDto[]>([]);
   const [activity, setActivity] = useState<NotificationDto[]>([]);
+  const [busy, setBusy] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -44,6 +45,8 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         }
       } catch {
         /* non-fatal on the dashboard */
+      } finally {
+        if (active) setBusy(false);
       }
     })();
     return () => {
@@ -124,7 +127,17 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         </section>
 
         {/* popular vibes */}
-        {vibes.length > 0 && (
+        {busy ? (
+          <div>
+            <p className="font-heading mb-2 text-sm font-bold">Popular vibes</p>
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i} className="bg-muted h-8 w-24 animate-pulse rounded-full" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          vibes.length > 0 && (
           <div>
             <p className="font-heading mb-2 text-sm font-bold">Popular vibes</p>
             <div className="flex flex-wrap gap-2">
@@ -143,6 +156,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
               ))}
             </div>
           </div>
+          )
         )}
 
         {/* tables near you */}
@@ -153,7 +167,13 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
               See all →
             </Link>
           </div>
-          {upcoming.length === 0 ? (
+          {busy ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : upcoming.length === 0 ? (
             <div className="rounded-3xl border border-dashed py-12 text-center">
               <i className="fa-solid fa-chair text-3xl text-muted-foreground" />
               <p className="text-muted-foreground mt-2 text-sm">
@@ -336,6 +356,25 @@ function HeroStat({
     </Link>
   ) : (
     <div className="flex items-center gap-2.5 text-white">{inner}</div>
+  );
+}
+
+/** Loading placeholder matching TableCoverCard's shape. */
+function SkeletonCard() {
+  return (
+    <div className="bg-card ring-border/60 overflow-hidden rounded-3xl ring-1">
+      <div className="bg-muted h-40 w-full animate-pulse" />
+      <div className="space-y-3 p-4">
+        <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
+        <div className="bg-muted h-3 w-1/2 animate-pulse rounded" />
+        <div className="bg-muted h-3 w-1/3 animate-pulse rounded" />
+        <div className="flex items-center justify-between pt-1">
+          <div className="bg-muted h-5 w-20 animate-pulse rounded-full" />
+          <div className="bg-muted h-4 w-12 animate-pulse rounded" />
+        </div>
+        <div className="bg-muted h-9 w-full animate-pulse rounded-full" />
+      </div>
+    </div>
   );
 }
 
