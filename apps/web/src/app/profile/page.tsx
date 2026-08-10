@@ -104,10 +104,12 @@ function ReliabilityGauge({ score }: { score: number }) {
 
 function IdentityCard({
   verificationStatus,
+  email,
   onCnicChange,
   cnicMsg,
 }: {
   verificationStatus: string;
+  email?: string | null;
   onCnicChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   cnicMsg: string | null;
 }) {
@@ -132,13 +134,20 @@ function IdentityCard({
 
       <div className="h-px bg-border" />
 
-      {/* Email — stub */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      {/* Email — the account's login email (verified via email-OTP) */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
           <i className="fa-solid fa-envelope text-muted-foreground text-xs" />
-          <span className="text-sm font-medium">Email address</span>
+          <span className="truncate text-sm font-medium">{email || 'Email address'}</span>
         </div>
-        <span className="text-xs font-semibold text-muted-foreground">Not added</span>
+        {email ? (
+          <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
+            <span className="size-4 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px]">✓</span>
+            Verified
+          </span>
+        ) : (
+          <span className="shrink-0 text-xs font-semibold text-muted-foreground">Not added</span>
+        )}
       </div>
 
       <div className="h-px bg-border" />
@@ -1103,6 +1112,7 @@ export default function ProfilePage() {
               {/* CNIC upload */}
               <IdentityCard
                 verificationStatus={user.verificationStatus}
+                email={user.email ?? null}
                 onCnicChange={(e) => void handleCnic(e)}
                 cnicMsg={cnicMsg}
               />
@@ -1132,6 +1142,7 @@ export default function ProfilePage() {
               </div>
               <IdentityCard
                 verificationStatus={user.verificationStatus}
+                email={user.email ?? null}
                 onCnicChange={(e) => void handleCnic(e)}
                 cnicMsg={cnicMsg}
               />
@@ -1191,7 +1202,12 @@ export default function ProfilePage() {
             <p className="eyebrow text-primary">Identity Verification</p>
             {[
               { icon: 'fa-phone', label: 'Phone Number', status: 'Verified', verified: true },
-              { icon: 'fa-envelope', label: 'Email Address', status: 'Not added', verified: false },
+              {
+                icon: 'fa-envelope',
+                label: 'Email Address',
+                status: user.email ? 'Verified' : 'Not added',
+                verified: !!user.email,
+              },
               {
                 icon: 'fa-id-card',
                 label: 'Government ID',

@@ -39,6 +39,14 @@ export function toPublicUser(u: User) {
 }
 
 /**
+ * Self view — the authenticated user's own record. Adds fields private to the
+ * owner (e.g. email) on top of the public shape. NEVER use for other users.
+ */
+export function toSelfUser(u: User) {
+  return { ...toPublicUser(u), email: u.email };
+}
+
+/**
  * Public-profile view — omits all private/sensitive fields.
  * Safe to return to any authenticated viewer.
  */

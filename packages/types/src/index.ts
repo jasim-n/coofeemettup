@@ -107,6 +107,8 @@ export type BookingStatus =
 export interface PublicUser {
   id: string;
   phone: string;
+  /** Only populated for the authenticated self (me / login); omitted for other users. */
+  email?: string | null;
   role: Role;
   canHost: boolean;
   verificationStatus: VerificationStatus;

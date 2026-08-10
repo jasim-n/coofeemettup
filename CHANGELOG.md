@@ -4,6 +4,22 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-10 — Host requests nav + profile email
+
+- **Host "Requests" inbox reachable on desktop.** The approve/decline page
+  (`/requests`) and its pending badge already existed but weren't in the desktop
+  top nav (only mobile tiles), so hosts couldn't find it. Added a host-only
+  "Requests" nav item with the live pending-count badge. (`desktop-nav.tsx`)
+- **Profile now shows the account email as Verified** instead of a hardcoded
+  "Not added". Root cause: the UI never read `user.email`, and `me()` dropped
+  email (`toPublicUser`) while `verify-otp` returned the *raw* user (leaking
+  sensitive fields). Added a self-only `toSelfUser` serializer (email included)
+  used by `me()` + `verify-otp`; `email` added to `PublicUser` as an
+  owner-only optional field (never populated for other users). Wired the
+  profile Identity section + sidebar to `user.email`.
+  (`user.serializer.ts`, `auth.controller.ts`, `types`, `profile/page.tsx`)
+
+
 ### 2026-08-10 — Home dashboard skeletons
 
 - **Home dashboard** now shows skeleton loaders while data fetches, instead of

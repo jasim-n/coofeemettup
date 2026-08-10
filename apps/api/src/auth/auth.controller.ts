@@ -13,7 +13,7 @@ import { randomBytes } from 'node:crypto';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { toPublicUser } from '../users/user.serializer';
+import { toSelfUser } from '../users/user.serializer';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { Public } from './decorators/public.decorator';
@@ -72,11 +72,12 @@ export class AuthController {
     res.cookie(SESSION_COOKIE, token, sessionCookieOptions(this.config));
     const csrfToken = this.issueCsrf(res);
     void this.audit.log({ actorId: user.id, action: 'auth.login' });
+    const self = toSelfUser(user);
     // Native clients can't use httpOnly cookies → hand them the bearer token.
     // Web stays cookie-only (token omitted) to preserve the httpOnly benefit.
     return client === 'mobile'
-      ? { user, csrfToken, token }
-      : { user, csrfToken };
+      ? { user: self, csrfToken, token }
+      : { user: self, csrfToken };
   }
 
   @Get('me')
@@ -87,7 +88,7 @@ export class AuthController {
     const user = await this.users.findById(current.id);
     if (!user) throw new UnauthorizedException();
     const csrfToken = this.issueCsrf(res);
-    return { user: toPublicUser(user), csrfToken };
+    return { user: toSelfUser(user), csrfToken };
   }
 
   @Post('logout')

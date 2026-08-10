@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
+import { useRequestsBadge } from '@/components/requests-badge';
 import { api } from '@/lib/api';
 import { Avatar } from '@/components/avatar';
 
@@ -21,6 +22,7 @@ const NAV = [
  */
 export function DesktopNav() {
   const { user, loading, logout } = useAuth();
+  const { count: requestCount } = useRequestsBadge();
   const pathname = usePathname();
   const router = useRouter();
   const [unread, setUnread] = useState(0);
@@ -96,6 +98,26 @@ export function DesktopNav() {
               </Link>
             );
           })}
+          {/* Host-only "Requests" — the join-request approve/decline inbox, with
+              a pending-count badge. */}
+          {user.canHost && (
+            <Link
+              href="/requests"
+              className={`relative flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors ${
+                isActive('/requests')
+                  ? 'bg-secondary text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <i className="fa-solid fa-inbox text-[0.95em]" />
+              <span className="hidden lg:inline">Requests</span>
+              {requestCount > 0 && (
+                <span className="bg-primary text-primary-foreground grid min-w-[1.1rem] place-items-center rounded-full px-1 text-[0.65rem] font-bold leading-4">
+                  {requestCount}
+                </span>
+              )}
+            </Link>
+          )}
         </div>
 
         {/* search */}
