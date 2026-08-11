@@ -340,10 +340,12 @@ export class TablesService {
       orderBy: { startAt: 'asc' },
     });
     const statusBy = await this.myStatusByTable(userId, ids);
+    const inviteBy = await this.myInviteByTable(userId, ids);
     return tables.map((t) => ({
       ...t,
       saved: true,
       myRequestStatus: statusBy.get(t.id) ?? null,
+      myInvite: inviteBy.get(t.id) ?? null,
     }));
   }
 

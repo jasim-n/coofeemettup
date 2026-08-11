@@ -10,6 +10,7 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { categoryIcon } from '@/lib/category-icon';
 import { haversineKm, formatDistance } from '@/lib/geo';
+import { tableCta } from '@/lib/table-cta';
 
 // Map libraries touch window/document — load client-only.
 const TablesMap = dynamic(() => import('@/components/tables-map'), { ssr: false });
@@ -129,12 +130,15 @@ function StatusBadge({ status }: { status: TableStatus }) {
 function TableRow({
   t,
   coords,
+  viewerId,
 }: {
   t: TableDto;
   coords: { lat: number; lng: number } | null;
+  viewerId?: string | null;
 }) {
   const status = tableStatus(t);
   const dist = tableDist(t, coords);
+  const cta = tableCta(t, viewerId);
   const venue = t.venueName ?? t.cafe?.name ?? 'See map';
 
   return (
@@ -187,8 +191,14 @@ function TableRow({
         <span className="font-extrabold text-primary">
           {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
         </span>
-        <span className="bg-primary text-primary-foreground rounded-full px-4 py-2 text-sm font-semibold">
-          Join Table
+        <span
+          className={`rounded-full px-4 py-2 text-sm font-semibold ${
+            cta.primary
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-primary'
+          }`}
+        >
+          {cta.label}
         </span>
       </div>
     </Link>
@@ -198,7 +208,7 @@ function TableRow({
 /* ─── page ──────────────────────────────────────────────────────────── */
 
 export default function NearbyTablesPage() {
-  useAuth(); // ensure auth context is loaded
+  const { user } = useAuth(); // ensure auth context is loaded
 
   const [tables, setTables] = useState<TableDto[] | null>(null);
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
@@ -476,7 +486,7 @@ export default function NearbyTablesPage() {
             <>
               <div className="space-y-3">
                 {filtered.slice(0, visible).map((t) => (
-                  <TableRow key={t.id} t={t} coords={coords} />
+                  <TableRow key={t.id} t={t} coords={coords} viewerId={user?.id} />
                 ))}
               </div>
               {visible < filtered.length && (

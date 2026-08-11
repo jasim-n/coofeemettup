@@ -11,7 +11,7 @@ export function tableCta(
   viewerId?: string | null,
 ): { label: string; primary: boolean } {
   if (viewerId && t.hostId === viewerId) return { label: 'Hosting', primary: false };
-  if (t.myRequestStatus === 'APPROVED') return { label: 'Going', primary: false };
+  if (t.myRequestStatus === 'APPROVED') return { label: 'Joined', primary: false };
   if (t.myRequestStatus === 'PENDING') return { label: 'Requested', primary: false };
   if (t.myInvite) return { label: 'Invited', primary: true };
   if (t.seatsLeft <= 0) return { label: 'Full', primary: false };

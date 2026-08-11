@@ -12,6 +12,7 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
+import { tableCta } from '@/lib/table-cta';
 
 export default function SavedPage() {
   const { user, loading } = useAuth();
@@ -80,6 +81,7 @@ export default function SavedPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {tables.map((t) => {
               const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
+              const cta = tableCta(t, user?.id);
               return (
                 <Link
                   key={t.id}
@@ -120,8 +122,8 @@ export default function SavedPage() {
                         {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
                       </span>
                     </div>
-                    <div className="bg-primary text-primary-foreground mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110">
-                      Join Table
+                    <div className={`mt-3 rounded-full py-2 text-center text-sm font-semibold transition-[filter] group-hover:brightness-110 ${cta.primary ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary'}`}>
+                      {cta.label}
                     </div>
                   </div>
                 </Link>
