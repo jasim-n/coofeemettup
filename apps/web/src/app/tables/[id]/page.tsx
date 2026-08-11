@@ -19,6 +19,7 @@ import { Avatar } from '@/components/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Stars } from '@/components/stars';
 import TableReviews from '@/components/table-reviews';
 import { PageLoader } from '@/components/spinner';
@@ -47,6 +48,14 @@ export default function TableDetailPage() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [images, setImages] = useState<TableImageDto[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [confirm, setConfirm] = useState<null | {
+    title: string;
+    message?: string;
+    confirmLabel: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+  }>(null);
 
   const isHost = !!table && !!user && table.hostId === user.id;
 
@@ -146,29 +155,35 @@ export default function TableDetailPage() {
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (!file) return;
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowed.includes(file.type)) {
-      setImageError('Only JPEG, PNG, or WebP images are allowed.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError('Image must be 5 MB or smaller.');
-      return;
-    }
+    if (files.length === 0) return;
     setImageError(null);
-    try {
-      const uploaded = await api.uploadTableImage(id, file);
-      setImages((prev) => [uploaded, ...prev]);
-    } catch (err) {
-      setImageError(err instanceof ApiError ? err.message : 'Upload failed.');
+    setUploading(true);
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    const errors: string[] = [];
+    // Upload each selected file; new photos appear as they finish.
+    for (const file of files) {
+      if (!allowed.includes(file.type)) {
+        errors.push(`${file.name}: only JPEG/PNG/WebP`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        errors.push(`${file.name}: over 5 MB`);
+        continue;
+      }
+      try {
+        const uploaded = await api.uploadTableImage(id, file);
+        setImages((prev) => [uploaded, ...prev]);
+      } catch (err) {
+        errors.push(`${file.name}: ${err instanceof ApiError ? err.message : 'failed'}`);
+      }
     }
+    setUploading(false);
+    if (errors.length) setImageError(`Some photos weren't added — ${errors.join(' · ')}`);
   }
 
   async function handleImageDelete(imageId: string) {
-    if (!window.confirm('Delete this photo?')) return;
     try {
       await api.deleteTableImage(id, imageId);
       setImages((prev) => prev.filter((img) => img.id !== imageId));
@@ -314,14 +329,21 @@ export default function TableDetailPage() {
                   <i className="fa-solid fa-images text-primary mr-2" />Event photos
                 </h2>
                 {isHost && (
-                  <label className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent`}>
+                  <label
+                    className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent ${
+                      uploading ? 'pointer-events-none opacity-60' : ''
+                    }`}
+                  >
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      disabled={uploading}
                       className="sr-only"
                       onChange={(e) => void handleImageUpload(e)}
                     />
-                    <i className="fa-solid fa-plus mr-1" />Add photos
+                    <i className={`fa-solid ${uploading ? 'fa-spinner animate-spin' : 'fa-plus'} mr-1`} />
+                    {uploading ? 'Uploading…' : 'Add photos'}
                   </label>
                 )}
               </div>
@@ -347,7 +369,14 @@ export default function TableDetailPage() {
                       {isHost && (
                         <button
                           type="button"
-                          onClick={() => void handleImageDelete(img.id)}
+                          onClick={() =>
+                            setConfirm({
+                              title: 'Delete this photo?',
+                              confirmLabel: 'Delete',
+                              destructive: true,
+                              onConfirm: () => void handleImageDelete(img.id),
+                            })
+                          }
                           className="bg-black/60 text-white hover:bg-black/80 absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full text-xs transition-colors"
                           aria-label="Delete photo"
                         >
@@ -625,11 +654,14 @@ export default function TableDetailPage() {
                     variant="outline"
                     className="w-full"
                     disabled={busy}
-                    onClick={() => {
-                      if (window.confirm('End this event? This marks it completed and unlocks reviews.')) {
-                        void run(() => api.completeTable(id));
-                      }
-                    }}
+                    onClick={() =>
+                      setConfirm({
+                        title: 'End this event?',
+                        message: 'This marks it completed and unlocks reviews.',
+                        confirmLabel: 'End event',
+                        onConfirm: () => void run(() => api.completeTable(id)),
+                      })
+                    }
                   >
                     <i className="fa-solid fa-flag-checkered mr-1.5" />End event
                   </Button>
@@ -714,6 +746,19 @@ export default function TableDetailPage() {
           </div>
         </aside>
       </div>
+
+      <ConfirmDialog
+        open={!!confirm}
+        title={confirm?.title ?? ''}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel ?? 'Confirm'}
+        destructive={confirm?.destructive}
+        onConfirm={() => {
+          confirm?.onConfirm();
+          setConfirm(null);
+        }}
+        onCancel={() => setConfirm(null)}
+      />
     </main>
   );
 }
