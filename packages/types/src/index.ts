@@ -199,6 +199,8 @@ export interface AdminTableDto extends TableDto {
   pendingRequests: number;
 }
 
+export type UpdateTableInput = Partial<CreateTableInput>;
+
 export interface CreateTableInput {
   cafeId?: string;
   venueName?: string;

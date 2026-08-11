@@ -248,4 +248,13 @@
   .animate-float-slow {
     animation: float-slow 6s ease-in-out infinite;
   }
+  /* Carousel autoplay progress bar (fills over the slide interval). */
+  @keyframes carousel-progress {
+    from {
+      width: 0%;
+    }
+    to {
+      width: 100%;
+    }
+  }
 }

@@ -6,6 +6,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -14,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { TablesService } from './tables.service';
 import { CreateTableDto } from './dto/create-table.dto';
+import { UpdateTableDto } from './dto/update-table.dto';
 import { PostMessageDto } from '../chat/dto/post-message.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/auth.types';
@@ -72,6 +74,16 @@ export class TablesController {
   @Get(':id')
   findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.tables.findOne(user.id, id);
+  }
+
+  @Patch(':id')
+  @HttpCode(200)
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateTableDto,
+  ) {
+    return this.tables.update(user.id, id, dto);
   }
 
   @Post(':id/join')

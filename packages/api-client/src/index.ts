@@ -17,6 +17,7 @@ import type {
   CreateCafeInput,
   CreateEventInput,
   CreateTableInput,
+  UpdateTableInput,
   DashboardMetrics,
   DmMessage,
   DmThread,
@@ -455,6 +456,10 @@ export class ApiClient {
   // ---- tables (host-created, approval-based join) ----
   createTable(input: CreateTableInput): Promise<TableDto> {
     return this.request('POST', '/tables', input);
+  }
+
+  updateTable(id: string, input: UpdateTableInput): Promise<TableDto> {
+    return this.request('PATCH', `/tables/${id}`, input);
   }
 
   browseTables(): Promise<TableDto[]> {

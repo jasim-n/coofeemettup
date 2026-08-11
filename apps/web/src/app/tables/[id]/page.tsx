@@ -682,6 +682,19 @@ export default function TableDetailPage() {
                 <p className="text-muted-foreground text-sm">
                   {"You're"} hosting this table — manage requests below.
                 </p>
+                {!eventEnded &&
+                  table.status !== 'COMPLETED' &&
+                  table.status !== 'CANCELLED' && (
+                    <Link
+                      href={`/tables/${id}/edit`}
+                      className={buttonVariants({
+                        variant: 'outline',
+                        className: 'w-full',
+                      })}
+                    >
+                      <i className="fa-solid fa-pen mr-1.5" />Edit event
+                    </Link>
+                  )}
                 {table.status !== 'COMPLETED' && table.status !== 'CANCELLED' ? (
                   <Button
                     variant="outline"

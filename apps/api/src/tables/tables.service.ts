@@ -11,6 +11,8 @@ import { AuditService } from '../audit/audit.service';
 import { ReactionsService } from '../reactions/reactions.service';
 import { MediaService } from '../media/media.service';
 import { CreateTableDto } from './dto/create-table.dto';
+import { UpdateTableDto } from './dto/update-table.dto';
+import { Prisma } from '../../generated/prisma/client';
 import { toPublicUser } from '../users/user.serializer';
 
 const HOST_SELECT = { id: true, firstName: true, lastInitial: true };
@@ -210,6 +212,54 @@ export class TablesService {
       meta: { category: table.category, seats: table.seats },
     });
     return table;
+  }
+
+  /** Host edits event details — only before it starts and while active. */
+  async update(userId: string, tableId: string, dto: UpdateTableDto) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    if (table.hostId !== userId) {
+      throw new ForbiddenException('Only the host can edit this event');
+    }
+    if (table.status === 'CANCELLED' || table.status === 'COMPLETED') {
+      throw new BadRequestException('This event can no longer be edited');
+    }
+    if (new Date(table.startAt).getTime() <= Date.now()) {
+      throw new BadRequestException('The event has already started');
+    }
+
+    const data: Prisma.TableUpdateInput = {};
+    if (dto.title !== undefined) data.title = dto.title.trim() || null;
+    if (dto.category !== undefined) data.category = dto.category;
+    if (dto.description !== undefined) data.description = dto.description.trim() || null;
+    if (dto.rules !== undefined) data.rules = dto.rules.trim() || null;
+    if (dto.pricePKR !== undefined) data.pricePKR = dto.pricePKR ?? null;
+    if (dto.venueName !== undefined) data.venueName = dto.venueName.trim() || null;
+    if (dto.venueAddress !== undefined) data.venueAddress = dto.venueAddress.trim() || null;
+    if (dto.lat !== undefined) data.lat = dto.lat;
+    if (dto.lng !== undefined) data.lng = dto.lng;
+    if (dto.startAt !== undefined) data.startAt = new Date(dto.startAt);
+
+    if (dto.seats !== undefined) {
+      const filled = table.seats - table.seatsLeft;
+      if (dto.seats < filled) {
+        throw new BadRequestException(
+          `${filled} seat(s) are already taken — can't reduce below that`,
+        );
+      }
+      data.seats = dto.seats;
+      data.seatsLeft = dto.seats - filled;
+      data.status = dto.seats - filled > 0 ? 'OPEN' : 'FULL';
+    }
+
+    await this.prisma.table.update({ where: { id: tableId }, data });
+    void this.audit.log({
+      actorId: userId,
+      action: 'table.updated',
+      targetType: 'table',
+      targetId: tableId,
+    });
+    return this.findOne(userId, tableId);
   }
 
   mineHosting(userId: string) {
