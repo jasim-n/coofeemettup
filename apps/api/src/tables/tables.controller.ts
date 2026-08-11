@@ -64,6 +64,11 @@ export class TablesController {
     return this.tables.groupThreads(user.id);
   }
 
+  @Get('featured')
+  featured() {
+    return this.tables.featuredImages();
+  }
+
   @Get(':id')
   findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.tables.findOne(user.id, id);

@@ -276,9 +276,11 @@ model TableImage {
   tableId      String
   url          String
   uploadedById String
+  featured     Boolean  @default(false) // admin-curated for the home "Featured" section
   createdAt    DateTime @default(now())
 
   @@index([tableId])
+  @@index([featured])
 }
 
 /// Per-user read marker for a table's group chat (unread = messages after this).

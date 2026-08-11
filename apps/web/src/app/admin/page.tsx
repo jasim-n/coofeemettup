@@ -47,6 +47,9 @@ export default function AdminPage() {
           <Link href="/admin/reviews" className="text-primary hover:underline">
             Reviews
           </Link>
+          <Link href="/admin/featured" className="text-primary hover:underline">
+            Featured
+          </Link>
           <Link href="/admin/users" className="text-primary hover:underline">
             Users
           </Link>

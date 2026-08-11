@@ -215,7 +215,25 @@ export interface TableImageDto {
   tableId: string;
   url: string;
   uploadedById: string;
+  featured: boolean;
   createdAt: string;
+}
+
+/** Admin-curated event photo shown in the home "Featured" section. */
+export interface FeaturedImageDto {
+  id: string;
+  url: string;
+  tableId: string;
+  tableTitle: string | null;
+  category: string;
+}
+
+/** A table that has event photos, for the admin featured-picker. */
+export interface AdminFeaturedTable {
+  id: string;
+  title: string | null;
+  category: string;
+  imageCount: number;
 }
 
 export interface TableJoinRequestDto {

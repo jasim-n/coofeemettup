@@ -9,6 +9,7 @@ import { SetUserRoleDto } from './dto/set-user-role.dto';
 import { ResolveReportDto } from './dto/resolve-report.dto';
 import { SetMailProviderDto } from './dto/set-mail-provider.dto';
 import { TestMailDto } from './dto/test-mail.dto';
+import { SetFeaturedDto } from './dto/set-featured.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -230,6 +231,28 @@ export class AdminController {
     @Param('id') id: string,
   ) {
     return this.admin.deleteReview(user.id, id);
+  }
+
+  // ── Featured event photos ──────────────────────────────────────────────────
+
+  @Get('admin/featured/tables')
+  featuredTables() {
+    return this.admin.featuredTables();
+  }
+
+  @Get('admin/tables/:id/images')
+  tableImages(@Param('id') id: string) {
+    return this.admin.listTableImages(id);
+  }
+
+  @Post('admin/images/:imageId/feature')
+  @HttpCode(200)
+  setImageFeatured(
+    @CurrentUser() user: AuthUser,
+    @Param('imageId') imageId: string,
+    @Body() dto: SetFeaturedDto,
+  ) {
+    return this.admin.setImageFeatured(user.id, imageId, dto.featured);
   }
 
   // ── Mail provider (OTP sender) ─────────────────────────────────────────────

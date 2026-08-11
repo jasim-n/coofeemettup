@@ -45,7 +45,9 @@ import type {
   Role,
   SuggestedPerson,
   TableChatResponse,
+  AdminFeaturedTable,
   AdminTableDto,
+  FeaturedImageDto,
   TableDto,
   TableImageDto,
   TableJoinRequestDto,
@@ -642,6 +644,23 @@ export class ApiClient {
 
   groupThreads(): Promise<GroupThread[]> {
     return this.request('GET', '/tables/mine/group-threads');
+  }
+
+  // ---- featured event photos (home section) ----
+  featuredImages(): Promise<FeaturedImageDto[]> {
+    return this.request('GET', '/tables/featured');
+  }
+
+  adminFeaturedTables(): Promise<AdminFeaturedTable[]> {
+    return this.request('GET', '/admin/featured/tables');
+  }
+
+  adminTableImages(tableId: string): Promise<TableImageDto[]> {
+    return this.request('GET', `/admin/tables/${tableId}/images`);
+  }
+
+  adminSetImageFeatured(imageId: string, featured: boolean): Promise<{ ok: true }> {
+    return this.request('POST', `/admin/images/${imageId}/feature`, { featured });
   }
 
   markGroupRead(tableId: string): Promise<{ ok: true }> {

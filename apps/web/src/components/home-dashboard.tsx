@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { type NotificationDto, type PublicUser, type TableDto } from '@jrst/api-client';
+import {
+  type FeaturedImageDto,
+  type NotificationDto,
+  type PublicUser,
+  type TableDto,
+} from '@jrst/api-client';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
@@ -26,23 +31,26 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   const [joined, setJoined] = useState<TableDto[]>([]);
   const [hosted, setHosted] = useState<TableDto[]>([]);
   const [activity, setActivity] = useState<NotificationDto[]>([]);
+  const [featured, setFeatured] = useState<FeaturedImageDto[]>([]);
   const [busy, setBusy] = useState(true);
 
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
-        const [t, j, h, n] = await Promise.all([
+        const [t, j, h, n, f] = await Promise.all([
           api.browseTables(),
           api.myJoinedTables(),
           api.myHostedTables().catch(() => [] as TableDto[]),
           api.notifications().catch(() => ({ items: [] as NotificationDto[], unread: 0 })),
+          api.featuredImages().catch(() => [] as FeaturedImageDto[]),
         ]);
         if (active) {
           setTables(t);
           setJoined(j);
           setHosted(h);
           setActivity(n.items.slice(0, 3));
+          setFeatured(f);
         }
       } catch {
         /* non-fatal on the dashboard */
@@ -127,6 +135,43 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
             </div>
           </div>
         </section>
+
+        {/* featured event photos (admin-curated) */}
+        {featured.length > 0 && (
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <span className="bg-gradient-ember grid size-7 place-items-center rounded-xl text-white">
+                <i className="fa-solid fa-star text-xs" />
+              </span>
+              <h2 className="font-heading text-xl font-bold tracking-tight">Featured</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {featured.map((f) => (
+                <Link
+                  key={f.id}
+                  href={`/tables/${f.tableId}`}
+                  className="group relative block overflow-hidden rounded-3xl shadow-soft"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- remote Cloudinary URL */}
+                  <img
+                    src={f.url}
+                    alt={f.tableTitle ?? f.category}
+                    className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-3">
+                    <p className="font-heading truncate text-sm font-bold text-white">
+                      {f.tableTitle ?? f.category}
+                    </p>
+                    <p className="truncate text-xs text-white/70">
+                      <i className={`fa-solid ${categoryIcon(f.category)}`} /> {f.category}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* popular vibes */}
         {busy ? (

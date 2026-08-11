@@ -571,6 +571,49 @@ export class AdminService {
     return { ok: true as const };
   }
 
+  // ── Featured event photos (home "Featured" section) ────────────────────────
+
+  /** Tables that have event photos, for the featured-picker dropdown. */
+  async featuredTables() {
+    const tables = await this.prisma.table.findMany({
+      where: { images: { some: {} } },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        _count: { select: { images: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return tables.map((t) => ({
+      id: t.id,
+      title: t.title,
+      category: t.category,
+      imageCount: t._count.images,
+    }));
+  }
+
+  /** All photos of a table (admin view), including the featured flag. */
+  listTableImages(tableId: string) {
+    return this.prisma.tableImage.findMany({
+      where: { tableId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async setImageFeatured(actorId: string, imageId: string, featured: boolean) {
+    const img = await this.prisma.tableImage.findUnique({ where: { id: imageId } });
+    if (!img) throw new NotFoundException('Image not found');
+    await this.prisma.tableImage.update({ where: { id: imageId }, data: { featured } });
+    void this.audit.log({
+      actorId,
+      action: featured ? 'image.featured' : 'image.unfeatured',
+      targetType: 'tableImage',
+      targetId: imageId,
+    });
+    return { ok: true as const };
+  }
+
   /**
    * Operational dashboard + the §7 Go/No-Go gate:
    * ≥40% of first-timers book a second event, plus a referral signal,

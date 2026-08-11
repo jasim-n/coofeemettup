@@ -4,6 +4,17 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-11 — Admin: featured event photos on home
+
+- **Admin can curate a "Featured" section on the home page.** New `/admin/featured`
+  page: pick an event (any table with photos) and tap its event photos to feature
+  them. New `TableImage.featured` flag (+ migration). Endpoints:
+  `GET /admin/featured/tables`, `GET /admin/tables/:id/images`,
+  `POST /admin/images/:imageId/feature` (all audited), and public
+  `GET /tables/featured`. Home dashboard shows a "Featured" gallery of the
+  curated photos (labeled by event, links to the table) when any are featured.
+
+
 ### 2026-08-11 — Chat ordering + unread indicators
 
 - **Conversations now sort by most-recent message.** Group chats previously used

@@ -87,6 +87,23 @@ export class TablesService {
     return { ok: true as const };
   }
 
+  /** Admin-curated featured event photos for the home "Featured" section. */
+  async featuredImages() {
+    const imgs = await this.prisma.tableImage.findMany({
+      where: { featured: true },
+      orderBy: { createdAt: 'desc' },
+      take: 24,
+      include: { table: { select: { id: true, title: true, category: true } } },
+    });
+    return imgs.map((i) => ({
+      id: i.id,
+      url: i.url,
+      tableId: i.tableId,
+      tableTitle: i.table.title,
+      category: i.table.category,
+    }));
+  }
+
   // ---------- group chat threads (list + unread) ----------
 
   /** Group-chat conversation summaries (last message + unread) for the sidebar. */
