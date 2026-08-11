@@ -92,13 +92,18 @@ export class ReactionsService {
 
     const dbKind: MessageKind = kind === 'dm' ? MessageKind.DM : MessageKind.GROUP;
 
-    const existing = await this.prisma.messageReaction.findFirst({
-      where: { messageId, userId: viewerId, emoji },
+    // One reaction per user per message: clicking the same emoji removes it
+    // (toggle off); clicking a different emoji REPLACES the user's previous one.
+    const mine = await this.prisma.messageReaction.findFirst({
+      where: { messageId, userId: viewerId },
     });
 
-    if (existing) {
-      await this.prisma.messageReaction.delete({ where: { id: existing.id } });
+    if (mine?.emoji === emoji) {
+      await this.prisma.messageReaction.delete({ where: { id: mine.id } });
     } else {
+      if (mine) {
+        await this.prisma.messageReaction.delete({ where: { id: mine.id } });
+      }
       await this.prisma.messageReaction.create({
         data: { messageId, userId: viewerId, emoji, kind: dbKind },
       });

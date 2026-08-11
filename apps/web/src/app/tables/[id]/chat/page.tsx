@@ -12,6 +12,7 @@ import { PageLoader } from '@/components/spinner';
 import { UserLink } from '@/components/user-link';
 
 const POLL_MS = 6000;
+const QUICK_EMOJIS = ['❤️', '👍', '😂', '🎉', '☕', '😮'];
 
 export default function TableChatPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +22,20 @@ export default function TableChatPage() {
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [reactPickerId, setReactPickerId] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+
+  async function toggleReaction(messageId: string, emoji: string) {
+    try {
+      const updated = await api.toggleReaction('group', messageId, emoji);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)),
+      );
+      setReactPickerId(null);
+    } catch {
+      /* best-effort */
+    }
+  }
 
   const load = useCallback(async () => {
     const res = await api.tableChat(id);
@@ -119,12 +133,60 @@ export default function TableChatPage() {
                 >
                   {m.body}
                 </div>
-                <span className="text-muted-foreground/70 mt-0.5 px-1 text-[10px]">
-                  {new Date(m.createdAt).toLocaleTimeString('en-PK', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
+                <div className="mt-0.5 flex items-center gap-2 px-1">
+                  <span className="text-muted-foreground/70 text-[10px]">
+                    {new Date(m.createdAt).toLocaleTimeString('en-PK', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setReactPickerId(reactPickerId === m.id ? null : m.id)}
+                      className="text-muted-foreground/60 hover:text-primary text-[11px]"
+                      aria-label="React"
+                    >
+                      <i className="fa-regular fa-face-smile" />
+                    </button>
+                    {reactPickerId === m.id && (
+                      <div
+                        className={`bg-card shadow-soft absolute bottom-5 z-10 flex gap-1 rounded-full border px-2 py-1 ${
+                          mine ? 'right-0' : 'left-0'
+                        }`}
+                      >
+                        {QUICK_EMOJIS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => void toggleReaction(m.id, emoji)}
+                            className="rounded-full p-0.5 text-base transition-transform hover:scale-125"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {m.reactions && m.reactions.length > 0 && (
+                  <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                    {m.reactions.map((r) => (
+                      <button
+                        key={r.emoji}
+                        type="button"
+                        onClick={() => void toggleReaction(m.id, r.emoji)}
+                        className={`rounded-full px-2 py-0.5 text-xs ring-1 transition-colors ${
+                          r.mine
+                            ? 'bg-secondary text-primary ring-primary/40 font-semibold'
+                            : 'bg-card text-muted-foreground ring-border/60'
+                        }`}
+                      >
+                        {r.emoji} {r.count}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           );

@@ -401,6 +401,9 @@ function TableCoverCard({ t, viewerId }: { t: TableDto; viewerId?: string | null
       </div>
       <div className="p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>
+        <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
+          <i className="fa-solid fa-calendar-day" /> {formatDateTime(t.startAt)}
+        </p>
         <p className="text-muted-foreground mt-1 text-sm">
           <i className="fa-solid fa-location-dot" /> {t.venueName ?? t.cafe?.name ?? 'See map'}
         </p>

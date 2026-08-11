@@ -488,7 +488,7 @@ model MessageReaction {
   emoji     String
   createdAt DateTime    @default(now())
 
-  @@unique([messageId, userId, emoji])
+  @@unique([messageId, userId])
   @@index([messageId])
   @@index([userId])
 }
