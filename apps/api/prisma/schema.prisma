@@ -169,6 +169,7 @@ model User {
   photoUrl           String?
   photoConsent       Boolean            @default(false)
   codeOfConductAt    DateTime?
+  lastSeenAt         DateTime? // presence: updated on each authenticated request
 
   blockedUserIds     String[]
   savedTableIds      String[]

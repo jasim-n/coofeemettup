@@ -285,8 +285,8 @@ export default function MessagesPage() {
 
   const groupConvos = convos.filter((c): c is GroupConvo => c.kind === 'group');
 
-  // presence: connections + group hosts (stub — no real presence data)
-  const presencePool: PublicUser[] = connections.slice(0, 5);
+  // presence: connections who are actually online (seen in the last ~5 min)
+  const presencePool: PublicUser[] = connections.filter((c) => c.online).slice(0, 5);
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-4">
@@ -844,7 +844,7 @@ export default function MessagesPage() {
                       name={`${person.firstName ?? 'M'} ${person.lastInitial ?? ''}`.trim()}
                       src={person.photoUrl}
                       size={36}
-                      online
+                      online={person.online ?? false}
                     />
                   </UserLink>
                 ))}

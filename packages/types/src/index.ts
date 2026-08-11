@@ -132,6 +132,8 @@ export interface PublicUser {
   photoUrl: string | null;
   photoConsent: boolean;
   codeOfConductAt: string | null;
+  /** Presence — true if the user was active in the last 5 minutes. */
+  online?: boolean;
   createdAt: string;
   updatedAt: string;
 }

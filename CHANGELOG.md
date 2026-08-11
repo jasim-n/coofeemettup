@@ -4,6 +4,24 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-11 — Join-state cards, event name + multi-category, real presence
+
+- **"Join Table" no longer shows for tables you've already joined.** The list
+  endpoints (`browse`, `mineSaved`) now return the viewer's `myRequestStatus`,
+  so cards correctly show Going/Requested/Hosting/Full. (`tables.service`)
+- **Create meetup: event name + multiple categories.** New "Event name" field
+  (→ `title`, shown as the card/page title). Category is now multi-select
+  (toggle chips) plus comma-separated custom entries, stored comma-joined.
+  Category icons/filters/trending/vibes split multi-categories so a table shows
+  under each of its categories. (`tables/new`, `category-icon`, `discover`,
+  `home-dashboard`, `create-table.dto` length 60→200)
+- **Real online presence.** New `User.lastSeenAt`, bumped (throttled) on each
+  authenticated request; `PublicUser.online` = active in the last 5 min. The
+  messages "Active now" section now shows only connections who are actually
+  online, and avatar green dots are real (were hardcoded). (`session.guard`,
+  `user.serializer`, `types`, `messages`)
+
+
 ### 2026-08-11 — Admin Featured picker: search + filters
 
 - The `/admin/featured` page now lets admins **find events** with a search box +

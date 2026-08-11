@@ -33,6 +33,8 @@ export function toPublicUser(u: User) {
     photoUrl: u.photoUrl,
     photoConsent: u.photoConsent,
     codeOfConductAt: u.codeOfConductAt,
+    // Presence — online if seen in the last 5 minutes.
+    online: !!u.lastSeenAt && Date.now() - new Date(u.lastSeenAt).getTime() < 5 * 60_000,
     createdAt: u.createdAt,
     updatedAt: u.updatedAt,
   };

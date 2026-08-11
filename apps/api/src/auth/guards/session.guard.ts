@@ -42,10 +42,19 @@ export class SessionGuard implements CanActivate {
       // Enforce account status — bans/suspensions take effect immediately.
       const dbUser = await this.prisma.user.findUnique({
         where: { id: payload.sub },
-        select: { status: true },
+        select: { status: true, lastSeenAt: true },
       });
       if (!dbUser || dbUser.status !== 'ACTIVE') {
         throw new UnauthorizedException('Your account has been suspended');
+      }
+
+      // Presence: bump lastSeenAt at most once a minute (fire-and-forget).
+      const stale =
+        !dbUser.lastSeenAt || Date.now() - dbUser.lastSeenAt.getTime() > 60_000;
+      if (stale) {
+        void this.prisma.user
+          .update({ where: { id: payload.sub }, data: { lastSeenAt: new Date() } })
+          .catch(() => undefined);
       }
 
       req.user = { id: payload.sub, role: payload.role };
