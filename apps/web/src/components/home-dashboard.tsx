@@ -137,41 +137,75 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         </section>
 
         {/* featured event photos (admin-curated) */}
-        {featured.length > 0 && (
-          <div>
-            <div className="mb-3 flex items-center gap-2">
-              <span className="bg-gradient-ember grid size-7 place-items-center rounded-xl text-white">
-                <i className="fa-solid fa-star text-xs" />
-              </span>
-              <h2 className="font-heading text-xl font-bold tracking-tight">Featured</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {featured.map((f) => (
-                <Link
-                  key={f.id}
-                  href={`/tables/${f.tableId}`}
-                  className="group relative block overflow-hidden rounded-3xl shadow-soft"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- remote Cloudinary URL */}
-                  <img
-                    src={f.url}
-                    alt={f.tableTitle ?? f.category}
-                    className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-3">
-                    <p className="font-heading truncate text-sm font-bold text-white">
-                      {f.tableTitle ?? f.category}
-                    </p>
-                    <p className="truncate text-xs text-white/70">
-                      <i className={`fa-solid ${categoryIcon(f.category)}`} /> {f.category}
+        {featured.length > 0 && (() => {
+          // Group by tableId, preserving order of first appearance
+          const groupOrder: string[] = [];
+          const groupMap = new Map<string, { tableTitle: string | null; category: string; images: FeaturedImageDto[] }>();
+          for (const f of featured) {
+            if (!groupMap.has(f.tableId)) {
+              groupOrder.push(f.tableId);
+              groupMap.set(f.tableId, { tableTitle: f.tableTitle, category: f.category, images: [] });
+            }
+            groupMap.get(f.tableId)!.images.push(f);
+          }
+          const groups = groupOrder.map((id) => ({ tableId: id, ...groupMap.get(id)! }));
+
+          return (
+            <div className="space-y-5">
+              {/* single top-level heading */}
+              <div className="flex items-center gap-2">
+                <span className="bg-gradient-ember grid size-7 place-items-center rounded-xl text-white">
+                  <i className="fa-solid fa-star text-xs" />
+                </span>
+                <h2 className="font-heading text-xl font-bold tracking-tight">Featured</h2>
+              </div>
+
+              {groups.map((group) => (
+                <div key={group.tableId} className="space-y-2">
+                  {/* per-event sub-header */}
+                  <div>
+                    <Link
+                      href={`/tables/${group.tableId}`}
+                      className="font-heading block truncate font-bold tracking-tight hover:underline"
+                    >
+                      {group.tableTitle ?? group.category}
+                    </Link>
+                    <p className="text-muted-foreground text-xs">
+                      <i className={`fa-solid ${categoryIcon(group.category)}`} /> {group.category}
                     </p>
                   </div>
-                </Link>
+
+                  {/* horizontal scrollable carousel */}
+                  <div className="flex snap-x gap-3 overflow-x-auto pb-1">
+                    {group.images.map((f) => (
+                      <Link
+                        key={f.id}
+                        href={`/tables/${group.tableId}`}
+                        className="group relative block shrink-0 snap-start overflow-hidden rounded-3xl shadow-soft"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- remote Cloudinary URL */}
+                        <img
+                          src={f.url}
+                          alt={group.tableTitle ?? group.category}
+                          className="h-44 w-72 sm:w-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-3">
+                          <p className="font-heading truncate text-sm font-bold text-white">
+                            {group.tableTitle ?? group.category}
+                          </p>
+                          <p className="truncate text-xs text-white/70">
+                            <i className={`fa-solid ${categoryIcon(group.category)}`} /> {group.category}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* popular vibes */}
         {busy ? (

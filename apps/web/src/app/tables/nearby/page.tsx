@@ -8,7 +8,6 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
-import { Spinner } from '@/components/spinner';
 import { categoryIcon } from '@/lib/category-icon';
 import { haversineKm, formatDistance } from '@/lib/geo';
 
@@ -64,6 +63,41 @@ const STATUS_OPTS = [
 ];
 
 const PAGE_SIZE = 6;
+
+/* ─── skeleton card ────────────────────────────────────────────────── */
+
+function SkeletonCard() {
+  return (
+    <div className="bg-card flex gap-4 rounded-2xl border p-3">
+      {/* thumbnail placeholder */}
+      <div className="size-16 shrink-0 rounded-xl bg-muted animate-pulse" />
+
+      {/* middle placeholder */}
+      <div className="min-w-0 flex-1 space-y-2 py-0.5">
+        {/* status badge */}
+        <div className="h-4 w-20 rounded-full bg-muted animate-pulse" />
+        {/* title */}
+        <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
+        {/* venue */}
+        <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
+        {/* category chip */}
+        <div className="h-4 w-16 rounded-full bg-muted animate-pulse" />
+        {/* meta row */}
+        <div className="flex gap-3">
+          <div className="h-3 w-12 rounded bg-muted animate-pulse" />
+          <div className="h-3 w-16 rounded bg-muted animate-pulse" />
+          <div className="h-3 w-20 rounded bg-muted animate-pulse" />
+        </div>
+      </div>
+
+      {/* right placeholder */}
+      <div className="flex shrink-0 flex-col items-end justify-between py-0.5">
+        <div className="h-5 w-12 rounded bg-muted animate-pulse" />
+        <div className="h-9 w-24 rounded-full bg-muted animate-pulse" />
+      </div>
+    </div>
+  );
+}
 
 /* ─── status badge ─────────────────────────────────────────────────── */
 
@@ -415,8 +449,10 @@ export default function NearbyTablesPage() {
 
           {/* table list */}
           {loadingTables && (
-            <div className="flex justify-center py-16">
-              <Spinner className="text-primary size-6" />
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </div>
           )}
 
@@ -472,7 +508,11 @@ export default function NearbyTablesPage() {
               ].map((row) => (
                 <div key={row.label} className="flex items-center gap-3">
                   <span className="text-primary text-xl font-extrabold leading-none w-10 shrink-0">
-                    {loadingTables ? '–' : row.value}
+                    {loadingTables ? (
+                      <span className="block h-5 w-8 rounded bg-muted animate-pulse" />
+                    ) : (
+                      row.value
+                    )}
                   </span>
                   <div>
                     <p className="text-sm font-semibold leading-tight">{row.label}</p>

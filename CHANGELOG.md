@@ -4,6 +4,22 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-11 — Invited state, skeletons, grouped Featured carousel
+
+- **Invited state everywhere.** `browse`/`findOne` now include the viewer's
+  pending invite (`myInvite`). Table cards (Explore/Home/Meetups) show
+  **"Invited"** instead of "Join Table", and the single table page shows a
+  **"You're invited" banner with Accept / Decline**. (`tables.service`, `types`,
+  `table-cta`, `tables/[id]`, `meetups`)
+- **Skeleton loaders on Explore + Nearby.** Both pages now show pulse skeleton
+  cards while data loads (instead of a spinner), and Explore's "Trending now" /
+  "Popular cities" show skeletons instead of a "0 tables" flash. (`discover`,
+  `tables/nearby`)
+- **Featured = one carousel per event.** The home Featured section groups photos
+  by event — each event gets its own header + horizontal carousel of wider
+  images. (`home-dashboard`)
+
+
 ### 2026-08-11 — Join-state cards, event name + multi-category, real presence
 
 - **"Join Table" no longer shows for tables you've already joined.** The list

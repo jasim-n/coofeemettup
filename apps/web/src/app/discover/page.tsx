@@ -10,7 +10,6 @@ import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/spinner';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
 import { tableCta } from '@/lib/table-cta';
@@ -98,6 +97,34 @@ function matchesWhen(t: TableDto, when: WhenFilter, customDate: string): boolean
 
 function cityCount(tables: TableDto[], city: string): number {
   return tables.filter((t) => nearestCity(t) === city).length;
+}
+
+/* ─── SkeletonCard ───────────────────────────────────────────────── */
+
+function SkeletonCard() {
+  return (
+    <div className="bg-card shadow-soft ring-border/60 flex h-full flex-col overflow-hidden rounded-3xl ring-1">
+      {/* image block */}
+      <div className="bg-muted animate-pulse h-40 shrink-0 rounded-t-3xl" />
+      <div className="flex flex-1 flex-col p-4 gap-3">
+        {/* title */}
+        <div className="bg-muted animate-pulse h-4 w-3/4 rounded" />
+        {/* date */}
+        <div className="bg-muted animate-pulse h-3 w-1/2 rounded" />
+        {/* venue */}
+        <div className="bg-muted animate-pulse h-3 w-2/3 rounded" />
+        {/* host */}
+        <div className="bg-muted animate-pulse h-3 w-2/5 rounded" />
+        {/* badge + price row */}
+        <div className="mt-auto flex items-center justify-between pt-1">
+          <div className="bg-muted animate-pulse h-5 w-20 rounded-full" />
+          <div className="bg-muted animate-pulse h-5 w-14 rounded" />
+        </div>
+        {/* cta button */}
+        <div className="bg-muted animate-pulse h-9 w-full rounded-full" />
+      </div>
+    </div>
+  );
 }
 
 /* ─── TableCoverCard ─────────────────────────────────────────────── */
@@ -549,9 +576,16 @@ export default function DiscoverPage() {
           {/* loading / error / empty */}
           {error && <p className="text-destructive text-sm">{error}</p>}
           {!tables && !error && (
-            <div className="flex justify-center py-16">
-              <Spinner className="text-primary size-6" />
-            </div>
+            <section>
+              <div className="mb-4">
+                <div className="bg-muted animate-pulse h-6 w-48 rounded" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            </section>
           )}
           {tables && results.length === 0 && (
             <div className="rounded-3xl border border-dashed py-16 text-center">
@@ -610,8 +644,21 @@ export default function DiscoverPage() {
             <div className="mb-3">
               <p className="font-heading font-bold tracking-tight">🔥 Trending now</p>
             </div>
-            {catCounts.length === 0 ? (
-              <p className="text-muted-foreground text-sm">Loading…</p>
+            {tables === null ? (
+              <ul className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <li key={i} className="flex items-center gap-3 py-2">
+                    <div className="bg-muted animate-pulse size-8 shrink-0 rounded-xl" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="bg-muted animate-pulse h-3 w-3/4 rounded" />
+                      <div className="bg-muted animate-pulse h-2.5 w-1/2 rounded" />
+                    </div>
+                    <div className="bg-muted animate-pulse h-3 w-5 rounded" />
+                  </li>
+                ))}
+              </ul>
+            ) : catCounts.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No trending topics yet.</p>
             ) : (
               <ul className="space-y-2">
                 {catCounts.slice(0, 5).map(([cat, count], i) => (
@@ -699,10 +746,14 @@ export default function DiscoverPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{city}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {cityCount(tables ?? [], city)}{' '}
-                      {cityCount(tables ?? [], city) === 1 ? 'table' : 'tables'}
-                    </p>
+                    {tables === null ? (
+                      <div className="bg-muted animate-pulse mt-1 h-2.5 w-16 rounded" />
+                    ) : (
+                      <p className="text-muted-foreground text-xs">
+                        {cityCount(tables, city)}{' '}
+                        {cityCount(tables, city) === 1 ? 'table' : 'tables'}
+                      </p>
+                    )}
                   </div>
                 </li>
               ))}
