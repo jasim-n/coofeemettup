@@ -358,8 +358,7 @@ function FeaturedCarousel({ images }: { images: FeaturedImageDto[] }) {
     return () => clearInterval(t);
   }, [n, paused]);
 
-  const img = images[idx % n];
-  const heading = img.tableTitle ?? img.category;
+  const safeIdx = idx % n;
 
   return (
     <div
@@ -367,17 +366,32 @@ function FeaturedCarousel({ images }: { images: FeaturedImageDto[] }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <Link href={`/tables/${img.tableId}`} className="block h-full w-full">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img key={img.id} src={img.url} alt={heading} className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-5">
-          <p className="font-heading truncate text-lg font-bold text-white">{heading}</p>
-          <p className="truncate text-xs text-white/70">
-            <i className={`fa-solid ${categoryIcon(img.category)}`} /> {img.category}
-          </p>
-        </div>
-      </Link>
+      {/* sliding track — translate by the active index for a slide effect */}
+      <div
+        className="flex h-full transition-transform duration-500 ease-out"
+        style={{ transform: `translateX(-${safeIdx * 100}%)` }}
+      >
+        {images.map((img) => {
+          const heading = img.tableTitle ?? img.category;
+          return (
+            <Link
+              key={img.id}
+              href={`/tables/${img.tableId}`}
+              className="relative block h-full w-full shrink-0"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img.url} alt={heading} className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <p className="font-heading truncate text-lg font-bold text-white">{heading}</p>
+                <p className="truncate text-xs text-white/70">
+                  <i className={`fa-solid ${categoryIcon(img.category)}`} /> {img.category}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
 
       {n > 1 && (
         <>
