@@ -607,6 +607,30 @@ export default function TableDetailPage() {
                       Leave table
                     </Button>
                   </>
+                ) : table.myInvite ? (
+                  <>
+                    <div className="bg-secondary rounded-2xl px-4 py-3 text-sm font-medium">
+                      <i className="fa-solid fa-envelope-open text-primary mr-1" />{' '}
+                      {"You're invited to this table."}
+                    </div>
+                    <Button
+                      variant="hero"
+                      size="lg"
+                      className="w-full"
+                      disabled={busy}
+                      onClick={() => void run(() => api.acceptInvite(table.myInvite!.id))}
+                    >
+                      {busy ? '…' : 'Accept invite'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full"
+                      disabled={busy}
+                      onClick={() => void run(() => api.declineInvite(table.myInvite!.id))}
+                    >
+                      Decline
+                    </Button>
+                  </>
                 ) : status === 'PENDING' ? (
                   <>
                     <div className="bg-secondary rounded-2xl px-4 py-3 text-sm font-medium">

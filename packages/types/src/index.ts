@@ -189,6 +189,8 @@ export interface TableDto {
   host?: TableHost;
   /** The current viewer's own request status for this table, if any. */
   myRequestStatus?: JoinStatus | null;
+  /** The current viewer's PENDING invite to this table, if any. */
+  myInvite?: { id: string; status: string } | null;
   /** Whether the current viewer has saved/bookmarked this table. */
   saved?: boolean;
 }

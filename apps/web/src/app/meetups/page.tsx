@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ApiError, type InviteDto, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { tableCta } from '@/lib/table-cta';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
@@ -172,8 +173,9 @@ function CalendarCard({ joined }: { joined: TableDto[] }) {
 
 /* ─── meetup cover card ─────────────────────────────────────────── */
 
-function MeetupCoverCard({ t }: { t: TableDto }) {
+function MeetupCoverCard({ t, viewerId }: { t: TableDto; viewerId?: string | null }) {
   const filled = t.seats - t.seatsLeft;
+  const cta = tableCta(t, viewerId);
   return (
     <Link
       href={`/tables/${t.id}`}
@@ -220,8 +222,12 @@ function MeetupCoverCard({ t }: { t: TableDto }) {
           <span className="font-heading text-primary text-sm font-extrabold">
             {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
           </span>
-          <span className="bg-primary text-primary-foreground rounded-full px-3 py-1 text-xs font-semibold transition-[filter] group-hover:brightness-110">
-            Join
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition-[filter] group-hover:brightness-110 ${
+              cta.primary ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary'
+            }`}
+          >
+            {cta.label}
           </span>
         </div>
       </div>
@@ -807,7 +813,7 @@ export default function MeetupsPage() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {upcomingCards.map((t) => (
-                      <MeetupCoverCard key={t.id} t={t} />
+                      <MeetupCoverCard key={t.id} t={t} viewerId={user?.id} />
                     ))}
                   </div>
                 )}

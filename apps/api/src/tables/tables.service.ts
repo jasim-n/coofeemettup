@@ -236,14 +236,14 @@ export class TablesService {
       orderBy: { startAt: 'asc' },
     });
     const saved = await this.savedSet(userId);
-    const statusBy = await this.myStatusByTable(
-      userId,
-      tables.map((t) => t.id),
-    );
+    const ids = tables.map((t) => t.id);
+    const statusBy = await this.myStatusByTable(userId, ids);
+    const inviteBy = await this.myInviteByTable(userId, ids);
     return tables.map((t) => ({
       ...t,
       saved: saved.has(t.id),
       myRequestStatus: statusBy.get(t.id) ?? null,
+      myInvite: inviteBy.get(t.id) ?? null,
     }));
   }
 
@@ -257,6 +257,18 @@ export class TablesService {
     return new Map(reqs.map((r) => [r.tableId, r.status]));
   }
 
+  /** The viewer's PENDING invite (id + status) per table id. */
+  private async myInviteByTable(userId: string, tableIds: string[]) {
+    if (tableIds.length === 0) {
+      return new Map<string, { id: string; status: string }>();
+    }
+    const invs = await this.prisma.tableInvite.findMany({
+      where: { inviteeId: userId, tableId: { in: tableIds }, status: 'PENDING' },
+      select: { id: true, tableId: true, status: true },
+    });
+    return new Map(invs.map((iv) => [iv.tableId, { id: iv.id, status: iv.status }]));
+  }
+
   async findOne(userId: string, id: string) {
     const table = await this.prisma.table.findUnique({
       where: { id },
@@ -266,9 +278,17 @@ export class TablesService {
     const mine = await this.prisma.tableJoinRequest.findUnique({
       where: { tableId_userId: { tableId: id, userId } },
     });
+    const invite = await this.prisma.tableInvite.findUnique({
+      where: { tableId_inviteeId: { tableId: id, inviteeId: userId } },
+      select: { id: true, status: true },
+    });
     return {
       ...table,
       myRequestStatus: mine?.status ?? null,
+      myInvite:
+        invite && invite.status === 'PENDING'
+          ? { id: invite.id, status: invite.status }
+          : null,
       saved: (await this.savedSet(userId)).has(id),
     };
   }
