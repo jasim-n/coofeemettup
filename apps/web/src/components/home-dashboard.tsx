@@ -137,35 +137,17 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         </section>
 
         {/* featured event photos (admin-curated) */}
-        {featured.length > 0 && (() => {
-          // Group by tableId, preserving order of first appearance
-          const groupOrder: string[] = [];
-          const groupMap = new Map<string, { tableTitle: string | null; category: string; images: FeaturedImageDto[] }>();
-          for (const f of featured) {
-            if (!groupMap.has(f.tableId)) {
-              groupOrder.push(f.tableId);
-              groupMap.set(f.tableId, { tableTitle: f.tableTitle, category: f.category, images: [] });
-            }
-            groupMap.get(f.tableId)!.images.push(f);
-          }
-          const groups = groupOrder.map((id) => ({ tableId: id, ...groupMap.get(id)! }));
-
-          return (
-            <div className="space-y-6">
-              {/* single top-level heading */}
-              <div className="flex items-center gap-2">
-                <span className="bg-gradient-ember grid size-7 place-items-center rounded-xl text-white">
-                  <i className="fa-solid fa-star text-xs" />
-                </span>
-                <h2 className="font-heading text-xl font-bold tracking-tight">Featured</h2>
-              </div>
-
-              {groups.map((group) => (
-                <EventCarousel key={group.tableId} group={group} />
-              ))}
+        {featured.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="bg-gradient-ember grid size-7 place-items-center rounded-xl text-white">
+                <i className="fa-solid fa-star text-xs" />
+              </span>
+              <h2 className="font-heading text-xl font-bold tracking-tight">Featured</h2>
             </div>
-          );
-        })()}
+            <FeaturedCarousel images={featured} />
+          </div>
+        )}
 
         {/* popular vibes */}
         {busy ? (
@@ -236,7 +218,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
       </div>
 
       {/* ---------- right rail ---------- */}
-      <aside className="space-y-4">
+      <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
         {/* profile card */}
         <div className="bg-card shadow-soft rounded-3xl border p-5">
           <div className="flex items-center gap-3">
@@ -362,95 +344,72 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   );
 }
 
-type EventGroup = {
-  tableId: string;
-  tableTitle: string | null;
-  category: string;
-  images: FeaturedImageDto[];
-};
-
-function EventCarousel({ group }: { group: EventGroup }) {
+/** One full-width carousel over ALL featured photos; autoplays; each slide's
+ *  heading is the event name (or category when there's no name). */
+function FeaturedCarousel({ images }: { images: FeaturedImageDto[] }) {
   const [idx, setIdx] = useState(0);
-  const n = group.images.length;
-  const img = group.images[idx];
+  const [paused, setPaused] = useState(false);
+  const n = images.length;
+
+  // Autoplay — advance every 4s, paused on hover.
+  useEffect(() => {
+    if (n <= 1 || paused) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % n), 4000);
+    return () => clearInterval(t);
+  }, [n, paused]);
+
+  const img = images[idx % n];
+  const heading = img.tableTitle ?? img.category;
 
   return (
-    <div className="space-y-2">
-      {/* per-event header */}
-      <div>
-        <Link
-          href={`/tables/${group.tableId}`}
-          className="font-heading block truncate font-bold tracking-tight hover:underline"
-        >
-          {group.tableTitle ?? group.category}
-        </Link>
-        <p className="text-muted-foreground text-xs">
-          <i className={`fa-solid ${categoryIcon(group.category)}`} /> {group.category}
-        </p>
-      </div>
-
-      {/* full-width image frame */}
-      <div className="relative h-72 w-full overflow-hidden rounded-3xl shadow-soft sm:h-80">
+    <div
+      className="relative h-72 w-full overflow-hidden rounded-3xl shadow-soft sm:h-80"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <Link href={`/tables/${img.tableId}`} className="block h-full w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={img.url}
-          alt={group.tableTitle ?? group.category}
-          className="h-full w-full object-cover transition-transform duration-500"
-        />
-
-        {/* gradient + title overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <p className="font-heading truncate text-base font-bold text-white">
-            {group.tableTitle ?? group.category}
-          </p>
+        <img key={img.id} src={img.url} alt={heading} className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-5">
+          <p className="font-heading truncate text-lg font-bold text-white">{heading}</p>
           <p className="truncate text-xs text-white/70">
-            <i className={`fa-solid ${categoryIcon(group.category)}`} /> {group.category}
+            <i className={`fa-solid ${categoryIcon(img.category)}`} /> {img.category}
           </p>
-          <Link
-            href={`/tables/${group.tableId}`}
-            className="mt-1 inline-block text-xs font-semibold text-white/80 hover:text-white hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            View event →
-          </Link>
         </div>
+      </Link>
 
-        {/* prev / next arrows — only when multiple images */}
-        {n > 1 && (
-          <>
-            <button
-              type="button"
-              aria-label="Previous photo"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx((i) => (i - 1 + n) % n); }}
-              className="absolute left-3 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
-            >
-              <i className="fa-solid fa-chevron-left text-sm" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next photo"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx((i) => (i + 1) % n); }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
-            >
-              <i className="fa-solid fa-chevron-right text-sm" />
-            </button>
-
-            {/* dot indicators */}
-            <div className="absolute inset-x-0 bottom-0 flex justify-center gap-1.5 pb-3">
-              {group.images.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Go to photo ${i + 1}`}
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx(i); }}
-                  className={`size-2 rounded-full transition-colors ${i === idx ? 'bg-white' : 'bg-white/50'}`}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      {n > 1 && (
+        <>
+          <button
+            type="button"
+            aria-label="Previous photo"
+            onClick={() => setIdx((i) => (i - 1 + n) % n)}
+            className="absolute left-3 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+          >
+            <i className="fa-solid fa-chevron-left text-sm" />
+          </button>
+          <button
+            type="button"
+            aria-label="Next photo"
+            onClick={() => setIdx((i) => (i + 1) % n)}
+            className="absolute right-3 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+          >
+            <i className="fa-solid fa-chevron-right text-sm" />
+          </button>
+          <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center gap-1.5 pb-3">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Go to photo ${i + 1}`}
+                onClick={() => setIdx(i)}
+                className={`size-2 rounded-full transition-colors ${i === idx % n ? 'bg-white' : 'bg-white/50'}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
