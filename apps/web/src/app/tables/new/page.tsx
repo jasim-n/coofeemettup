@@ -37,17 +37,19 @@ export default function NewTablePage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [form, setForm] = useState({
+    title: '',
     venueName: '',
     venueAddress: '',
     lat: '',
     lng: '',
     startAt: '',
     seats: '6',
-    category: '',
+    category: '', // free-text custom categories (comma-separated)
     description: '',
     rules: '',
     price: '',
   });
+  const [categories, setCategories] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -77,12 +79,22 @@ export default function NewTablePage() {
   async function publish(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!form.title.trim()) {
+      setError('Give your event a name.');
+      return;
+    }
     if (!form.lat || !form.lng) {
       setError('Drop a pin on the map to set the venue.');
       return;
     }
-    if (!form.category.trim()) {
-      setError('Pick or type a category.');
+    // Combine selected chips + any comma-separated custom ones (deduped).
+    const custom = form.category
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const allCategories = Array.from(new Set([...categories, ...custom]));
+    if (allCategories.length === 0) {
+      setError('Pick or type at least one category.');
       return;
     }
     setBusy(true);
@@ -92,10 +104,10 @@ export default function NewTablePage() {
         venueAddress: form.venueAddress.trim() || undefined,
         lat: Number(form.lat),
         lng: Number(form.lng),
-        title: undefined,
+        title: form.title.trim(),
         startAt: new Date(form.startAt).toISOString(),
         seats: Number(form.seats),
-        category: form.category.trim(),
+        category: allCategories.join(', '),
         description: form.description.trim() || undefined,
         rules: form.rules.trim() || undefined,
         pricePKR: form.price.trim() ? Number(form.price) : undefined,
@@ -125,7 +137,20 @@ export default function NewTablePage() {
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
       <form onSubmit={publish} className="grid gap-4 lg:grid-cols-2">
-        <div className="lg:col-span-2"><Section step="1" title="Choose venue">
+        <div className="lg:col-span-2"><Section step="1" title="Event name">
+          <Input
+            id="title"
+            placeholder="e.g. Sunday Deep Talks"
+            value={form.title}
+            onChange={(e) => set('title', e.target.value)}
+            required
+          />
+          <p className="text-muted-foreground text-xs">
+            Shown as the title on cards and the event page.
+          </p>
+        </Section></div>
+
+        <div className="lg:col-span-2"><Section step="2" title="Choose venue">
           <div className="space-y-1.5">
             <Label htmlFor="venueName">Venue name</Label>
             <Input
@@ -156,7 +181,7 @@ export default function NewTablePage() {
           </div>
         </Section></div>
 
-        <Section step="2" title="Date & time">
+        <Section step="3" title="Date & time">
           <Input
             type="datetime-local"
             value={form.startAt}
@@ -165,7 +190,7 @@ export default function NewTablePage() {
           />
         </Section>
 
-        <Section step="3" title="Number of seats">
+        <Section step="4" title="Number of seats">
           <Input
             type="number"
             min={2}
@@ -177,31 +202,40 @@ export default function NewTablePage() {
           <p className="text-muted-foreground text-xs">Between 2 and 50 (you don’t take a seat).</p>
         </Section>
 
-        <Section step="4" title="Category">
+        <Section step="5" title="Category">
+          <p className="text-muted-foreground text-xs">Pick one or more.</p>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => set('category', c)}
-                className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                  form.category === c
-                    ? 'bg-primary text-primary-foreground border-transparent'
-                    : 'bg-card hover:bg-muted'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+            {CATEGORIES.map((c) => {
+              const active = categories.includes(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() =>
+                    setCategories((prev) =>
+                      active ? prev.filter((x) => x !== c) : [...prev, c],
+                    )
+                  }
+                  className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                    active
+                      ? 'bg-primary text-primary-foreground border-transparent'
+                      : 'bg-card hover:bg-muted'
+                  }`}
+                >
+                  {active && <i className="fa-solid fa-check mr-1 text-xs" />}
+                  {c}
+                </button>
+              );
+            })}
           </div>
           <Input
-            placeholder="…or type your own"
+            placeholder="…or add your own (comma-separated)"
             value={form.category}
             onChange={(e) => set('category', e.target.value)}
           />
         </Section>
 
-        <Section step="5" title="Description & rules">
+        <Section step="6" title="Description & rules">
           <div className="space-y-1.5">
             <Label htmlFor="description">What’s this table about?</Label>
             <Textarea

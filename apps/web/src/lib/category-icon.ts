@@ -13,7 +13,19 @@ const CAT_ICON: Record<string, string> = {
   'board games': 'fa-chess',
 };
 
-/** FA icon class for a category (case-insensitive); falls back to a coffee cup. */
+/** Split a (possibly comma-separated multi-) category string into trimmed parts. */
+export function splitCategories(category?: string | null): string[] {
+  return (category ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * FA icon class for a category (case-insensitive); uses the FIRST category when
+ * a table has multiple (comma-separated). Falls back to a coffee cup.
+ */
 export function categoryIcon(category?: string | null): string {
-  return CAT_ICON[(category ?? '').toLowerCase()] ?? 'fa-mug-saucer';
+  const first = splitCategories(category)[0] ?? '';
+  return CAT_ICON[first.toLowerCase()] ?? 'fa-mug-saucer';
 }

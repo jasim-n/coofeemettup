@@ -47,7 +47,7 @@ export class CreateTableDto {
   seats!: number;
 
   @IsString()
-  @Length(1, 60)
+  @Length(1, 200)
   category!: string;
 
   @IsOptional()

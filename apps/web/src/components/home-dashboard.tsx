@@ -13,7 +13,7 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
-import { categoryIcon } from '@/lib/category-icon';
+import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { tableCta } from '@/lib/table-cta';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
@@ -66,7 +66,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   const viewerId = user.id;
   const upcoming = tables.slice(0, 6);
   const verified = user.verificationStatus === 'VERIFIED';
-  const vibes = [...new Set(tables.map((t) => t.category))].slice(0, 6);
+  const vibes = [...new Set(tables.flatMap((t) => splitCategories(t.category)))].slice(0, 6);
   const name = user.firstName ?? user.phone;
 
   // eslint-disable-next-line react-hooks/purity -- one-time clock read for greeting + relative timestamps

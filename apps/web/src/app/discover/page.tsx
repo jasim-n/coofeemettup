@@ -11,7 +11,7 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/spinner';
-import { categoryIcon } from '@/lib/category-icon';
+import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
 import { tableCta } from '@/lib/table-cta';
 
@@ -231,14 +231,14 @@ export default function DiscoverPage() {
   }, []);
 
   const categories = useMemo(
-    () => [...new Set((tables ?? []).map((t) => t.category))].sort(),
+    () => [...new Set((tables ?? []).flatMap((t) => splitCategories(t.category)))].sort(),
     [tables],
   );
 
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return (tables ?? []).filter((t) => {
-      if (category && t.category !== category) return false;
+      if (category && !splitCategories(t.category).includes(category)) return false;
       if (!matchesPrice(t, priceTier)) return false;
       if (!matchesWhen(t, when, customDate)) return false;
       if (!matchesDistance(t, coords, distanceKm)) return false;
@@ -259,7 +259,9 @@ export default function DiscoverPage() {
   const catCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const t of tables ?? []) {
-      counts[t.category] = (counts[t.category] ?? 0) + 1;
+      for (const c of splitCategories(t.category)) {
+        counts[c] = (counts[c] ?? 0) + 1;
+      }
     }
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
