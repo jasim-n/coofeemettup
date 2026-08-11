@@ -236,8 +236,23 @@ export class AdminController {
   // ── Featured event photos ──────────────────────────────────────────────────
 
   @Get('admin/featured/tables')
-  featuredTables() {
-    return this.admin.featuredTables();
+  featuredTables(
+    @CurrentUser() user: AuthUser,
+    @Query('q') q?: string,
+    @Query('status') status?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('hasPhotos') hasPhotos?: string,
+    @Query('bookmarked') bookmarked?: string,
+  ) {
+    return this.admin.eventsForFeaturing(user.id, {
+      q,
+      status,
+      from,
+      to,
+      hasPhotos: hasPhotos === 'true',
+      bookmarked: bookmarked === 'true',
+    });
   }
 
   @Get('admin/tables/:id/images')

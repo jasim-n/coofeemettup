@@ -4,6 +4,17 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-11 — Admin Featured picker: search + filters
+
+- The `/admin/featured` page now lets admins **find events** with a search box +
+  filters (status, date range, "only events with photos", "my bookmarked
+  events") instead of a plain dropdown. Each event card shows its status, date,
+  venue, photo count, and featured count; selecting one opens its photos to
+  feature. `GET /admin/featured/tables` gained query params
+  (q/status/from/to/hasPhotos/bookmarked). (`admin.service`, `types`, client,
+  `admin/featured/page.tsx`)
+
+
 ### 2026-08-11 — Admin: featured event photos on home
 
 - **Admin can curate a "Featured" section on the home page.** New `/admin/featured`

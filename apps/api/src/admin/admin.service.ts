@@ -6,7 +6,13 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { MailService, type MailProvider } from '../mail/mail.service';
-import type { AttendanceStatus, UserStatus, Role } from '../../generated/prisma/client';
+import { Prisma } from '../../generated/prisma/client';
+import type {
+  AttendanceStatus,
+  UserStatus,
+  Role,
+  TableStatus,
+} from '../../generated/prisma/client';
 
 const SLIM_USER = {
   id: true,
@@ -573,23 +579,77 @@ export class AdminService {
 
   // ── Featured event photos (home "Featured" section) ────────────────────────
 
-  /** Tables that have event photos, for the featured-picker dropdown. */
-  async featuredTables() {
+  /** Events (tables) for the featured picker, with filters. */
+  async eventsForFeaturing(
+    userId: string,
+    opts: {
+      q?: string;
+      status?: string;
+      from?: string;
+      to?: string;
+      hasPhotos?: boolean;
+      bookmarked?: boolean;
+    },
+  ) {
+    const where: Prisma.TableWhereInput = {};
+    const q = opts.q?.trim();
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { venueName: { contains: q, mode: 'insensitive' } },
+        { category: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+    if (opts.status) where.status = opts.status as TableStatus;
+    if (opts.from || opts.to) {
+      where.startAt = {
+        ...(opts.from ? { gte: new Date(opts.from) } : {}),
+        ...(opts.to ? { lte: new Date(opts.to) } : {}),
+      };
+    }
+    if (opts.hasPhotos) where.images = { some: {} };
+    if (opts.bookmarked) {
+      const me = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { savedTableIds: true },
+      });
+      where.id = { in: me?.savedTableIds ?? [] };
+    }
+
     const tables = await this.prisma.table.findMany({
-      where: { images: { some: {} } },
+      where,
       select: {
         id: true,
         title: true,
         category: true,
+        status: true,
+        startAt: true,
+        venueName: true,
         _count: { select: { images: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { startAt: 'desc' },
+      take: 100,
     });
+
+    const ids = tables.map((t) => t.id);
+    const featured = ids.length
+      ? await this.prisma.tableImage.groupBy({
+          by: ['tableId'],
+          where: { tableId: { in: ids }, featured: true },
+          _count: { _all: true },
+        })
+      : [];
+    const featuredBy = new Map(featured.map((f) => [f.tableId, f._count._all]));
+
     return tables.map((t) => ({
       id: t.id,
       title: t.title,
       category: t.category,
+      status: t.status,
+      startAt: t.startAt.toISOString(),
+      venueName: t.venueName,
       imageCount: t._count.images,
+      featuredCount: featuredBy.get(t.id) ?? 0,
     }));
   }
 

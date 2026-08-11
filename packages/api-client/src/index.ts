@@ -47,6 +47,7 @@ import type {
   TableChatResponse,
   AdminFeaturedTable,
   AdminTableDto,
+  FeaturedFilters,
   FeaturedImageDto,
   TableDto,
   TableImageDto,
@@ -651,8 +652,16 @@ export class ApiClient {
     return this.request('GET', '/tables/featured');
   }
 
-  adminFeaturedTables(): Promise<AdminFeaturedTable[]> {
-    return this.request('GET', '/admin/featured/tables');
+  adminFeaturedTables(filters: FeaturedFilters = {}): Promise<AdminFeaturedTable[]> {
+    const p = new URLSearchParams();
+    if (filters.q) p.set('q', filters.q);
+    if (filters.status) p.set('status', filters.status);
+    if (filters.from) p.set('from', filters.from);
+    if (filters.to) p.set('to', filters.to);
+    if (filters.hasPhotos) p.set('hasPhotos', 'true');
+    if (filters.bookmarked) p.set('bookmarked', 'true');
+    const qs = p.toString();
+    return this.request('GET', `/admin/featured/tables${qs ? `?${qs}` : ''}`);
   }
 
   adminTableImages(tableId: string): Promise<TableImageDto[]> {

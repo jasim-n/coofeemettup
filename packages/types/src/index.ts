@@ -228,12 +228,25 @@ export interface FeaturedImageDto {
   category: string;
 }
 
-/** A table that has event photos, for the admin featured-picker. */
+/** An event (table) in the admin featured-picker, with photo counts. */
 export interface AdminFeaturedTable {
   id: string;
   title: string | null;
   category: string;
+  status: TableStatus;
+  startAt: string;
+  venueName: string | null;
   imageCount: number;
+  featuredCount: number;
+}
+
+export interface FeaturedFilters {
+  q?: string;
+  status?: TableStatus | '';
+  from?: string;
+  to?: string;
+  hasPhotos?: boolean;
+  bookmarked?: boolean;
 }
 
 export interface TableJoinRequestDto {
