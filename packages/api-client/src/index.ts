@@ -698,6 +698,11 @@ export class ApiClient {
     return this.request('GET', '/invites/mine');
   }
 
+  /** Invitees the host has already invited to a table (host only). */
+  tableInvites(tableId: string): Promise<{ inviteeId: string; status: string }[]> {
+    return this.request('GET', `/invites/table/${tableId}`);
+  }
+
   acceptInvite(id: string): Promise<{ ok: true }> {
     return this.request('POST', `/invites/${id}/accept`);
   }

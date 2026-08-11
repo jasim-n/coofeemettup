@@ -26,6 +26,11 @@ export class InvitesController {
     return this.invites.mine(user.id);
   }
 
+  @Get('table/:tableId')
+  tableInvites(@CurrentUser() user: AuthUser, @Param('tableId') tableId: string) {
+    return this.invites.tableInvites(user.id, tableId);
+  }
+
   @Post(':id/accept')
   @HttpCode(200)
   accept(@CurrentUser() user: AuthUser, @Param('id') id: string) {

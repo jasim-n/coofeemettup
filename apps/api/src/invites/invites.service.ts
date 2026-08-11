@@ -25,6 +25,27 @@ export class InvitesService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  /** Invitees the host has already invited to this table (excludes declined). */
+  async tableInvites(host: string, tableId: string) {
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+      select: { hostId: true },
+    });
+    if (!table) throw new NotFoundException('Table not found');
+    if (table.hostId !== host) {
+      throw new ForbiddenException('Only the host can view invites');
+    }
+    return this.prisma.tableInvite.findMany({
+      where: {
+        tableId,
+        status: {
+          in: [InviteStatus.PENDING, InviteStatus.ACCEPTED, InviteStatus.MAYBE],
+        },
+      },
+      select: { inviteeId: true, status: true },
+    });
+  }
+
   async invite(me: string, tableId: string, inviteeId: string) {
     const table = await this.prisma.table.findUnique({ where: { id: tableId } });
     if (!table) throw new NotFoundException('Table not found');

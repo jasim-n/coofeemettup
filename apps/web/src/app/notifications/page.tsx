@@ -8,6 +8,21 @@ import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageLoader } from '@/components/spinner';
 
+/** Where a notification should take the user when tapped. */
+function notificationHref(n: NotificationDto): string | null {
+  const tableId = typeof n.meta?.tableId === 'string' ? n.meta.tableId : null;
+  switch (n.type) {
+    case 'table.invite':
+      return '/invites';
+    case 'table.request':
+      return '/requests';
+    case 'verification':
+      return '/profile';
+    default:
+      return tableId ? `/tables/${tableId}` : null;
+  }
+}
+
 export default function NotificationsPage() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState<NotificationDto[]>([]);
@@ -59,33 +74,49 @@ export default function NotificationsPage() {
       )}
 
       <div className="space-y-3">
-        {items.map((n) => (
-          <Card
-            key={n.id}
-            className={`rounded-3xl transition-all ${
-              n.readAt
-                ? ''
-                : 'bg-secondary/50 ring-1 ring-primary/20'
-            }`}
-          >
-            <CardContent className="py-4 px-5">
-              <div className="flex items-start justify-between gap-3">
-                <p className={`text-sm ${n.readAt ? 'font-medium' : 'font-bold'}`}>{n.title}</p>
-                <span className="text-muted-foreground shrink-0 text-xs">
-                  {new Date(n.createdAt).toLocaleString('en-PK', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
-              {n.body && (
-                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{n.body}</p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+        {items.map((n) => {
+          const href = notificationHref(n);
+          const card = (
+            <Card
+              className={`rounded-3xl transition-all ${
+                n.readAt ? '' : 'bg-secondary/50 ring-1 ring-primary/20'
+              } ${href ? 'hover:shadow-soft cursor-pointer' : ''}`}
+            >
+              <CardContent className="py-4 px-5">
+                <div className="flex items-start justify-between gap-3">
+                  <p className={`text-sm ${n.readAt ? 'font-medium' : 'font-bold'}`}>{n.title}</p>
+                  <span className="text-muted-foreground shrink-0 text-xs">
+                    {new Date(n.createdAt).toLocaleString('en-PK', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+                {n.body && (
+                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{n.body}</p>
+                )}
+                {href && (
+                  <p className="text-primary mt-2 text-xs font-semibold">
+                    {href === '/invites'
+                      ? 'View invite →'
+                      : href === '/requests'
+                        ? 'Review requests →'
+                        : 'Open →'}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          );
+          return href ? (
+            <Link key={n.id} href={href} className="block">
+              {card}
+            </Link>
+          ) : (
+            <div key={n.id}>{card}</div>
+          );
+        })}
       </div>
     </main>
   );

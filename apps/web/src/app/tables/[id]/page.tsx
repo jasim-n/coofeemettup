@@ -91,7 +91,7 @@ export default function TableDetailPage() {
     };
   }, [load]);
 
-  // Load connections for invite picker (host only)
+  // Load connections + already-sent invites for the invite picker (host only)
   useEffect(() => {
     if (!user) return;
     let active = true;
@@ -103,10 +103,19 @@ export default function TableDetailPage() {
         /* best-effort */
       }
     })();
+    // Seed the "Invited ✓" state so it survives a refresh.
+    if (isHost) {
+      void api
+        .tableInvites(id)
+        .then((invs) => {
+          if (active) setInvited(new Set(invs.map((iv) => iv.inviteeId)));
+        })
+        .catch(() => undefined);
+    }
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, isHost, id]);
 
   // Invite picker: search ALL active members by name (debounced). Under 2 chars
   // we show the host's connections as the default list. setState lives inside
