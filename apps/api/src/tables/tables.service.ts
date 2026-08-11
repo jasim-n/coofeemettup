@@ -236,7 +236,25 @@ export class TablesService {
       orderBy: { startAt: 'asc' },
     });
     const saved = await this.savedSet(userId);
-    return tables.map((t) => ({ ...t, saved: saved.has(t.id) }));
+    const statusBy = await this.myStatusByTable(
+      userId,
+      tables.map((t) => t.id),
+    );
+    return tables.map((t) => ({
+      ...t,
+      saved: saved.has(t.id),
+      myRequestStatus: statusBy.get(t.id) ?? null,
+    }));
+  }
+
+  /** The viewer's join-request status per table id (for card CTAs). */
+  private async myStatusByTable(userId: string, tableIds: string[]) {
+    if (tableIds.length === 0) return new Map<string, string>();
+    const reqs = await this.prisma.tableJoinRequest.findMany({
+      where: { userId, tableId: { in: tableIds } },
+      select: { tableId: true, status: true },
+    });
+    return new Map(reqs.map((r) => [r.tableId, r.status]));
   }
 
   async findOne(userId: string, id: string) {
@@ -301,7 +319,12 @@ export class TablesService {
       include: { cafe: true, host: { select: HOST_SELECT } },
       orderBy: { startAt: 'asc' },
     });
-    return tables.map((t) => ({ ...t, saved: true }));
+    const statusBy = await this.myStatusByTable(userId, ids);
+    return tables.map((t) => ({
+      ...t,
+      saved: true,
+      myRequestStatus: statusBy.get(t.id) ?? null,
+    }));
   }
 
   // ---------- join lifecycle ----------
