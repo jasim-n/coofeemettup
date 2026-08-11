@@ -59,6 +59,11 @@ export class TablesController {
     return this.tables.mineSaved(user.id);
   }
 
+  @Get('mine/group-threads')
+  groupThreads(@CurrentUser() user: AuthUser) {
+    return this.tables.groupThreads(user.id);
+  }
+
   @Get(':id')
   findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.tables.findOne(user.id, id);
@@ -143,6 +148,12 @@ export class TablesController {
   @Get(':id/chat')
   chat(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.tables.getChat(user.id, id);
+  }
+
+  @Post(':id/read')
+  @HttpCode(200)
+  markRead(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.tables.markGroupRead(user.id, id);
   }
 
   @Post(':id/chat')

@@ -281,6 +281,17 @@ model TableImage {
   @@index([tableId])
 }
 
+/// Per-user read marker for a table's group chat (unread = messages after this).
+model GroupChatRead {
+  id         String   @id @default(cuid())
+  userId     String
+  tableId    String
+  lastReadAt DateTime @default(now())
+
+  @@unique([userId, tableId])
+  @@index([userId])
+}
+
 enum ReviewRole {
   HOST
   GUEST

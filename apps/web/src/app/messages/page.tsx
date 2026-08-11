@@ -6,7 +6,6 @@ import {
   ApiError,
   type ChatMessage,
   type DmMessage,
-  type DmThread,
   type PublicUser,
   type TableDto,
 } from '@jrst/api-client';
@@ -102,72 +101,69 @@ export default function MessagesPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ---- load all convos + connections ----
+  // ---- load + poll all convos + connections ----
+  // Both DM and group threads carry a real last-message time + unread count, so
+  // we merge them into ONE list sorted by recency and refresh on an interval so
+  // unread badges / ordering update when new messages arrive.
   useEffect(() => {
     if (!user) return;
     let active = true;
-    void (async () => {
-      try {
-        const [threads, joined, hosted, conns] = await Promise.all([
-          api.dmThreads(),
-          api.myJoinedTables(),
-          user.canHost ? api.myHostedTables() : Promise.resolve([] as TableDto[]),
-          api.myConnections(),
-        ]);
-        if (!active) return;
-
-        // build DM convos
-        const dmConvos: DmConvo[] = threads.map((t: DmThread) => ({
-          kind: 'dm',
-          key: `dm:${t.user.id}`,
-          userId: t.user.id,
-          name: `${t.user.firstName ?? 'Member'} ${t.user.lastInitial ?? ''}`.trim(),
-          last: t.lastMessage,
-          time: t.lastAt,
-          unread: t.unread,
-        }));
-
-        // build group convos (deduped)
-        const approvedJoined = joined.filter((t) => t.myRequestStatus === 'APPROVED');
-        const seen = new Set<string>();
-        const groupConvos: GroupConvo[] = [];
-        for (const t of [...hosted, ...approvedJoined]) {
-          if (!seen.has(t.id)) {
-            seen.add(t.id);
-            groupConvos.push({
-              kind: 'group',
-              key: `group:${t.id}`,
-              table: t,
-              name: t.title ?? t.category,
-              last: 'Group chat',
-              time: t.startAt,
-              unread: 0,
-            });
-          }
-        }
-
-        // DMs are real 1:1 conversations → surface them first (most recent
-        // message on top); group/meetup chats follow (soonest meetup first).
-        // (Group `time` is the meetup startAt, which is often in the future, so
-        // groups must not be time-sorted against DMs or they'd bury them.)
-        dmConvos.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-        groupConvos.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
-        const all: Convo[] = [...dmConvos, ...groupConvos];
-
-        setConvos(all);
-        setConnections(conns);
-        if (all.length > 0 && !selectedKey) {
-          setSelectedKey(all[0]!.key);
-        }
-      } finally {
-        if (active) setConvoLoading(false);
-      }
-    })();
+    const loadConvos = async () => {
+      const [threads, groups, conns] = await Promise.all([
+        api.dmThreads(),
+        api.groupThreads(),
+        api.myConnections(),
+      ]);
+      if (!active) return;
+      const dmConvos: DmConvo[] = threads.map((t) => ({
+        kind: 'dm',
+        key: `dm:${t.user.id}`,
+        userId: t.user.id,
+        name: `${t.user.firstName ?? 'Member'} ${t.user.lastInitial ?? ''}`.trim(),
+        last: t.lastMessage,
+        time: t.lastAt,
+        unread: t.unread,
+      }));
+      const groupConvos: GroupConvo[] = groups.map((g) => ({
+        kind: 'group',
+        key: `group:${g.table.id}`,
+        table: g.table,
+        name: g.table.title ?? g.table.category,
+        last: g.lastMessage ?? 'No messages yet',
+        time: g.lastAt,
+        unread: g.unread,
+      }));
+      const all: Convo[] = [...dmConvos, ...groupConvos].sort(
+        (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
+      );
+      setConvos(all);
+      setConnections(conns);
+      setConvoLoading(false);
+      setSelectedKey((prev) => prev ?? all[0]?.key ?? null);
+    };
+    void loadConvos().catch(() => {
+      if (active) setConvoLoading(false);
+    });
+    const timer = setInterval(() => void loadConvos().catch(() => undefined), 8000);
     return () => {
       active = false;
+      clearInterval(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Mark a group chat read when opened → clears its unread badge.
+  useEffect(() => {
+    if (!selectedKey?.startsWith('group:') || !user) return;
+    const tid = selectedKey.slice(6);
+    void api
+      .markGroupRead(tid)
+      .then(() =>
+        setConvos((prev) =>
+          prev.map((c) => (c.key === selectedKey ? { ...c, unread: 0 } : c)),
+        ),
+      )
+      .catch(() => undefined);
+  }, [selectedKey, user]);
 
   // ---- load + poll selected thread ----
   useEffect(() => {

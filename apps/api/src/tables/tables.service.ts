@@ -87,6 +87,68 @@ export class TablesService {
     return { ok: true as const };
   }
 
+  // ---------- group chat threads (list + unread) ----------
+
+  /** Group-chat conversation summaries (last message + unread) for the sidebar. */
+  async groupThreads(userId: string) {
+    const hosted = await this.prisma.table.findMany({
+      where: { hostId: userId },
+      include: { cafe: true, host: { select: HOST_SELECT } },
+    });
+    const approved = await this.prisma.tableJoinRequest.findMany({
+      where: { userId, status: 'APPROVED' },
+      include: {
+        table: { include: { cafe: true, host: { select: HOST_SELECT } } },
+      },
+    });
+    const byId = new Map<string, (typeof hosted)[number]>();
+    for (const t of hosted) byId.set(t.id, t);
+    for (const r of approved) if (!byId.has(r.table.id)) byId.set(r.table.id, r.table);
+    const tables = [...byId.values()];
+    const tableIds = tables.map((t) => t.id);
+    if (tableIds.length === 0) return [];
+
+    const messages = await this.prisma.groupMessage.findMany({
+      where: { groupId: { in: tableIds } },
+      orderBy: { createdAt: 'desc' },
+      select: { groupId: true, body: true, userId: true, createdAt: true },
+    });
+    const reads = await this.prisma.groupChatRead.findMany({
+      where: { userId, tableId: { in: tableIds } },
+    });
+    const readByTable = new Map(reads.map((r) => [r.tableId, r.lastReadAt]));
+
+    const result = tables.map((t) => {
+      const msgs = messages.filter((m) => m.groupId === t.id);
+      const last = msgs[0] ?? null; // desc → first is latest
+      const lastReadAt = readByTable.get(t.id) ?? new Date(0);
+      const unread = msgs.filter(
+        (m) => m.userId !== userId && m.createdAt > lastReadAt,
+      ).length;
+      return {
+        table: t,
+        lastMessage: last?.body ?? null,
+        lastAt: (last?.createdAt ?? t.createdAt).toISOString(),
+        unread,
+      };
+    });
+    result.sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
+    return result;
+  }
+
+  /** Mark a table's group chat as read up to now (clears its unread count). */
+  async markGroupRead(userId: string, tableId: string) {
+    if (!(await this.isMember(userId, tableId))) {
+      throw new ForbiddenException('Not a member of this table');
+    }
+    await this.prisma.groupChatRead.upsert({
+      where: { userId_tableId: { userId, tableId } },
+      create: { userId, tableId },
+      update: { lastReadAt: new Date() },
+    });
+    return { ok: true as const };
+  }
+
   // ---------- hosting ----------
   async create(userId: string, dto: CreateTableDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });

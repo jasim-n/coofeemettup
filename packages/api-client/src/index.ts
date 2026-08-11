@@ -20,6 +20,7 @@ import type {
   DashboardMetrics,
   DmMessage,
   DmThread,
+  GroupThread,
   EventDto,
   FeedbackDto,
   GenderTrack,
@@ -637,6 +638,14 @@ export class ApiClient {
   // ---- direct messages ----
   dmThreads(): Promise<DmThread[]> {
     return this.request('GET', '/dm/threads');
+  }
+
+  groupThreads(): Promise<GroupThread[]> {
+    return this.request('GET', '/tables/mine/group-threads');
+  }
+
+  markGroupRead(tableId: string): Promise<{ ok: true }> {
+    return this.request('POST', `/tables/${tableId}/read`);
   }
 
   dmThread(userId: string): Promise<DmMessage[]> {

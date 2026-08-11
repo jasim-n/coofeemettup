@@ -4,6 +4,21 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-11 — Chat ordering + unread indicators
+
+- **Conversations now sort by most-recent message.** Group chats previously used
+  the event start date (often future) as their sort key and showed a hardcoded
+  "Group chat" text with no unread — so the list wasn't in message order. New
+  `GET /tables/mine/group-threads` returns each group's real last message,
+  last-message time, and unread count; the messages page merges DM + group into
+  one list sorted by recency.
+- **Unread indicators for group chats.** New `GroupChatRead` model (per-user
+  read marker) + `POST /tables/:id/read`. Group conversations show a real unread
+  badge; opening a chat marks it read (messages page + the standalone table chat
+  page). The messages page now polls the thread list every 8s so unread badges
+  and ordering update live when new messages arrive.
+
+
 ### 2026-08-11 — Host: end event + event photos
 
 - **Host can end an event.** New `POST /tables/:id/complete` (host-only) marks

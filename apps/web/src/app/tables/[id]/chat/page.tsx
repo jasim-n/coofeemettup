@@ -41,6 +41,7 @@ export default function TableChatPage() {
     const res = await api.tableChat(id);
     setMember(res.member);
     setMessages(res.messages);
+    if (res.member) void api.markGroupRead(id).catch(() => undefined);
   }, [id]);
 
   useEffect(() => {

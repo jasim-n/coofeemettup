@@ -690,6 +690,13 @@ export interface DmThread {
   unread: number;
 }
 
+export interface GroupThread {
+  table: TableDto;
+  lastMessage: string | null;
+  lastAt: string;
+  unread: number;
+}
+
 // ── Mail provider (admin: OTP sender) ────────────────────────────────────────
 export type MailProvider = 'brevo' | 'gmail';
 
