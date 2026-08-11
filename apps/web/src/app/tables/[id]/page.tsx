@@ -7,6 +7,7 @@ import {
   ApiError,
   type PublicUser,
   type TableDto,
+  type TableImageDto,
   type TableJoinRequestDto,
   type UserReputation,
 } from '@jrst/api-client';
@@ -44,6 +45,8 @@ export default function TableDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [images, setImages] = useState<TableImageDto[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const isHost = !!table && !!user && table.hostId === user.id;
 
@@ -111,6 +114,14 @@ export default function TableDetailPage() {
     return () => clearTimeout(t);
   }, [inviteQuery]);
 
+  // Load event photos — only for members (host or approved); endpoint 403s for others.
+  useEffect(() => {
+    if (!table?.id || !user) return;
+    const isMember = isHost || table.myRequestStatus === 'APPROVED';
+    if (!isMember) return;
+    api.tableImages(table.id).then(setImages).catch(() => setImages([]));
+  }, [table?.id, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function run(action: () => Promise<unknown>) {
     setError(null);
     setBusy(true);
@@ -129,6 +140,38 @@ export default function TableDetailPage() {
     try {
       await api.inviteToTable(table.id, connectionId);
       setInvited((prev) => new Set(prev).add(connectionId));
+    } catch {
+      /* best-effort */
+    }
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setImageError('Only JPEG, PNG, or WebP images are allowed.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError('Image must be 5 MB or smaller.');
+      return;
+    }
+    setImageError(null);
+    try {
+      const uploaded = await api.uploadTableImage(id, file);
+      setImages((prev) => [uploaded, ...prev]);
+    } catch (err) {
+      setImageError(err instanceof ApiError ? err.message : 'Upload failed.');
+    }
+  }
+
+  async function handleImageDelete(imageId: string) {
+    if (!window.confirm('Delete this photo?')) return;
+    try {
+      await api.deleteTableImage(id, imageId);
+      setImages((prev) => prev.filter((img) => img.id !== imageId));
     } catch {
       /* best-effort */
     }
@@ -258,6 +301,61 @@ export default function TableDetailPage() {
                 <div className="bg-secondary/50 mt-4 rounded-2xl p-4">
                   <p className="eyebrow text-primary mb-1">House rules</p>
                   <p className="text-muted-foreground text-sm">{table.rules}</p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* event photos — members only */}
+          {(isHost || status === 'APPROVED') && (
+            <section className="bg-card shadow-soft rounded-3xl border p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="font-heading text-lg font-bold tracking-tight">
+                  <i className="fa-solid fa-images text-primary mr-2" />Event photos
+                </h2>
+                {isHost && (
+                  <label className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent`}>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={(e) => void handleImageUpload(e)}
+                    />
+                    <i className="fa-solid fa-plus mr-1" />Add photos
+                  </label>
+                )}
+              </div>
+              {imageError && (
+                <p className="text-destructive mb-3 text-sm">{imageError}</p>
+              )}
+              {images.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  {isHost
+                    ? 'No photos yet — add some from the event.'
+                    : "The host hasn't shared any photos yet."}
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {images.map((img) => (
+                    <div key={img.id} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt=""
+                        className="h-32 w-full rounded-2xl object-cover"
+                      />
+                      {isHost && (
+                        <button
+                          type="button"
+                          onClick={() => void handleImageDelete(img.id)}
+                          className="bg-black/60 text-white hover:bg-black/80 absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full text-xs transition-colors"
+                          aria-label="Delete photo"
+                        >
+                          <i className="fa-solid fa-xmark" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </section>
@@ -518,9 +616,29 @@ export default function TableDetailPage() {
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground mt-4 text-sm">
-                {"You're"} hosting this table — manage requests below.
-              </p>
+              <div className="mt-4 space-y-3">
+                <p className="text-muted-foreground text-sm">
+                  {"You're"} hosting this table — manage requests below.
+                </p>
+                {table.status !== 'COMPLETED' && table.status !== 'CANCELLED' ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() => {
+                      if (window.confirm('End this event? This marks it completed and unlocks reviews.')) {
+                        void run(() => api.completeTable(id));
+                      }
+                    }}
+                  >
+                    <i className="fa-solid fa-flag-checkered mr-1.5" />End event
+                  </Button>
+                ) : table.status === 'COMPLETED' ? (
+                  <p className="text-muted-foreground text-center text-xs">
+                    <i className="fa-solid fa-circle-check mr-1 text-primary" />Event ended
+                  </p>
+                ) : null}
+              </div>
             )}
           </div>
 

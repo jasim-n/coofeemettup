@@ -46,6 +46,7 @@ import type {
   TableChatResponse,
   AdminTableDto,
   TableDto,
+  TableImageDto,
   TableJoinRequestDto,
   UserReputation,
   UpdateCafeInput,
@@ -490,6 +491,45 @@ export class ApiClient {
 
   declineTableRequest(id: string, reqId: string): Promise<{ ok: true }> {
     return this.request('POST', `/tables/${id}/requests/${reqId}/decline`);
+  }
+
+  // ---- host: end event + event photos ----
+  completeTable(id: string): Promise<TableDto> {
+    return this.request('POST', `/tables/${id}/complete`);
+  }
+
+  tableImages(id: string): Promise<TableImageDto[]> {
+    return this.request('GET', `/tables/${id}/images`);
+  }
+
+  deleteTableImage(id: string, imageId: string): Promise<{ ok: true }> {
+    return this.request('DELETE', `/tables/${id}/images/${imageId}`);
+  }
+
+  async uploadTableImage(id: string, file: File): Promise<TableImageDto> {
+    const form = new FormData();
+    form.append('file', file);
+    const headers: Record<string, string> = {};
+    if (this.clientType === 'mobile') {
+      headers['x-client'] = 'mobile';
+      if (this.authToken) headers['Authorization'] = `Bearer ${this.authToken}`;
+    } else if (this.csrfToken) {
+      headers['x-csrf-token'] = this.csrfToken;
+    }
+    // No Content-Type: the browser sets the multipart boundary.
+    const res = await this.fetchImpl(`${this.baseUrl}/api/tables/${id}/images`, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: form,
+    });
+    const text = await res.text();
+    const data: unknown = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+      const record = (data ?? {}) as { message?: unknown };
+      throw new ApiError(res.status, String(record.message ?? res.statusText), data);
+    }
+    return data as TableImageDto;
   }
 
   tableChat(id: string): Promise<TableChatResponse> {

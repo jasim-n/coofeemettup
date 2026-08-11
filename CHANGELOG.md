@@ -4,6 +4,19 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-11 — Host: end event + event photos
+
+- **Host can end an event.** New `POST /tables/:id/complete` (host-only) marks
+  the table COMPLETED and unlocks reviews. Detail page shows an "End event"
+  button for the host (hidden once completed/cancelled → "Event ended").
+- **Event photo sharing.** New `TableImage` model + endpoints: host uploads via
+  `POST /tables/:id/images` (image ≤5MB → Cloudinary), members view via
+  `GET /tables/:id/images`, host removes via `DELETE`. Detail page gains an
+  "Event photos" gallery — the host can add/delete; approved members view only;
+  non-members don't see it. (`tables.service/controller`, `types`, client,
+  `tables/[id]/page.tsx`)
+
+
 ### 2026-08-10 — Table card CTA state + invite search
 
 - **Table card button now reflects the viewer's relationship** instead of always

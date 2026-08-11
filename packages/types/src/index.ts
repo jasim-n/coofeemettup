@@ -210,6 +210,14 @@ export interface CreateTableInput {
   pricePKR?: number;
 }
 
+export interface TableImageDto {
+  id: string;
+  tableId: string;
+  url: string;
+  uploadedById: string;
+  createdAt: string;
+}
+
 export interface TableJoinRequestDto {
   id: string;
   tableId: string;

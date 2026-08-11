@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
 import { ReactionsService } from '../reactions/reactions.service';
+import { MediaService } from '../media/media.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { toPublicUser } from '../users/user.serializer';
 
@@ -21,7 +22,70 @@ export class TablesService {
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
     private readonly reactions: ReactionsService,
+    private readonly media: MediaService,
   ) {}
+
+  // ---------- host: end event + event photos ----------
+
+  /** Host marks the event finished → status COMPLETED (unlocks reviews). */
+  async complete(userId: string, tableId: string) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    if (table.hostId !== userId) {
+      throw new ForbiddenException('Only the host can end this event');
+    }
+    if (table.status === 'CANCELLED') {
+      throw new ConflictException('This event was cancelled');
+    }
+    if (table.status !== 'COMPLETED') {
+      await this.prisma.table.update({
+        where: { id: tableId },
+        data: { status: 'COMPLETED' },
+      });
+      void this.audit.log({
+        actorId: userId,
+        action: 'table.completed',
+        targetType: 'table',
+        targetId: tableId,
+      });
+    }
+    return this.findOne(userId, tableId);
+  }
+
+  /** Host uploads an event photo (already stored via MediaService). */
+  async addImage(userId: string, tableId: string, buffer: Buffer) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    if (table.hostId !== userId) {
+      throw new ForbiddenException('Only the host can add event photos');
+    }
+    const url = await this.media.uploadImage(buffer, 'table-photos');
+    return this.prisma.tableImage.create({
+      data: { tableId, url, uploadedById: userId },
+    });
+  }
+
+  /** Any joined member (host + approved) can view the event photos. */
+  async listImages(userId: string, tableId: string) {
+    if (!(await this.isMember(userId, tableId))) {
+      throw new ForbiddenException('Only the host and approved members can view photos');
+    }
+    return this.prisma.tableImage.findMany({
+      where: { tableId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /** Only the host can remove an event photo. */
+  async deleteImage(userId: string, tableId: string, imageId: string) {
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    if (table.hostId !== userId) {
+      throw new ForbiddenException('Only the host can remove event photos');
+    }
+    await this.prisma.tableImage.deleteMany({ where: { id: imageId, tableId } });
+    return { ok: true as const };
+  }
 
   // ---------- hosting ----------
   async create(userId: string, dto: CreateTableDto) {
