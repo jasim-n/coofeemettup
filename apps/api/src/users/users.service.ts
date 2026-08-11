@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { toPublicProfile } from './user.serializer';
+import { toPublicProfile, toPublicUser } from './user.serializer';
 
 type ConnectionState = 'none' | 'pending_sent' | 'pending_received' | 'connected';
 
@@ -27,6 +27,28 @@ function isUniqueViolation(err: unknown): boolean {
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Search active members by name/occupation for the invite picker. Excludes the
+   * viewer. Requires a 2+ char query; returns public-safe user rows (no email).
+   */
+  async searchUsers(viewerId: string, q: string, limit = 20) {
+    const term = q.trim();
+    if (term.length < 2) return [];
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { not: viewerId },
+        status: 'ACTIVE',
+        OR: [
+          { firstName: { contains: term, mode: 'insensitive' } },
+          { occupation: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { reliabilityScore: 'desc' },
+      take: Math.min(Math.max(limit, 1), 50),
+    });
+    return users.map(toPublicUser);
+  }
 
   /** Find-or-create by phone; on first sign-up, capture a valid referral code. */
   async upsertByPhone(phone: string, referredByCode?: string) {

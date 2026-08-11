@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -51,6 +52,15 @@ export class UsersController {
   @Get('me/referral')
   referral(@CurrentUser() user: AuthUser) {
     return this.users.getReferral(user.id);
+  }
+
+  @Get('search')
+  search(
+    @CurrentUser() me: AuthUser,
+    @Query('q') q = '',
+    @Query('limit') limit?: string,
+  ) {
+    return this.users.searchUsers(me.id, q, limit !== undefined ? Number(limit) : 20);
   }
 
   @Get(':id/profile')

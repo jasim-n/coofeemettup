@@ -40,6 +40,7 @@ export default function TableDetailPage() {
   const [connections, setConnections] = useState<PublicUser[]>([]);
   const [invited, setInvited] = useState<Set<string>>(new Set());
   const [inviteQuery, setInviteQuery] = useState('');
+  const [inviteResults, setInviteResults] = useState<PublicUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -94,6 +95,21 @@ export default function TableDetailPage() {
       active = false;
     };
   }, [user]);
+
+  // Invite picker: search ALL active members by name (debounced). Under 2 chars
+  // we show the host's connections as the default list. setState lives inside
+  // the timeout (not the effect body) to satisfy the hooks lint rule.
+  useEffect(() => {
+    const q = inviteQuery.trim();
+    const t = setTimeout(() => {
+      if (q.length < 2) {
+        setInviteResults([]);
+        return;
+      }
+      api.searchUsers(q).then(setInviteResults).catch(() => setInviteResults([]));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [inviteQuery]);
 
   async function run(action: () => Promise<unknown>) {
     setError(null);
@@ -341,56 +357,57 @@ export default function TableDetailPage() {
           {/* invite people (host only) */}
           {isHost && (
             <section className="bg-card shadow-soft rounded-3xl border p-6">
-              <h2 className="font-heading mb-3 text-lg font-bold tracking-tight">Invite people</h2>
-              {connections.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No connections to invite yet.</p>
-              ) : (() => {
-                const q = inviteQuery.trim().toLowerCase();
-                const filtered = q
-                  ? connections.filter((c) => personName(c).toLowerCase().includes(q))
-                  : connections;
+              <h2 className="font-heading mb-1 text-lg font-bold tracking-tight">Invite people</h2>
+              <p className="text-muted-foreground mb-3 text-xs">
+                Search anyone by name, or invite from your connections below.
+              </p>
+              <div className="relative mb-3">
+                <i className="fa-solid fa-magnifying-glass text-muted-foreground pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm" />
+                <Input
+                  value={inviteQuery}
+                  onChange={(e) => setInviteQuery(e.target.value)}
+                  placeholder="Search people to invite…"
+                  className="pl-10"
+                />
+              </div>
+              {(() => {
+                const q = inviteQuery.trim();
+                const searching = q.length >= 2;
+                const people = searching ? inviteResults : connections;
+                if (people.length === 0) {
+                  return (
+                    <p className="text-muted-foreground text-sm">
+                      {searching
+                        ? `No people match “${q}”.`
+                        : 'Type at least 2 letters to search, or connect with people first.'}
+                    </p>
+                  );
+                }
                 return (
-                <>
-                <div className="relative mb-3">
-                  <i className="fa-solid fa-magnifying-glass text-muted-foreground pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm" />
-                  <Input
-                    value={inviteQuery}
-                    onChange={(e) => setInviteQuery(e.target.value)}
-                    placeholder="Search people to invite…"
-                    className="pl-10"
-                  />
-                </div>
-                {filtered.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">
-                    No people match &ldquo;{inviteQuery}&rdquo;.
-                  </p>
-                ) : (
-                <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-                  {filtered.map((conn) => {
-                    const alreadyInvited = invited.has(conn.id);
-                    return (
-                      <div
-                        key={conn.id}
-                        className="flex items-center justify-between gap-3 rounded-2xl border p-3"
-                      >
-                        <UserLink userId={conn.id} className="flex items-center gap-2 text-sm font-medium">
-                          <Avatar name={personName(conn)} src={conn.photoUrl} size={32} />
-                          {personName(conn)}
-                        </UserLink>
-                        <Button
-                          size="xs"
-                          variant={alreadyInvited ? 'secondary' : 'default'}
-                          disabled={alreadyInvited}
-                          onClick={() => void sendInvite(conn.id)}
+                  <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                    {people.map((person) => {
+                      const alreadyInvited = invited.has(person.id);
+                      return (
+                        <div
+                          key={person.id}
+                          className="flex items-center justify-between gap-3 rounded-2xl border p-3"
                         >
-                          {alreadyInvited ? 'Invited ✓' : 'Invite'}
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-                )}
-                </>
+                          <UserLink userId={person.id} className="flex items-center gap-2 text-sm font-medium">
+                            <Avatar name={personName(person)} src={person.photoUrl} size={32} />
+                            {personName(person)}
+                          </UserLink>
+                          <Button
+                            size="xs"
+                            variant={alreadyInvited ? 'secondary' : 'default'}
+                            disabled={alreadyInvited}
+                            onClick={() => void sendInvite(person.id)}
+                          >
+                            {alreadyInvited ? 'Invited ✓' : 'Invite'}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 );
               })()}
             </section>
