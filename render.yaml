@@ -12,10 +12,13 @@ services:
     healthCheckPath: /api/health
     # --prod=false so devDeps (nest, prisma, typescript) are available to build.
     buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @jrst/api build
-    # Apply any new migrations, then start the compiled server.
-    # main.js lands at dist/src/main.js (the generated Prisma client sits outside src/,
-    # so tsc keeps the src/ path in the output).
-    startCommand: pnpm --filter @jrst/api exec prisma migrate deploy && pnpm --filter @jrst/api exec node dist/src/main.js
+    # Start the compiled server. Migrations are applied out-of-band (locally via
+    # `prisma migrate deploy` against Neon) BEFORE each push — do NOT run migrate
+    # deploy here: it acquires a Postgres session advisory lock, which Neon's
+    # `-pooler` (PgBouncer transaction pooling) can't hold, so it times out (P1002)
+    # and the server never boots. main.js lands at dist/src/main.js (the generated
+    # Prisma client sits outside src/, so tsc keeps the src/ path in the output).
+    startCommand: pnpm --filter @jrst/api exec node dist/src/main.js
     envVars:
       - key: NODE_ENV
         value: production
