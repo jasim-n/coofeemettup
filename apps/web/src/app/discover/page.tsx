@@ -532,11 +532,8 @@ export default function DiscoverPage() {
           {/* TOP CATEGORIES */}
           {catCounts.length > 0 && (
             <section>
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4">
                 <h2 className="font-heading text-xl font-bold tracking-tight">Top categories</h2>
-                <Link href="/discover" className="text-primary text-sm font-semibold hover:underline">
-                  View all
-                </Link>
               </div>
               <div className="flex flex-wrap gap-3">
                 {catCounts.map(([cat, count]) => (
@@ -604,13 +601,10 @@ export default function DiscoverPage() {
           {/* RECOMMENDED FOR YOU */}
           {recommended.length > 0 && (
             <section>
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4">
                 <h2 className="font-heading text-xl font-bold tracking-tight">
                   Recommended for you
                 </h2>
-                <Link href="/discover" className="text-primary text-sm font-semibold hover:underline">
-                  See all
-                </Link>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recommended.map((t) => (

@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-12 — Explore: remove redundant "View all" / "See all"
+
+- Removed the self-linking **"View all"** (Top categories) and **"See all"**
+  (Recommended for you) buttons on `/discover` — both pointed back to the same
+  page. Kept the functional "Your upcoming → View all" (→ /meetups).
+
 ### 2026-08-12 — Privacy identity: public @handle, private name/phone/email
 
 - **Handles are the public identity.** Every account now has a unique `@username`.
