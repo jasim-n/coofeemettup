@@ -185,8 +185,8 @@ function TableCoverCard({
           })()}
         </p>
         <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
-          <Avatar name={t.host?.firstName ?? 'H'} size={22} />
-          Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
+          <Avatar name={t.host?.username ?? 'member'} size={22} />
+          Hosted by @{t.host?.username ?? 'member'}
         </div>
         <div className="mt-auto flex items-center justify-between pt-3">
           <Badge variant={low ? 'warning' : 'secondary'}>

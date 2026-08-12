@@ -248,6 +248,12 @@ export default function ProfilePage() {
   // #code-of-conduct hash must be honoured in a client effect instead).
   const [section, setSection] = useState<Section>('overview');
 
+  // Honour ?section=settings|edit deep-link (e.g. the home "Finish your profile" CTA).
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get('section');
+    if (s === 'settings' || s === 'edit') setSection('settings');
+  }, []);
+
   // Honour the #code-of-conduct deep-link from the table "Accept in profile" CTA:
   // open the settings section and scroll the consent checkbox into view.
   useEffect(() => {
@@ -290,8 +296,9 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
     setForm({
+      username: user.username ?? '',
       firstName: user.firstName ?? '',
-      lastInitial: user.lastInitial ?? '',
+      lastName: user.lastName ?? '',
       ageBand: user.ageBand ?? '',
       gender: user.gender ?? '',
       city: user.city ?? '',
@@ -355,8 +362,10 @@ export default function ProfilePage() {
       </main>
     );
 
-  /* derived */
-  const displayName = user.firstName ?? user.phone;
+  /* derived — self sees own real name; handle is the public identity */
+  const displayName =
+    [user.firstName, user.lastName].filter(Boolean).join(' ') ||
+    (user.username ? `@${user.username}` : 'Member');
   const joinDate = formatJoinDate(user.createdAt);
   // eslint-disable-next-line react-hooks/purity -- one-time clock read for filtering upcoming meetups
   const now = Date.now();
@@ -405,8 +414,9 @@ export default function ProfilePage() {
     setFormStatus(null);
     setBusy(true);
     const payload: UpdateProfileInput = {
+      username: form.username || undefined,
       firstName: form.firstName || undefined,
-      lastInitial: form.lastInitial || undefined,
+      lastName: form.lastName || undefined,
       ageBand: form.ageBand || undefined,
       gender: (form.gender || undefined) as UpdateProfileInput['gender'],
       city: form.city || undefined,
@@ -518,7 +528,9 @@ export default function ProfilePage() {
                   <i className="fa-solid fa-circle-check text-primary text-xs" title="Verified" />
                 )}
               </p>
-              <p className="text-muted-foreground text-xs">@{user.phone}</p>
+              <p className="text-muted-foreground text-xs">
+                {user.username ? `@${user.username}` : 'Set your handle'}
+              </p>
               <p className="text-primary text-xs font-semibold mt-0.5">● Online</p>
             </div>
           </div>
@@ -910,14 +922,34 @@ export default function ProfilePage() {
                 <section className="space-y-4">
                   <p className="eyebrow text-primary">Basic info</p>
 
+                  <div className="space-y-1.5">
+                    <Label htmlFor="username">Handle</Label>
+                    <div className="relative">
+                      <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+                        @
+                      </span>
+                      <Input
+                        id="username"
+                        className="pl-7"
+                        autoCapitalize="none"
+                        placeholder="sarah_k"
+                        {...field('username')}
+                      />
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      Your public identity — the only name other members see. Name, phone &
+                      email stay private.
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="firstName">First name</Label>
                       <Input id="firstName" {...field('firstName')} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="lastInitial">Last initial</Label>
-                      <Input id="lastInitial" maxLength={2} {...field('lastInitial')} />
+                      <Label htmlFor="lastName">Last name</Label>
+                      <Input id="lastName" {...field('lastName')} />
                     </div>
                   </div>
 

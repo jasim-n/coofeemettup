@@ -46,7 +46,7 @@ export default function MyReviews() {
                     <div className="flex items-center justify-between">
                       <Stars value={r.rating} size="text-sm" />
                       <span className="text-muted-foreground text-xs">
-                        {r.reviewer.firstName ?? 'Someone'} {r.reviewer.lastInitial ?? ''} · as{' '}
+                        @{r.reviewer.username ?? 'member'} · as{' '}
                         {r.role.toLowerCase()}
                       </span>
                     </div>

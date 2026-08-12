@@ -164,17 +164,31 @@ export class ApiClient {
   async verifyOtp(
     email: string,
     code: string,
-    opts?: { phone?: string; referralCode?: string },
+    opts?: {
+      phone?: string;
+      firstName?: string;
+      lastName?: string;
+      username?: string;
+      referralCode?: string;
+    },
   ): Promise<AuthResponse> {
     const res = await this.request<AuthResponse>('POST', '/auth/verify-otp', {
       email,
       code,
       phone: opts?.phone,
+      firstName: opts?.firstName,
+      lastName: opts?.lastName,
+      username: opts?.username,
       referralCode: opts?.referralCode,
     });
     this.csrfToken = res.csrfToken;
     if (this.clientType === 'mobile' && res.token) this.authToken = res.token;
     return res;
+  }
+
+  /** Live handle-availability check for the signup + profile forms. */
+  usernameAvailable(u: string): Promise<{ available: boolean; valid: boolean }> {
+    return this.request('GET', `/users/username-available?u=${encodeURIComponent(u)}`);
   }
 
   /** Bootstraps an existing session; throws ApiError(401) if not logged in. */

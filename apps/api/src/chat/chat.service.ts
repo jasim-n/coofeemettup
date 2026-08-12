@@ -33,7 +33,7 @@ export class ChatService {
     const senderIds = [...new Set(rows.map((r) => r.userId))];
     const users = await this.prisma.user.findMany({
       where: { id: { in: senderIds } },
-      select: { id: true, firstName: true, lastInitial: true },
+      select: { id: true, username: true },
     });
     const byId = new Map(users.map((u) => [u.id, u]));
 
@@ -44,8 +44,7 @@ export class ChatService {
         userId: r.userId,
         body: r.body,
         createdAt: r.createdAt.toISOString(),
-        firstName: byId.get(r.userId)?.firstName ?? null,
-        lastInitial: byId.get(r.userId)?.lastInitial ?? null,
+        username: byId.get(r.userId)?.username ?? null,
       }));
     return { groupId: group.id, messages };
   }

@@ -142,7 +142,9 @@ export default function Home() {
             className="pointer-events-none absolute -top-10 -right-6 size-40 rounded-full bg-gradient-hero opacity-40 blur-2xl"
           />
           <p className="eyebrow text-white/60">Welcome back</p>
-          <p className="font-heading mt-1 text-2xl font-extrabold tracking-tight">{user!.phone}</p>
+          <p className="font-heading mt-1 text-2xl font-extrabold tracking-tight">
+            {user!.firstName ?? (user!.username ? `@${user!.username}` : 'there')}
+          </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
               {user!.role.toLowerCase()}

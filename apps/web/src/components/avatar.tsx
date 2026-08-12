@@ -9,7 +9,9 @@ const PALETTES = [
 ];
 
 function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  // Strip a leading @ so handle-based names (e.g. "@sarah_k") yield real letters.
+  const clean = name.trim().replace(/^@/, '');
+  const parts = clean.split(/[\s_]+/).filter(Boolean).slice(0, 2);
   return parts.map((p) => p.charAt(0)).join('').toUpperCase() || '?';
 }
 

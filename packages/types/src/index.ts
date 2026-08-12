@@ -106,15 +106,21 @@ export type BookingStatus =
 
 export interface PublicUser {
   id: string;
-  phone: string;
-  /** Only populated for the authenticated self (me / login); omitted for other users. */
+  /** Public identity — the ONLY name other users ever see. */
+  username: string | null;
+  /**
+   * Private fields below are populated ONLY for the authenticated self
+   * (me / login) and for admins; omitted for other users.
+   */
+  phone?: string;
   email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  lastInitial?: string | null;
   role: Role;
   canHost: boolean;
   verificationStatus: VerificationStatus;
   reliabilityScore: number;
-  firstName: string | null;
-  lastInitial: string | null;
   ageBand: string | null;
   gender: Gender | null;
   city: string | null;
@@ -163,8 +169,7 @@ export type JoinStatus = (typeof JoinStatus)[keyof typeof JoinStatus];
 
 export interface TableHost {
   id: string;
-  firstName: string | null;
-  lastInitial: string | null;
+  username: string | null;
 }
 
 export interface TableDto {
@@ -287,8 +292,7 @@ export interface ChatMessage {
   userId: string;
   body: string;
   createdAt: string;
-  firstName: string | null;
-  lastInitial: string | null;
+  username: string | null;
   reactions?: ReactionSummary[];
 }
 
@@ -331,7 +335,7 @@ export interface ReviewItem {
   comment: string | null;
   role: ReviewRole;
   createdAt: string;
-  reviewer: { firstName: string | null; lastInitial: string | null };
+  reviewer: { username: string | null };
 }
 
 export interface UserReputation {
@@ -342,8 +346,8 @@ export interface UserReputation {
 
 export interface PublicProfile {
   id: string;
-  firstName: string | null;
-  lastInitial: string | null;
+  /** Public identity — real name is never exposed here. */
+  username: string | null;
   city: string | null;
   verificationStatus: VerificationStatus;
   reliabilityScore: number;
@@ -463,7 +467,9 @@ export interface CreateEventInput {
 export type UpdateEventInput = Partial<Omit<CreateEventInput, 'cafeId'>>;
 
 export interface UpdateProfileInput {
+  username?: string;
   firstName?: string;
+  lastName?: string;
   lastInitial?: string;
   ageBand?: string;
   gender?: Gender;
@@ -592,8 +598,7 @@ export interface PendingVerification {
 
 export interface GroupMember {
   id: string;
-  firstName: string | null;
-  lastInitial: string | null;
+  username: string | null;
   interests: string[];
 }
 
@@ -606,9 +611,11 @@ export type ReportStatus = 'OPEN' | 'RESOLVED' | 'ACTIONED';
 
 export interface AdminUserDto {
   id: string;
+  username: string | null;
   email: string | null;
   phone: string;
   firstName: string | null;
+  lastName: string | null;
   lastInitial: string | null;
   role: Role;
   status: UserStatus;

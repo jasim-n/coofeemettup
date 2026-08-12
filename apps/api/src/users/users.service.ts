@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { toPublicProfile, toPublicUser } from './user.serializer';
+import { validateUsername } from './username.util';
 
-type ConnectionState = 'none' | 'pending_sent' | 'pending_received' | 'connected';
+type ConnectionState =
+  'none' | 'pending_sent' | 'pending_received' | 'connected';
 
 // Unambiguous alphabet (no O/0/I/1) for shareable referral codes.
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -29,18 +36,19 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Search active members by name/occupation for the invite picker. Excludes the
-   * viewer. Requires a 2+ char query; returns public-safe user rows (no email).
+   * Search active members by @handle/occupation for the invite picker. Excludes
+   * the viewer. Requires a 2+ char query; returns public-safe rows (handle only,
+   * never real name/phone). Real names are private, so search never matches them.
    */
   async searchUsers(viewerId: string, q: string, limit = 20) {
-    const term = q.trim();
+    const term = q.trim().replace(/^@/, '');
     if (term.length < 2) return [];
     const users = await this.prisma.user.findMany({
       where: {
         id: { not: viewerId },
         status: 'ACTIVE',
         OR: [
-          { firstName: { contains: term, mode: 'insensitive' } },
+          { username: { contains: term, mode: 'insensitive' } },
           { occupation: { contains: term, mode: 'insensitive' } },
         ],
       },
@@ -80,8 +88,25 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { phone } });
   }
 
-  /** Create a new user identified by email + phone (signup path). */
-  async createWithEmail(email: string, phone: string, referredByCode?: string) {
+  findByUsername(username: string) {
+    return this.prisma.user.findUnique({ where: { username } });
+  }
+
+  /** True if no other user already holds this (normalized) handle. */
+  async isUsernameAvailable(username: string) {
+    return !(await this.prisma.user.findUnique({ where: { username } }));
+  }
+
+  /**
+   * Create a new user identified by email + phone + a public @handle and their
+   * (private) real name. `lastInitial` is derived from lastName for admin views.
+   */
+  async createWithEmail(
+    email: string,
+    phone: string,
+    profile: { firstName: string; lastName: string; username: string },
+    referredByCode?: string,
+  ) {
     // Only honour a referral code that belongs to a real, different user.
     let referredBy: string | null = null;
     if (referredByCode) {
@@ -91,7 +116,15 @@ export class UsersService {
       if (referrer && referrer.email !== email) referredBy = referredByCode;
     }
     return this.prisma.user.create({
-      data: { email, phone, referredByCode: referredBy },
+      data: {
+        email,
+        phone,
+        username: profile.username,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        lastInitial: profile.lastName.charAt(0).toUpperCase() || null,
+        referredByCode: referredBy,
+      },
     });
   }
 
@@ -119,13 +152,19 @@ export class UsersService {
     const u = await this.prisma.user.findUnique({ where: { id: targetId } });
     if (!u) throw new NotFoundException('User not found');
 
-    if (u.blockedUserIds.includes(viewerId)) throw new NotFoundException('User not found');
+    if (u.blockedUserIds.includes(viewerId))
+      throw new NotFoundException('User not found');
 
     const [hosted, joined, connections, pair] = await Promise.all([
       this.prisma.table.count({ where: { hostId: targetId } }),
-      this.prisma.tableJoinRequest.count({ where: { userId: targetId, status: 'APPROVED' } }),
+      this.prisma.tableJoinRequest.count({
+        where: { userId: targetId, status: 'APPROVED' },
+      }),
       this.prisma.connection.count({
-        where: { status: 'ACCEPTED', OR: [{ requesterId: targetId }, { addresseeId: targetId }] },
+        where: {
+          status: 'ACCEPTED',
+          OR: [{ requesterId: targetId }, { addresseeId: targetId }],
+        },
       }),
       viewerId === targetId
         ? Promise.resolve(null)
@@ -168,12 +207,41 @@ export class UsersService {
     return updated;
   }
 
-  updateProfile(userId: string, dto: UpdateProfileDto) {
-    const { agreeCodeOfConduct, ...rest } = dto;
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const { agreeCodeOfConduct, username, lastName, ...rest } = dto;
+
+    // Handle change: validate format + enforce global uniqueness.
+    let usernameData: { username: string } | Record<string, never> = {};
+    if (username !== undefined) {
+      let normalized: string;
+      try {
+        normalized = validateUsername(username);
+      } catch (e) {
+        throw new BadRequestException(
+          e instanceof Error ? e.message : 'Invalid handle',
+        );
+      }
+      const holder = await this.prisma.user.findUnique({
+        where: { username: normalized },
+      });
+      if (holder && holder.id !== userId) {
+        throw new ConflictException('That handle is taken');
+      }
+      usernameData = { username: normalized };
+    }
+
+    // Keep the admin-facing lastInitial in sync with the private lastName.
+    const lastNameData =
+      lastName !== undefined
+        ? { lastName, lastInitial: lastName.charAt(0).toUpperCase() || null }
+        : {};
+
     return this.prisma.user.update({
       where: { id: userId },
       data: {
         ...rest,
+        ...usernameData,
+        ...lastNameData,
         ...(agreeCodeOfConduct ? { codeOfConductAt: new Date() } : {}),
       },
     });

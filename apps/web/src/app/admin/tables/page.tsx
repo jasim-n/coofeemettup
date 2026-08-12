@@ -295,7 +295,7 @@ export default function AdminTablesPage() {
                     <p>🗓️ {formatDateTime(t.startAt)}</p>
                     <p>📍 {t.venueName ?? t.cafe?.name ?? '—'}</p>
                     <p>
-                      🙋 {t.host?.firstName ?? 'host'} {t.host?.lastInitial ?? ''}
+                      🙋 @{t.host?.username ?? 'member'}
                     </p>
                     <p>
                       🪑 {t.seats - t.seatsLeft} / {t.seats} filled

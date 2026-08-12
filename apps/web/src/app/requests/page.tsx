@@ -156,7 +156,7 @@ export default function RequestsPage() {
                   <p className="flex items-center gap-1.5">
                     <i className="fa-solid fa-user" />
                     <UserLink userId={r.userId}>
-                      {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                      @{r.user?.username ?? 'member'}
                     </UserLink>
                     {r.user?.reliabilityScore != null && (
                       <> · <i className="fa-solid fa-star" /> {r.user.reliabilityScore}</>

@@ -205,7 +205,7 @@ export class BookingsService {
     const others = mine.userIds.filter((id) => id !== userId);
     const members = await this.prisma.user.findMany({
       where: { id: { in: others } },
-      select: { id: true, firstName: true, lastInitial: true, interests: true },
+      select: { id: true, username: true, interests: true },
     });
     return { members };
   }

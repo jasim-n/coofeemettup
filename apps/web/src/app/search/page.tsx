@@ -142,7 +142,7 @@ function sortResults(items: TableDto[], sort: SortKey): TableDto[] {
 function AvatarStack({ host, going }: { host?: TableDto['host']; going: number }) {
   return (
     <div className="flex items-center gap-1.5">
-      {host && <Avatar name={`${host.firstName ?? 'H'} ${host.lastInitial ?? ''}`} size={24} />}
+      {host && <Avatar name={host.username ?? 'member'} size={24} />}
       {going > 0 && (
         <span className="bg-secondary text-secondary-foreground grid size-6 place-items-center rounded-full text-[10px] font-bold ring-2 ring-card">
           +{going}
@@ -273,8 +273,8 @@ function TableCoverCard({
           <i className="fa-solid fa-calendar-day" />{formatDateTime(t.startAt)}
         </p>
         <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
-          <Avatar name={t.host?.firstName ?? 'H'} size={22} />
-          Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
+          <Avatar name={t.host?.username ?? 'member'} size={22} />
+          Hosted by @{t.host?.username ?? 'member'}
           {going > 0 && <span className="text-primary ml-1 font-semibold">{going} going</span>}
         </div>
         <div className="mt-3 flex items-center justify-between">

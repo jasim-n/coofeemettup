@@ -15,7 +15,8 @@ import { UpdateTableDto } from './dto/update-table.dto';
 import { Prisma } from '../../generated/prisma/client';
 import { toPublicUser } from '../users/user.serializer';
 
-const HOST_SELECT = { id: true, firstName: true, lastInitial: true };
+// Public identity only — hosts/participants are shown by @handle, never real name.
+const HOST_SELECT = { id: true, username: true };
 
 @Injectable()
 export class TablesService {
@@ -31,7 +32,9 @@ export class TablesService {
 
   /** Host marks the event finished → status COMPLETED (unlocks reviews). */
   async complete(userId: string, tableId: string) {
-    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
     if (!table) throw new NotFoundException('Table not found');
     if (table.hostId !== userId) {
       throw new ForbiddenException('Only the host can end this event');
@@ -56,7 +59,9 @@ export class TablesService {
 
   /** Host uploads an event photo (already stored via MediaService). */
   async addImage(userId: string, tableId: string, buffer: Buffer) {
-    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
     if (!table) throw new NotFoundException('Table not found');
     if (table.hostId !== userId) {
       throw new ForbiddenException('Only the host can add event photos');
@@ -70,7 +75,9 @@ export class TablesService {
   /** Any joined member (host + approved) can view the event photos. */
   async listImages(userId: string, tableId: string) {
     if (!(await this.isMember(userId, tableId))) {
-      throw new ForbiddenException('Only the host and approved members can view photos');
+      throw new ForbiddenException(
+        'Only the host and approved members can view photos',
+      );
     }
     return this.prisma.tableImage.findMany({
       where: { tableId },
@@ -80,12 +87,16 @@ export class TablesService {
 
   /** Only the host can remove an event photo. */
   async deleteImage(userId: string, tableId: string, imageId: string) {
-    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
     if (!table) throw new NotFoundException('Table not found');
     if (table.hostId !== userId) {
       throw new ForbiddenException('Only the host can remove event photos');
     }
-    await this.prisma.tableImage.deleteMany({ where: { id: imageId, tableId } });
+    await this.prisma.tableImage.deleteMany({
+      where: { id: imageId, tableId },
+    });
     return { ok: true as const };
   }
 
@@ -122,7 +133,8 @@ export class TablesService {
     });
     const byId = new Map<string, (typeof hosted)[number]>();
     for (const t of hosted) byId.set(t.id, t);
-    for (const r of approved) if (!byId.has(r.table.id)) byId.set(r.table.id, r.table);
+    for (const r of approved)
+      if (!byId.has(r.table.id)) byId.set(r.table.id, r.table);
     const tables = [...byId.values()];
     const tableIds = tables.map((t) => t.id);
     if (tableIds.length === 0) return [];
@@ -151,7 +163,9 @@ export class TablesService {
         unread,
       };
     });
-    result.sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
+    result.sort(
+      (a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime(),
+    );
     return result;
   }
 
@@ -216,7 +230,9 @@ export class TablesService {
 
   /** Host edits event details — only before it starts and while active. */
   async update(userId: string, tableId: string, dto: UpdateTableDto) {
-    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
     if (!table) throw new NotFoundException('Table not found');
     if (table.hostId !== userId) {
       throw new ForbiddenException('Only the host can edit this event');
@@ -231,11 +247,14 @@ export class TablesService {
     const data: Prisma.TableUpdateInput = {};
     if (dto.title !== undefined) data.title = dto.title.trim() || null;
     if (dto.category !== undefined) data.category = dto.category;
-    if (dto.description !== undefined) data.description = dto.description.trim() || null;
+    if (dto.description !== undefined)
+      data.description = dto.description.trim() || null;
     if (dto.rules !== undefined) data.rules = dto.rules.trim() || null;
     if (dto.pricePKR !== undefined) data.pricePKR = dto.pricePKR ?? null;
-    if (dto.venueName !== undefined) data.venueName = dto.venueName.trim() || null;
-    if (dto.venueAddress !== undefined) data.venueAddress = dto.venueAddress.trim() || null;
+    if (dto.venueName !== undefined)
+      data.venueName = dto.venueName.trim() || null;
+    if (dto.venueAddress !== undefined)
+      data.venueAddress = dto.venueAddress.trim() || null;
     if (dto.lat !== undefined) data.lat = dto.lat;
     if (dto.lng !== undefined) data.lng = dto.lng;
     if (dto.startAt !== undefined) data.startAt = new Date(dto.startAt);
@@ -313,10 +332,16 @@ export class TablesService {
       return new Map<string, { id: string; status: string }>();
     }
     const invs = await this.prisma.tableInvite.findMany({
-      where: { inviteeId: userId, tableId: { in: tableIds }, status: 'PENDING' },
+      where: {
+        inviteeId: userId,
+        tableId: { in: tableIds },
+        status: 'PENDING',
+      },
       select: { id: true, tableId: true, status: true },
     });
-    return new Map(invs.map((iv) => [iv.tableId, { id: iv.id, status: iv.status }]));
+    return new Map(
+      invs.map((iv) => [iv.tableId, { id: iv.id, status: iv.status }]),
+    );
   }
 
   async findOne(userId: string, id: string) {
@@ -360,7 +385,9 @@ export class TablesService {
   }
 
   async toggleSave(userId: string, tableId: string) {
-    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
     if (!table) throw new NotFoundException('Table not found');
     const u = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -445,7 +472,7 @@ export class TablesService {
       table.hostId,
       'table.request',
       'New join request',
-      `${user.firstName ?? 'Someone'} asked to join your table.`,
+      `${user.username ? '@' + user.username : 'Someone'} asked to join your table.`,
       { tableId },
     );
     return request;
@@ -466,7 +493,13 @@ export class TablesService {
   async myRequests(userId: string) {
     const tables = await this.prisma.table.findMany({
       where: { hostId: userId },
-      select: { id: true, title: true, category: true, startAt: true, venueName: true },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        startAt: true,
+        venueName: true,
+      },
     });
     if (tables.length === 0) return [];
     const tableById = new Map(tables.map((t) => [t.id, t]));
@@ -480,7 +513,11 @@ export class TablesService {
     const userById = new Map(users.map((u) => [u.id, u]));
     return reqs.map((r) => {
       const u = userById.get(r.userId);
-      return { ...r, user: u ? toPublicUser(u) : null, table: tableById.get(r.tableId) ?? null };
+      return {
+        ...r,
+        user: u ? toPublicUser(u) : null,
+        table: tableById.get(r.tableId) ?? null,
+      };
     });
   }
 
@@ -625,7 +662,7 @@ export class TablesService {
     });
     const users = await this.prisma.user.findMany({
       where: { id: { in: [...new Set(rows.map((r) => r.userId))] } },
-      select: { id: true, firstName: true, lastInitial: true },
+      select: { id: true, username: true },
     });
     const byId = new Map(users.map((u) => [u.id, u]));
     const filtered = rows.filter((r) => !blocked.has(r.userId));
@@ -638,8 +675,7 @@ export class TablesService {
       userId: r.userId,
       body: r.body,
       createdAt: r.createdAt.toISOString(),
-      firstName: byId.get(r.userId)?.firstName ?? null,
-      lastInitial: byId.get(r.userId)?.lastInitial ?? null,
+      username: byId.get(r.userId)?.username ?? null,
       reactions: reactionMap.get(r.id) ?? [],
     }));
     return { member: true, messages };

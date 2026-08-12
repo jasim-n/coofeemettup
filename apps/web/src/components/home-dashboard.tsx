@@ -67,7 +67,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   const upcoming = tables.slice(0, 6);
   const verified = user.verificationStatus === 'VERIFIED';
   const vibes = [...new Set(tables.flatMap((t) => splitCategories(t.category)))].slice(0, 6);
-  const name = user.firstName ?? user.phone;
+  const name = user.firstName ?? 'there';
 
   // eslint-disable-next-line react-hooks/purity -- one-time clock read for greeting + relative timestamps
   const now = Date.now();
@@ -86,8 +86,25 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
       .filter((t) => new Date(t.startAt).getTime() >= now)
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())[0] ?? null;
 
+  const needsName = !user.firstName || !user.lastName;
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="space-y-6">
+      {needsName && (
+        <Link
+          href="/profile?section=edit"
+          className="border-primary/40 bg-secondary text-secondary-foreground flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium shadow-soft transition-[filter] hover:brightness-[0.98]"
+        >
+          <i className="fa-solid fa-id-card text-primary" />
+          <span className="flex-1">
+            Finish your profile — add your name so hosts can prep for your visit. Your name
+            stays private; only your @handle is public.
+          </span>
+          <span className="text-primary font-semibold whitespace-nowrap">Add name →</span>
+        </Link>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       {/* ---------- main column ---------- */}
       <div className="min-w-0 space-y-6">
         {/* hero band — café illustration from the design, full-bleed on the right */}
@@ -340,6 +357,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
           </div>
         )}
       </aside>
+      </div>
     </div>
   );
 }
@@ -525,9 +543,9 @@ function TableCoverCard({ t, viewerId }: { t: TableDto; viewerId?: string | null
         </p>
         <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
           <span className="bg-primary/10 text-primary grid size-6 place-items-center rounded-full text-[10px] font-bold">
-            {initial(t.host?.firstName)}
+            {initial(t.host?.username)}
           </span>
-          Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
+          Hosted by @{t.host?.username ?? 'member'}
         </div>
         <div className="mt-3 flex items-center justify-between">
           <Badge variant={low ? 'warning' : 'secondary'}>

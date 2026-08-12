@@ -58,7 +58,9 @@ export function DesktopNav() {
 
   if (loading || !user) return null;
   const isAdmin = user.role === 'ADMIN' || user.role === 'ORGANIZER';
-  const name = user.firstName ?? user.phone;
+  const name =
+    [user.firstName, user.lastName].filter(Boolean).join(' ') ||
+    (user.username ? `@${user.username}` : 'Member');
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
   function search(e: React.FormEvent) {
@@ -171,7 +173,9 @@ export function DesktopNav() {
                 <Avatar name={name} src={user.photoUrl} size={48} online />
                 <div className="min-w-0">
                   <p className="font-heading truncate font-bold tracking-tight">{name}</p>
-                  <p className="text-muted-foreground truncate text-xs">@{user.phone}</p>
+                  <p className="text-muted-foreground truncate text-xs">
+                    {user.username ? `@${user.username}` : 'Set your handle'}
+                  </p>
                   <span className="bg-secondary text-secondary-foreground mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold">
                     <i className="fa-solid fa-star text-[0.9em]" />
                     {user.verificationStatus === 'VERIFIED' ? 'Verified member' : 'Member'}

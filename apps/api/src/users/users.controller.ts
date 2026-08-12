@@ -15,7 +15,9 @@ import { memoryStorage } from 'multer';
 import { UsersService } from './users.service';
 import { MediaService } from '../media/media.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { toPublicUser } from './user.serializer';
+import { toSelfUser } from './user.serializer';
+import { normalizeUsername, USERNAME_RE } from './username.util';
+import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/auth.types';
 
@@ -34,7 +36,24 @@ export class UsersController {
 
   @Patch('me')
   async updateMe(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
-    return toPublicUser(await this.users.updateProfile(user.id, dto));
+    return toSelfUser(await this.users.updateProfile(user.id, dto));
+  }
+
+  /**
+   * Live handle-availability check for the signup + profile forms. Public
+   * because signup runs it before a session exists (read-only, no mutation).
+   * Returns availability by GLOBAL uniqueness; the profile form suppresses the
+   * check for the user's own current handle.
+   */
+  @Public()
+  @Get('username-available')
+  async usernameAvailable(
+    @Query('u') u = '',
+  ): Promise<{ available: boolean; valid: boolean }> {
+    const handle = normalizeUsername(u);
+    if (!USERNAME_RE.test(handle)) return { available: false, valid: false };
+    const holder = await this.users.findByUsername(handle);
+    return { available: !holder, valid: true };
   }
 
   @Post('me/photo')
@@ -60,7 +79,11 @@ export class UsersController {
     @Query('q') q = '',
     @Query('limit') limit?: string,
   ) {
-    return this.users.searchUsers(me.id, q, limit !== undefined ? Number(limit) : 20);
+    return this.users.searchUsers(
+      me.id,
+      q,
+      limit !== undefined ? Number(limit) : 20,
+    );
   }
 
   @Get(':id/profile')

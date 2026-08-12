@@ -47,7 +47,9 @@ export class InvitesService {
   }
 
   async invite(me: string, tableId: string, inviteeId: string) {
-    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
     if (!table) throw new NotFoundException('Table not found');
 
     if (table.hostId !== me) {
@@ -57,17 +59,24 @@ export class InvitesService {
       throw new BadRequestException('Invalid invitee');
     }
 
-    const invitee = await this.prisma.user.findUnique({ where: { id: inviteeId } });
+    const invitee = await this.prisma.user.findUnique({
+      where: { id: inviteeId },
+    });
     if (!invitee) throw new NotFoundException('User not found');
 
     await this.prisma.tableInvite.upsert({
       where: { tableId_inviteeId: { tableId, inviteeId } },
-      create: { tableId, inviterId: me, inviteeId, status: InviteStatus.PENDING },
+      create: {
+        tableId,
+        inviterId: me,
+        inviteeId,
+        status: InviteStatus.PENDING,
+      },
       update: { status: InviteStatus.PENDING },
     });
 
     const inviter = await this.prisma.user.findUnique({ where: { id: me } });
-    const inviterName = inviter?.firstName ?? 'The host';
+    const inviterName = inviter?.username ? `@${inviter.username}` : 'The host';
     const tableTitle = table.title ?? 'a table';
 
     void this.notifications.create(
@@ -142,7 +151,8 @@ export class InvitesService {
 
   async accept(me: string, id: string) {
     const invite = await this.loadInvite(id);
-    if (invite.inviteeId !== me) throw new ForbiddenException('Not your invite');
+    if (invite.inviteeId !== me)
+      throw new ForbiddenException('Not your invite');
     if (
       invite.status !== InviteStatus.PENDING &&
       invite.status !== InviteStatus.MAYBE
@@ -197,7 +207,8 @@ export class InvitesService {
 
   async decline(me: string, id: string) {
     const invite = await this.loadInvite(id);
-    if (invite.inviteeId !== me) throw new ForbiddenException('Not your invite');
+    if (invite.inviteeId !== me)
+      throw new ForbiddenException('Not your invite');
 
     await this.prisma.tableInvite.update({
       where: { id },
@@ -209,7 +220,8 @@ export class InvitesService {
 
   async maybe(me: string, id: string) {
     const invite = await this.loadInvite(id);
-    if (invite.inviteeId !== me) throw new ForbiddenException('Not your invite');
+    if (invite.inviteeId !== me)
+      throw new ForbiddenException('Not your invite');
 
     await this.prisma.tableInvite.update({
       where: { id },

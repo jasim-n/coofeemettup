@@ -15,7 +15,9 @@ import {
 } from '../../../generated/prisma/client';
 
 export class UpdateProfileDto {
+  @IsOptional() @IsString() username?: string;
   @IsOptional() @IsString() firstName?: string;
+  @IsOptional() @IsString() lastName?: string;
   @IsOptional() @IsString() lastInitial?: string;
   @IsOptional() @IsString() ageBand?: string;
   @IsOptional() @IsEnum(Gender) gender?: Gender;

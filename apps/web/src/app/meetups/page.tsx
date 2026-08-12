@@ -17,8 +17,8 @@ import { haversineKm, formatDistance } from '@/lib/geo';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
 
-const personName = (u: { firstName?: string | null; lastInitial?: string | null }) =>
-  `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
+const personName = (u: { username?: string | null }) =>
+  `@${u.username ?? 'member'}`;
 
 const NOW = Date.now();
 
@@ -207,7 +207,7 @@ function MeetupCoverCard({ t, viewerId }: { t: TableDto; viewerId?: string | nul
         </p>
         {/* avatar stack */}
         <div className="mt-2 flex items-center gap-2">
-          <Avatar name={t.host?.firstName ?? 'H'} size={22} />
+          <Avatar name={t.host?.username ?? 'member'} size={22} />
           <span className="text-muted-foreground text-xs">+{filled}</span>
         </div>
         <p className="text-muted-foreground mt-1 text-xs">

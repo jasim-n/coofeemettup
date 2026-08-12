@@ -138,7 +138,7 @@ export default function PublicProfilePage() {
 
   const { user: p, stats, connectionState, isSelf } = profile;
 
-  const displayName = `${p.firstName ?? 'Member'} ${p.lastInitial ?? ''}`.trim();
+  const displayName = `@${p.username ?? 'member'}`;
   const joinDate = formatJoinDate(p.createdAt);
 
   /* About card — show if any field present */
@@ -170,7 +170,7 @@ export default function PublicProfilePage() {
           />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             <div className="shrink-0">
-              <Avatar name={displayName} src={p.photoUrl} size={96} />
+              <Avatar name={p.username ?? 'member'} src={p.photoUrl} size={96} />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -341,7 +341,7 @@ export default function PublicProfilePage() {
                   <div className="flex items-center justify-between gap-2">
                     <Stars value={r.rating} size="text-sm" />
                     <span className="text-muted-foreground text-xs shrink-0">
-                      {r.reviewer.firstName ?? 'Someone'} {r.reviewer.lastInitial ?? ''} · as{' '}
+                      @{r.reviewer.username ?? 'member'} · as{' '}
                       {r.role.toLowerCase()}
                     </span>
                   </div>

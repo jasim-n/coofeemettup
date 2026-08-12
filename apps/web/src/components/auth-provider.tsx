@@ -8,7 +8,7 @@ interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
   requestOtp: (email: string) => Promise<{ isNewUser: boolean; devCode?: string }>;
-  verifyOtp: (email: string, code: string, opts?: { phone?: string; referralCode?: string }) => Promise<void>;
+  verifyOtp: (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string }) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const verifyOtp = useCallback(
-    async (email: string, code: string, opts?: { phone?: string; referralCode?: string }) => {
+    async (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string }) => {
       const res = await api.verifyOtp(email, code, opts);
       // Persist the bearer token so the session survives reloads (no cookies).
       const token = api.getAuthToken();

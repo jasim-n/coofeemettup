@@ -122,7 +122,7 @@ export default function TableChatPage() {
               <div className={`flex max-w-[78%] flex-col ${mine ? 'items-end' : 'items-start'}`}>
                 {!mine && (
                   <UserLink userId={m.userId} className="text-muted-foreground mb-0.5 px-1 text-xs font-semibold">
-                    {m.firstName ?? 'Member'} {m.lastInitial ?? ''}
+                    @{m.username ?? 'member'}
                   </UserLink>
                 )}
                 <div

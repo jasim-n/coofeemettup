@@ -67,6 +67,9 @@ export class AuthController {
     const email = dto.email.trim().toLowerCase();
     const { user, token } = await this.auth.verifyOtp(email, dto.code, {
       phone: dto.phone,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      username: dto.username,
       referralCode: dto.referralCode,
     });
     res.cookie(SESSION_COOKIE, token, sessionCookieOptions(this.config));

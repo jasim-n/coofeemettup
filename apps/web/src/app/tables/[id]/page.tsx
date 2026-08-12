@@ -201,8 +201,7 @@ export default function TableDetailPage() {
     }
   }
 
-  const personName = (u: PublicUser) =>
-    `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
+  const personName = (u: PublicUser) => `@${u.username ?? 'member'}`;
 
   // eventEnded uses module-level NOW_MS so Date.now() is never called during render.
   const eventEnded = table ? new Date(table.startAt).getTime() < NOW_MS : false;
@@ -286,12 +285,12 @@ export default function TableDetailPage() {
             <div className="mt-3 flex items-center gap-2">
               <UserLink userId={table.hostId} className="flex items-center gap-2">
                 <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
-                  {initial(table.host?.firstName)}
+                  {initial(table.host?.username)}
                 </span>
                 <span className="text-sm">
                   Hosted by{' '}
                   <span className="font-semibold">
-                    {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
+                    @{table.host?.username ?? 'member'}
                   </span>
                 </span>
               </UserLink>
@@ -405,11 +404,11 @@ export default function TableDetailPage() {
             <div className="flex items-center gap-3">
               <UserLink userId={table.hostId} className="flex items-center gap-3">
                 <span className="bg-primary/10 text-primary font-heading grid size-12 place-items-center rounded-full text-lg font-bold">
-                  {initial(table.host?.firstName)}
+                  {initial(table.host?.username)}
                 </span>
                 <div>
                   <p className="font-heading font-bold">
-                    {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
+                    @{table.host?.username ?? 'member'}
                   </p>
                   <p className="text-muted-foreground text-sm">
                     {hostRep && hostRep.hostRating.count > 0 ? (
@@ -449,16 +448,16 @@ export default function TableDetailPage() {
                       {(r.user?.id ?? r.userId) ? (
                         <UserLink userId={(r.user?.id ?? r.userId)!} className="flex items-center gap-2">
                           <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
-                            {initial(r.user?.firstName)}
+                            {initial(r.user?.username)}
                           </span>
-                          {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                          @{r.user?.username ?? 'member'}
                         </UserLink>
                       ) : (
                         <>
                           <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
-                            {initial(r.user?.firstName)}
+                            {initial(r.user?.username)}
                           </span>
-                          {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
+                          @{r.user?.username ?? 'member'}
                         </>
                       )}
                       {r.user && (

@@ -4,6 +4,28 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-12 — Privacy identity: public @handle, private name/phone/email
+
+- **Handles are the public identity.** Every account now has a unique `@username`.
+  Other members see ONLY the handle — never your real name, phone, or email.
+  Public profile, table host/participants, join requests, group & event chat,
+  DMs, connections, invites, reviews and member search all render `@handle`.
+- **Real name + phone + email are private.** Visible only to you (your own
+  profile/settings) and to admins. The API strips name/phone/email from
+  `toPublicUser`; only `toSelfUser` and admin endpoints include them. (Fixed the
+  leak where phone rode along in every public user payload.)
+- **Phone still required per account** — it stays a unique, mandatory field (the
+  admin lifeline to reach people); it's just no longer shown to other users.
+  Email is likewise unique + private, and remains the OTP login key.
+- **Signup collects name + handle.** New users pick a public `@handle` (live
+  availability check, 3–20 chars) and give their first + last name and phone.
+  Copy makes it explicit: *"Your @handle is public. Your name, phone & email stay
+  private."* Duplicate handle/phone/email are rejected.
+- **Profile edit** gains Handle + First/Last name fields; the home dashboard shows
+  a "finish your profile" prompt to existing users missing a name.
+- Backend: `username`/`lastName` columns (+ migration + backfill of handles for
+  existing users), `GET /users/username-available`, handle validation shared util.
+
 ### 2026-08-12 — Venue place-search when creating/editing an event
 
 - **Place search (free, no API key).** The "Choose venue" step on both the

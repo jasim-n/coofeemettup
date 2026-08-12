@@ -12,8 +12,8 @@ import { Avatar } from '@/components/avatar';
 import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 import { Button } from '@/components/ui/button';
-const personName = (u: { firstName?: string | null; lastInitial?: string | null }) =>
-  `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
+const personName = (u: { username?: string | null }) =>
+  `@${u.username ?? 'member'}`;
 
 function Toast({ msg }: { msg: string }) {
   return (

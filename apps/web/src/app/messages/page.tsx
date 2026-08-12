@@ -321,8 +321,7 @@ export default function MessagesPage() {
                     ) : (
                       <ul>
                         {connections.map((person) => {
-                          const name =
-                            `${person.firstName ?? 'Member'} ${person.lastInitial ?? ''}`.trim();
+                          const name = `@${person.username ?? 'member'}`;
                           return (
                             <li key={person.id}>
                               <button
@@ -677,7 +676,7 @@ export default function MessagesPage() {
                         {!mine && (
                           <UserLink userId={m.userId}>
                             <Avatar
-                              name={m.firstName ?? 'Member'}
+                              name={m.username ?? 'member'}
                               size={28}
                               className="mb-0.5 shrink-0"
                             />
@@ -689,7 +688,7 @@ export default function MessagesPage() {
                           {!mine && (
                             <UserLink userId={m.userId}>
                               <span className="text-muted-foreground mb-0.5 px-1 text-[10px] font-semibold">
-                                {m.firstName ?? 'Member'}
+                                @{m.username ?? 'member'}
                               </span>
                             </UserLink>
                           )}
@@ -841,7 +840,7 @@ export default function MessagesPage() {
                 {presencePool.map((person) => (
                   <UserLink key={person.id} userId={person.id}>
                     <Avatar
-                      name={`${person.firstName ?? 'M'} ${person.lastInitial ?? ''}`.trim()}
+                      name={person.username ?? 'member'}
                       src={person.photoUrl}
                       size={36}
                       online={person.online ?? false}

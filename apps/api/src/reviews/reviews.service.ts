@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 
-const NAME_SELECT = { id: true, firstName: true, lastInitial: true };
+const NAME_SELECT = { id: true, username: true };
 const round1 = (n: number | null) => (n == null ? 0 : Math.round(n * 10) / 10);
 
 @Injectable()
@@ -47,7 +47,7 @@ export class ReviewsService {
       });
       subjects = users.map((u) => ({
         subjectId: u.id,
-        name: `${u.firstName ?? 'Guest'} ${u.lastInitial ?? ''}`.trim(),
+        name: u.username ? `@${u.username}` : 'Guest',
         role: 'GUEST',
       }));
     } else {
@@ -58,7 +58,7 @@ export class ReviewsService {
       subjects = [
         {
           subjectId: table.hostId,
-          name: `${host?.firstName ?? 'Host'} ${host?.lastInitial ?? ''}`.trim(),
+          name: host?.username ? `@${host.username}` : 'Host',
           role: 'HOST',
         },
       ];
@@ -187,8 +187,7 @@ export class ReviewsService {
         role: r.role,
         createdAt: r.createdAt.toISOString(),
         reviewer: {
-          firstName: byId.get(r.reviewerId)?.firstName ?? null,
-          lastInitial: byId.get(r.reviewerId)?.lastInitial ?? null,
+          username: byId.get(r.reviewerId)?.username ?? null,
         },
       })),
     };

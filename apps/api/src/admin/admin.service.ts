@@ -16,6 +16,7 @@ import type {
 
 const SLIM_USER = {
   id: true,
+  username: true,
   firstName: true,
   lastInitial: true,
   photoUrl: true,
@@ -70,7 +71,9 @@ export class AdminService {
     const where = q
       ? {
           OR: [
+            { username: { contains: q, mode: 'insensitive' as const } },
             { firstName: { contains: q, mode: 'insensitive' as const } },
+            { lastName: { contains: q, mode: 'insensitive' as const } },
             { lastInitial: { contains: q, mode: 'insensitive' as const } },
             { email: { contains: q, mode: 'insensitive' as const } },
             { phone: { contains: q, mode: 'insensitive' as const } },
@@ -80,9 +83,11 @@ export class AdminService {
 
     const select = {
       id: true,
+      username: true,
       email: true,
       phone: true,
       firstName: true,
+      lastName: true,
       lastInitial: true,
       role: true,
       status: true,
@@ -124,7 +129,9 @@ export class AdminService {
         where: { role: 'ADMIN', status: 'ACTIVE', id: { not: targetId } },
       });
       if (otherActiveAdmins < 1) {
-        throw new BadRequestException('Cannot suspend/ban the last active admin');
+        throw new BadRequestException(
+          'Cannot suspend/ban the last active admin',
+        );
       }
     }
 
@@ -252,17 +259,27 @@ export class AdminService {
   ) {
     const report = await this.prisma.report.findUnique({
       where: { id: reportId },
-      select: { id: true, subjectId: true, subject: { select: { role: true } } },
+      select: {
+        id: true,
+        subjectId: true,
+        subject: { select: { role: true } },
+      },
     });
     if (!report) throw new NotFoundException('Report not found');
 
     if (banSubject) {
       if (report.subject.role === 'ADMIN') {
         const otherActiveAdmins = await this.prisma.user.count({
-          where: { role: 'ADMIN', status: 'ACTIVE', id: { not: report.subjectId } },
+          where: {
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            id: { not: report.subjectId },
+          },
         });
         if (otherActiveAdmins < 1) {
-          throw new BadRequestException('Cannot suspend/ban the last active admin');
+          throw new BadRequestException(
+            'Cannot suspend/ban the last active admin',
+          );
         }
       }
       await this.prisma.user.update({
@@ -285,7 +302,9 @@ export class AdminService {
       action: `report.${status}`,
       targetType: 'report',
       targetId: reportId,
-      meta: banSubject ? { banSubject: true, subjectId: report.subjectId } : undefined,
+      meta: banSubject
+        ? { banSubject: true, subjectId: report.subjectId }
+        : undefined,
     });
 
     return updated;
@@ -410,7 +429,12 @@ export class AdminService {
     const requests = await this.prisma.tableJoinRequest.findMany({
       where: { tableId, status: { in: ['APPROVED', 'PENDING'] } },
       orderBy: { createdAt: 'desc' },
-      select: { userId: true, status: true, paymentStatus: true, createdAt: true },
+      select: {
+        userId: true,
+        status: true,
+        paymentStatus: true,
+        createdAt: true,
+      },
     });
 
     // Batch-fetch users (host + participants) — no N+1
@@ -444,7 +468,9 @@ export class AdminService {
       });
 
       if (!req || req.status === 'CANCELLED') {
-        throw new BadRequestException('No active join request found for this participant');
+        throw new BadRequestException(
+          'No active join request found for this participant',
+        );
       }
 
       const wasApproved = req.status === 'APPROVED';
@@ -481,7 +507,9 @@ export class AdminService {
   }
 
   async deleteTable(actorId: string, tableId: string) {
-    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
     if (!table) throw new NotFoundException('Table not found');
 
     await this.prisma.$transaction([
@@ -504,7 +532,13 @@ export class AdminService {
 
   // ── Review moderation ─────────────────────────────────────────────────────
 
-  async listReviews({ limit = 30, offset = 0 }: { limit?: number; offset?: number }) {
+  async listReviews({
+    limit = 30,
+    offset = 0,
+  }: {
+    limit?: number;
+    offset?: number;
+  }) {
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
         orderBy: { createdAt: 'desc' },
@@ -528,7 +562,10 @@ export class AdminService {
 
     // Batch-fetch users and tables — no N+1
     const userIds = Array.from(
-      new Set([...reviews.map((r) => r.reviewerId), ...reviews.map((r) => r.subjectId)]),
+      new Set([
+        ...reviews.map((r) => r.reviewerId),
+        ...reviews.map((r) => r.subjectId),
+      ]),
     );
     const tableIds = Array.from(new Set(reviews.map((r) => r.tableId)));
 
@@ -662,9 +699,14 @@ export class AdminService {
   }
 
   async setImageFeatured(actorId: string, imageId: string, featured: boolean) {
-    const img = await this.prisma.tableImage.findUnique({ where: { id: imageId } });
+    const img = await this.prisma.tableImage.findUnique({
+      where: { id: imageId },
+    });
     if (!img) throw new NotFoundException('Image not found');
-    await this.prisma.tableImage.update({ where: { id: imageId }, data: { featured } });
+    await this.prisma.tableImage.update({
+      where: { id: imageId },
+      data: { featured },
+    });
     void this.audit.log({
       actorId,
       action: featured ? 'image.featured' : 'image.unfeatured',

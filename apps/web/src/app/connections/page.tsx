@@ -13,7 +13,7 @@ import { PageLoader } from '@/components/spinner';
 /* ─── helpers ────────────────────────────────────────────────── */
 
 function displayName(u: PublicUser): string {
-  return `${u.firstName ?? 'Member'} ${u.lastInitial ?? ''}`.trim();
+  return `@${u.username ?? 'member'}`;
 }
 
 /* ─── sub-components ─────────────────────────────────────────── */

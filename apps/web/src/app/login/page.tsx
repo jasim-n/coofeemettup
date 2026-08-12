@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiError } from '@jrst/api-client';
+import { api } from '@/lib/api';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [handleStatus, setHandleStatus] = useState<
+    'idle' | 'checking' | 'ok' | 'taken' | 'invalid'
+  >('idle');
   const [isNewUser, setIsNewUser] = useState(false);
   const [devCode, setDevCode] = useState<string | null>(null);
   const [ref, setRef] = useState<string | null>(null);
@@ -39,6 +46,26 @@ export default function LoginPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of URL on mount
     if (refCode) setRef(refCode.toUpperCase());
   }, []);
+
+  // Debounced live handle-availability check (new users only).
+  useEffect(() => {
+    if (!isNewUser) return;
+    const u = username.trim().replace(/^@/, '').toLowerCase();
+    const t = setTimeout(async () => {
+      if (u.length < 3) {
+        setHandleStatus(u.length ? 'invalid' : 'idle');
+        return;
+      }
+      setHandleStatus('checking');
+      try {
+        const { available, valid } = await api.usernameAvailable(u);
+        setHandleStatus(!valid ? 'invalid' : available ? 'ok' : 'taken');
+      } catch {
+        setHandleStatus('idle');
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [username, isNewUser]);
 
   async function handleRequest(e: React.FormEvent) {
     e.preventDefault();
@@ -66,8 +93,20 @@ export default function LoginPage() {
     setError(null);
     setPhoneError(null);
 
-    // Client-side PK phone validation for new users
+    // New users: validate name, handle, and PK phone before submit.
     if (isNewUser) {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Please enter your first and last name.');
+        return;
+      }
+      if (handleStatus === 'invalid' || username.trim().replace(/^@/, '').length < 3) {
+        setError('Pick a handle: 3–20 letters, numbers or underscores.');
+        return;
+      }
+      if (handleStatus === 'taken') {
+        setError('That handle is taken — try another.');
+        return;
+      }
       const normalised = normalisePkPhone(phone);
       if (!normalised) {
         setPhoneError(
@@ -81,6 +120,9 @@ export default function LoginPage() {
     try {
       await verifyOtp(email, code, {
         phone: isNewUser ? normalisePkPhone(phone) ?? phone : undefined,
+        firstName: isNewUser ? firstName.trim() : undefined,
+        lastName: isNewUser ? lastName.trim() : undefined,
+        username: isNewUser ? username.trim().replace(/^@/, '').toLowerCase() : undefined,
         referralCode: ref ?? undefined,
       });
       router.push('/');
@@ -128,7 +170,8 @@ export default function LoginPage() {
             </p>
             {step === 'code' && isNewUser && (
               <p className="text-muted-foreground text-sm leading-relaxed">
-                New here? Add your phone number to finish signup.
+                New here? Pick a public <span className="font-semibold">@handle</span> and add
+                your details to finish signup.
               </p>
             )}
             {ref && (
@@ -181,27 +224,95 @@ export default function LoginPage() {
                 />
               </div>
               {isNewUser && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="font-semibold">Phone number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    inputMode="tel"
-                    placeholder="03XX XXXXXXX"
-                    value={phone ?? ''}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      setPhoneError(null);
-                    }}
-                    required
-                  />
-                  <p className="text-muted-foreground text-xs">
-                    Pakistani mobile — required to finish signup
-                  </p>
-                  {phoneError && (
-                    <p className="text-destructive text-sm font-medium">{phoneError}</p>
-                  )}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="firstName" className="font-semibold">First name</Label>
+                      <Input
+                        id="firstName"
+                        placeholder="Sarah"
+                        value={firstName ?? ''}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lastName" className="font-semibold">Last name</Label>
+                      <Input
+                        id="lastName"
+                        placeholder="Khan"
+                        value={lastName ?? ''}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="username" className="font-semibold">Handle</Label>
+                    <div className="relative">
+                      <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+                        @
+                      </span>
+                      <Input
+                        id="username"
+                        className="pl-7"
+                        placeholder="sarah_k"
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        value={username ?? ''}
+                        onChange={(e) =>
+                          setUsername(e.target.value.replace(/^@/, '').toLowerCase())
+                        }
+                        required
+                      />
+                      {handleStatus === 'checking' && (
+                        <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-sm">
+                          <i className="fa-solid fa-circle-notch fa-spin" />
+                        </span>
+                      )}
+                      {handleStatus === 'ok' && (
+                        <span className="text-primary absolute top-1/2 right-3 -translate-y-1/2 text-sm">
+                          <i className="fa-solid fa-circle-check" />
+                        </span>
+                      )}
+                      {(handleStatus === 'taken' || handleStatus === 'invalid') && (
+                        <span className="text-destructive absolute top-1/2 right-3 -translate-y-1/2 text-sm">
+                          <i className="fa-solid fa-circle-xmark" />
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {handleStatus === 'taken'
+                        ? 'That handle is taken — try another.'
+                        : handleStatus === 'invalid'
+                          ? '3–20 letters, numbers or underscores.'
+                          : 'Your @handle is public. Your name, phone & email stay private.'}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="font-semibold">Phone number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      inputMode="tel"
+                      placeholder="03XX XXXXXXX"
+                      value={phone ?? ''}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        setPhoneError(null);
+                      }}
+                      required
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Pakistani mobile — private, only admins can see it.
+                    </p>
+                    {phoneError && (
+                      <p className="text-destructive text-sm font-medium">{phoneError}</p>
+                    )}
+                  </div>
+                </>
               )}
               {devCode && (
                 <p className="bg-secondary text-secondary-foreground rounded-2xl px-4 py-2.5 text-center text-sm">
