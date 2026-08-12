@@ -25,6 +25,7 @@ import type {
   EventDto,
   FeedbackDto,
   GenderTrack,
+  GeocodeResult,
   GroupDto,
   MailProvider,
   MailProviderStatus,
@@ -464,6 +465,11 @@ export class ApiClient {
 
   browseTables(): Promise<TableDto[]> {
     return this.request('GET', '/tables');
+  }
+
+  // Free place search (Photon/OSM) for the venue picker.
+  geocode(q: string): Promise<GeocodeResult[]> {
+    return this.request('GET', `/geocode?q=${encodeURIComponent(q)}`);
   }
 
   getTable(id: string): Promise<TableDto> {

@@ -216,6 +216,14 @@ export interface CreateTableInput {
   pricePKR?: number;
 }
 
+/** A place-search suggestion from the free Photon/OSM geocoder. */
+export interface GeocodeResult {
+  name: string;
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 export interface TableImageDto {
   id: string;
   tableId: string;

@@ -7,6 +7,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ApiError, type UpdateTableInput } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import VenueSearch from '@/components/venue-search';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -210,6 +211,17 @@ export default function EditTablePage() {
         </Section></div>
 
         <div className="lg:col-span-2"><Section step="2" title="Choose venue">
+          <VenueSearch
+            onSelect={(r) =>
+              setForm((f) => ({
+                ...f,
+                venueName: r.name,
+                venueAddress: r.label,
+                lat: r.lat.toFixed(6),
+                lng: r.lng.toFixed(6),
+              }))
+            }
+          />
           <div className="space-y-1.5">
             <Label htmlFor="venueName">Venue name</Label>
             <Input

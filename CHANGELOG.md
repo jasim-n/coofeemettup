@@ -4,6 +4,17 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-12 — Venue place-search when creating/editing an event
+
+- **Place search (free, no API key).** The "Choose venue" step on both the
+  create (`tables/new`) and edit (`tables/[id]/edit`) forms now has a debounced
+  search box: type a place → pick a suggestion → it auto-fills the venue name +
+  address and drops the map pin (lat/lng). Manual entry + pin-drop still work.
+- **Backend geocode proxy.** New `GET /geocode?q=` (authenticated) proxies the
+  Photon/OSM geocoder server-side (proper User-Agent, Pakistan-biased, 6s
+  timeout) and returns simplified `{name, label, lat, lng}` results.
+  (`geo` module, `GeocodeResult` type, `api.geocode`, `VenueSearch` component)
+
 ### 2026-08-11 — Invited state, skeletons, grouped Featured carousel
 
 - **Invited state everywhere.** `browse`/`findOne` now include the viewer's

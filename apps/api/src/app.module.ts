@@ -25,6 +25,7 @@ import { InvitesModule } from './invites/invites.module';
 import { ReactionsModule } from './reactions/reactions.module';
 import { MailModule } from './mail/mail.module';
 import { MediaModule } from './media/media.module';
+import { GeoModule } from './geo/geo.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -54,6 +55,7 @@ import { HealthController } from './health/health.controller';
     DmModule,
     InvitesModule,
     ReactionsModule,
+    GeoModule,
   ],
   controllers: [HealthController],
 })
