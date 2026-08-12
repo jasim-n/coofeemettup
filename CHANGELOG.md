@@ -4,6 +4,15 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-12 — Meetups: hide past & cancelled events from active views
+
+- **Cancelled tables are hidden everywhere.** `applyFilters` now drops any
+  `CANCELLED` table from every browse/active list, and drops `COMPLETED` ones
+  from all non-"past" views.
+- **"My Meetups" & "Upcoming" show only live upcoming commitments.** Past,
+  cancelled and completed tables no longer appear there — they belong in the
+  **Past** tab. The Past tab also excludes cancelled tables. (`meetups`)
+
 ### 2026-08-12 — Explore: remove redundant "View all" / "See all"
 
 - Removed the self-linking **"View all"** (Top categories) and **"See all"**

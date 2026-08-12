@@ -48,6 +48,11 @@ function applyFilters(
     const start = new Date(t.startAt).getTime();
     const now = NOW;
 
+    // Cancelled tables are void — never surface them in any view.
+    if (t.status === 'CANCELLED') return false;
+    // Completed tables belong only to the "past" view.
+    if (when !== 'past' && t.status === 'COMPLETED') return false;
+
     // when filter
     if (when === 'upcoming' && start < now) return false;
     if (when === 'past' && start >= now) return false;
@@ -501,6 +506,8 @@ export default function MeetupsPage() {
   );
 
   // "My Meetups" = tables I host + tables I've joined (approved/pending), deduped.
+  // Only LIVE, upcoming commitments — past, cancelled and completed tables drop
+  // out here and live in the Past tab instead.
   const activeJoined = useMemo(() => {
     const mine = [
       ...hosted,
@@ -510,14 +517,22 @@ export default function MeetupsPage() {
     ];
     const seen = new Set<string>();
     const deduped = mine.filter((t) => (seen.has(t.id) ? false : seen.add(t.id)));
-    return applyFilters(deduped, when, category, fromDate, toDate, coords, radiusKm);
+    const live = deduped.filter(
+      (t) =>
+        t.status !== 'CANCELLED' &&
+        t.status !== 'COMPLETED' &&
+        new Date(t.startAt).getTime() >= NOW,
+    );
+    return applyFilters(live, when, category, fromDate, toDate, coords, radiusKm);
   }, [hosted, joined, when, category, fromDate, toDate, coords, radiusKm]);
 
+  // Past tab — tables I attended that have already happened (cancelled ones excluded).
   const pastJoined = useMemo(
     () =>
       joined.filter(
         (t) =>
           new Date(t.startAt).getTime() < NOW &&
+          t.status !== 'CANCELLED' &&
           (t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING'),
       ),
     [joined],
