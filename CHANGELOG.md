@@ -14,6 +14,8 @@ All notable UI/product changes are logged here.
   user-facing reputation endpoints; admins still moderate full reviews.
 - **No DB migration** — peer reviews reuse the existing `Review` unique key
   `(tableId, reviewerId, subjectId)`; scores remain on-read aggregates.
+- Feature wiring and edge cases documented in [`docs/features.md`](docs/features.md).
+- Feature map (wiring, edge cases, file layout): [`docs/features.md`](docs/features.md).
 
 ### 2026-08-13 — Create-account email gate
 

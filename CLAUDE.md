@@ -185,8 +185,9 @@ Do not fake external integrations or credentials. Implement seams only when requ
 Use references in this order:
 
 1. Current implementation and Prisma schema.
-2. `CHANGELOG.md` and recent dated task files.
-3. `tasks/progress.md` for historical decisions and framework gotchas.
-4. `docs/design/DESIGN-BRIEF.md` and current design assets for product direction.
-5. `README.md` and `docs/architecture.md` for setup/history, checking them against current code because parts are Events-era.
+2. `docs/features.md` — what each shipped feature does, wiring, and structural rules.
+3. `CHANGELOG.md` and recent dated task files.
+4. `tasks/progress.md` for historical decisions and framework gotchas.
+5. `docs/design/DESIGN-BRIEF.md` and current design assets for product direction.
+6. `README.md` and `docs/architecture.md` for setup/history, checking them against current code because parts are Events-era.
 
