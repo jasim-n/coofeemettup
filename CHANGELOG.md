@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-14 — My Meetups stays open until table is closed
+
+- Hosted and joined (approved/pending) tables remain in **My Meetups** after
+  `startAt` as long as status is not `CANCELLED` or `COMPLETED`.
+- **Past** shows completed hosted/joined tables only (no overlap with open ones).
+
 ### 2026-08-13 — Invite picker: handle search only
 
 - Table “Invite people” no longer pre-lists connections; the list stays empty

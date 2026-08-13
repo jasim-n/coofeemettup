@@ -6,6 +6,23 @@ Last updated: 2026-08-13.
 
 ---
 
+## My Meetups visibility
+
+### Rule
+
+**My Meetups** lists tables the viewer hosts **or** has joined (`APPROVED` / `PENDING`), until the table is **closed** (`CANCELLED` or `COMPLETED`). Passing `startAt` alone does **not** remove them.
+
+**Past** lists `COMPLETED` hosted/joined tables only.
+
+| Surface | Include |
+|---------|---------|
+| My Meetups | host ∪ join, status ∉ {CANCELLED, COMPLETED} |
+| Past | host ∪ join, status = COMPLETED |
+
+UI: `/meetups` (`activeJoined` / `pastJoined` in `apps/web/src/app/meetups/page.tsx`).
+
+---
+
 ## Invite people (Table host)
 
 ### What it does
