@@ -29,6 +29,8 @@ services:
         sync: false
       - key: REDIS_URL # Upstash rediss:// URL
         sync: false
+      - key: BREVO_API_KEY # Brevo API v3 key; sent over HTTPS/443
+        sync: false
       - key: WEB_ORIGIN # your Vercel URL, e.g. https://jrst.vercel.app (comma-separated for multiple)
         sync: false
       - key: API_ORIGIN # this service's URL, e.g. https://jrst-api.onrender.com

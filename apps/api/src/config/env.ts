@@ -25,6 +25,7 @@ export const envSchema = z.object({
   MAIL_PASS: z.string().optional(),
   MAIL_FROM: z.string().optional(),
   // Brevo (Sendinblue) SMTP — primary transactional provider.
+  BREVO_API_KEY: z.string().optional(),
   BREVO_HOST: z.string().optional(),
   BREVO_PORT: z.coerce.number().optional(),
   BREVO_USER: z.string().optional(),

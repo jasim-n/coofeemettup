@@ -18,6 +18,11 @@ type Creds = {
   from: string;
 };
 
+type BrevoSender = {
+  email: string;
+  name?: string;
+};
+
 export interface MailProviderStatus {
   /** The provider that will actually be used for the next send (null = none configured). */
   active: MailProvider | null;
@@ -31,6 +36,8 @@ export interface MailProviderStatus {
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private readonly transports: Partial<Record<MailProvider, Transporter>> = {};
+  private readonly fetchImpl = (input: RequestInfo | URL, init?: RequestInit) =>
+    globalThis.fetch(input, init);
 
   constructor(
     private readonly config: ConfigService<Env, true>,
@@ -60,6 +67,12 @@ export class MailService {
   }
 
   private isConfigured(provider: MailProvider): boolean {
+    if (
+      provider === 'brevo' &&
+      this.config.get('BREVO_API_KEY', { infer: true })
+    ) {
+      return true;
+    }
     const c = this.creds(provider);
     return Boolean(c.host && c.user && c.pass);
   }
@@ -85,6 +98,48 @@ export class MailService {
       });
     }
     return this.transports[provider] ?? null;
+  }
+
+  private brevoSender(): BrevoSender {
+    const from = this.creds('brevo').from.trim();
+    const match = from.match(/^(.*?)\s*<([^<>]+)>$/);
+    if (!match) return { email: from };
+    return { name: match[1].trim(), email: match[2].trim() };
+  }
+
+  private async sendViaBrevoApi(
+    to: string,
+    subject: string,
+    text: string,
+    html: string,
+  ): Promise<void> {
+    const apiKey = this.config.get('BREVO_API_KEY', { infer: true });
+    if (!apiKey) throw new Error('BREVO_API_KEY is not configured');
+
+    const response = await this.fetchImpl(
+      'https://api.brevo.com/v3/smtp/email',
+      {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'api-key': apiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: this.brevoSender(),
+          to: [{ email: to }],
+          subject,
+          textContent: text,
+          htmlContent: html,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 300);
+      throw new Error(`Brevo API ${response.status}: ${detail}`);
+    }
   }
 
   private envDefault(): MailProvider | null {
@@ -150,6 +205,21 @@ export class MailService {
       ...this.configuredProviders().filter((p) => p !== active),
     ];
     for (const provider of order) {
+      if (
+        provider === 'brevo' &&
+        this.config.get('BREVO_API_KEY', { infer: true })
+      ) {
+        try {
+          await this.sendViaBrevoApi(to, subject, text, html);
+          return provider;
+        } catch (err) {
+          this.logger.error(
+            `Mail send via ${provider} API failed for ${to}`,
+            err as Error,
+          );
+        }
+        continue;
+      }
       const transport = this.transport(provider);
       if (!transport) continue;
       try {

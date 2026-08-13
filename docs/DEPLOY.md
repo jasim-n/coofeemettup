@@ -27,9 +27,10 @@ Neon/Upstash dashboards:
 1. Go to **render.com** → sign in **with GitHub** (free, no card).
 2. **New → Blueprint** → pick the `jasim-n/coofeemettup` repo. Render reads
    [`render.yaml`](../render.yaml) and creates the `jrst-api` web service.
-3. In the service's **Environment**, set the four `sync:false` vars:
+3. In the service's **Environment**, set the `sync:false` vars:
    - `DATABASE_URL` = your Neon pooled URL
    - `REDIS_URL` = your Upstash URL
+   - `BREVO_API_KEY` = your Brevo API v3 key (HTTPS email sending)
    - `WEB_ORIGIN` = `https://REPLACE-ME.vercel.app` (put a placeholder now; fix in Step 3)
    - `API_ORIGIN` = the URL Render shows for this service (e.g. `https://jrst-api.onrender.com`)
    - (`SESSION_SECRET` and `PAYMENTS_WEBHOOK_SECRET` auto-generate.)
