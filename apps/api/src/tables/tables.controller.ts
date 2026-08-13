@@ -36,6 +36,17 @@ export class TablesController {
     return this.tables.create(user.id, dto);
   }
 
+  /** Upload a banner/cover image → returns its URL (set as imageUrl on create/edit). */
+  @Post('cover')
+  @UseInterceptors(imageUpload)
+  uploadCover(
+    @CurrentUser() user: AuthUser,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('No file');
+    return this.tables.uploadCover(user.id, file.buffer);
+  }
+
   @Get()
   browse(@CurrentUser() user: AuthUser) {
     return this.tables.browse(user.id);

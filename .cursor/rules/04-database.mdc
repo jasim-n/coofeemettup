@@ -1,0 +1,37 @@
+---
+description: Prisma schema, migration, and cross-layer contract requirements
+globs: apps/api/prisma/**,apps/api/src/**,packages/{types,api-client}/**
+alwaysApply: false
+---
+
+# Database and Contracts
+
+- `apps/api/prisma/schema.prisma` is the canonical persistence model.
+- Prisma 7 datasource configuration belongs in `apps/api/prisma.config.ts`; never add a datasource URL to `schema.prisma`.
+- Keep the generated client conventions already configured for NestJS/CommonJS.
+
+## Migration requirements
+
+- Every schema change requires its own append-only migration:
+  `apps/api/prisma/migrations/<timestamp>_<name>/migration.sql`.
+- Never use `prisma db push` or ad hoc database schema edits.
+- Review destructive SQL and obtain user approval before applying destructive changes.
+- Preserve all migration history so a clean database can be reconstructed.
+- After schema changes, run `prisma migrate deploy` and `prisma generate`.
+- Apply production migrations out-of-band before application deployment; do not run them in Render startup.
+
+## Cross-layer workflow
+
+Keep data/API changes synchronized:
+
+1. Prisma schema and migration.
+2. API DTO validation, service, controller, and serializer.
+3. `packages/types/src/index.ts`.
+4. `packages/api-client/src/index.ts`.
+5. Consuming web UI.
+6. Focused tests.
+
+- Preserve public/self/admin serializer boundaries.
+- Fire-and-forget Prisma writes must await internally because Prisma promises are lazy.
+- Pass Prisma scalar arrays directly; do not wrap them in `{ set: [] }` unless the generated API requires it.
+

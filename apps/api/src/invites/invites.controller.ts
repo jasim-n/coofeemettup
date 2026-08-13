@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { InvitesService } from './invites.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/auth.types';
@@ -27,7 +20,10 @@ export class InvitesController {
   }
 
   @Get('table/:tableId')
-  tableInvites(@CurrentUser() user: AuthUser, @Param('tableId') tableId: string) {
+  tableInvites(
+    @CurrentUser() user: AuthUser,
+    @Param('tableId') tableId: string,
+  ) {
     return this.invites.tableInvites(user.id, tableId);
   }
 

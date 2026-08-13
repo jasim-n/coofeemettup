@@ -1,0 +1,41 @@
+---
+description: Development scope, dependencies, verification, and deployment constraints
+alwaysApply: true
+---
+
+# Development Rules
+
+## Services and dependencies
+
+- During development use free/open-source/self-hostable resources.
+- Do not require new external accounts or paid services without explicit approval.
+- Keep payment, identity verification, and messaging integrations replaceable until providers are approved.
+- OSM public demo services are acceptable for development only; respect production usage policies.
+- Do not fake provider credentials or claim external integrations are complete.
+
+## Commands
+
+Use Node 24 and pnpm 11. Prefer scoped commands because mobile is out of scope:
+
+```bash
+pnpm --filter @jrst/api start
+pnpm --filter @jrst/web dev
+pnpm --filter @jrst/api typecheck
+pnpm --filter @jrst/web typecheck
+pnpm --filter @jrst/api lint
+pnpm --filter @jrst/web lint
+pnpm --filter @jrst/api test
+pnpm --filter @jrst/api build
+pnpm --filter @jrst/web build
+```
+
+Root Turbo checks include mobile and should not be the only scoped verification.
+
+## Verification and deployment
+
+- Verify changes in proportion to risk, starting with focused checks.
+- Inspect e2e scripts before use; several still target the retired Events journey.
+- Do not deploy from the CLI. Use the repository's CI/CD path.
+- Do not run Prisma migrations in application startup.
+- Treat Render free-tier cold starts and earlier local Turbopack memory exhaustion as operational conditions, not application correctness.
+

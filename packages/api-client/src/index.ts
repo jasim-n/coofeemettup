@@ -352,6 +352,19 @@ export class ApiClient {
 
   // ---- profile photo ----
   async uploadPhoto(file: File): Promise<{ photoUrl: string }> {
+    return this.uploadFile('/api/users/me/photo', file) as Promise<{
+      photoUrl: string;
+    }>;
+  }
+
+  /** Upload a table banner/cover → returns { url }. Used at create/edit time. */
+  async uploadTableCover(file: File): Promise<{ url: string }> {
+    return this.uploadFile('/api/tables/cover', file) as Promise<{ url: string }>;
+  }
+
+  // Shared multipart upload — attaches auth/CSRF and lets the browser set the
+  // multipart boundary (no Content-Type header).
+  private async uploadFile(path: string, file: File): Promise<unknown> {
     const form = new FormData();
     form.append('file', file);
     const headers: Record<string, string> = {};
@@ -361,8 +374,7 @@ export class ApiClient {
     } else if (this.csrfToken) {
       headers['x-csrf-token'] = this.csrfToken;
     }
-    // No Content-Type: the browser sets the multipart boundary.
-    const res = await this.fetchImpl(`${this.baseUrl}/api/users/me/photo`, {
+    const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       credentials: 'include',
@@ -374,7 +386,7 @@ export class ApiClient {
       const record = (data ?? {}) as { message?: unknown };
       throw new ApiError(res.status, String(record.message ?? res.statusText), data);
     }
-    return data as { photoUrl: string };
+    return data;
   }
 
   // ---- verification (CNIC) ----

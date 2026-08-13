@@ -8,6 +8,7 @@ import { ApiError, type UpdateTableInput } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import VenueSearch from '@/components/venue-search';
+import { BannerPicker } from '@/components/banner-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,6 +66,7 @@ export default function EditTablePage() {
     price: '',
   });
   const [categories, setCategories] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -83,6 +85,7 @@ export default function EditTablePage() {
         const customParts = parts.filter((p) => !CATEGORIES.includes(p));
 
         setCategories(chipParts);
+        setImageUrl(t.imageUrl ?? null);
         setForm({
           title: t.title ?? '',
           venueName: t.venueName ?? '',
@@ -165,6 +168,8 @@ export default function EditTablePage() {
         lat: Number(form.lat),
         lng: Number(form.lng),
         title: form.title.trim(),
+        // Empty string clears a previously set banner (service maps '' → null).
+        imageUrl: imageUrl ?? '',
         startAt: new Date(form.startAt).toISOString(),
         seats: Number(form.seats),
         category: allCategories.join(', '),
@@ -210,7 +215,11 @@ export default function EditTablePage() {
           </p>
         </Section></div>
 
-        <div className="lg:col-span-2"><Section step="2" title="Choose venue">
+        <div className="lg:col-span-2"><Section step="2" title="Banner image">
+          <BannerPicker value={imageUrl} onChange={setImageUrl} />
+        </Section></div>
+
+        <div className="lg:col-span-2"><Section step="3" title="Choose venue">
           <VenueSearch
             onSelect={(r) =>
               setForm((f) => ({
@@ -252,7 +261,7 @@ export default function EditTablePage() {
           </div>
         </Section></div>
 
-        <Section step="3" title="Date & time">
+        <Section step="4" title="Date & time">
           <Input
             type="datetime-local"
             value={form.startAt}
@@ -261,7 +270,7 @@ export default function EditTablePage() {
           />
         </Section>
 
-        <Section step="4" title="Number of seats">
+        <Section step="5" title="Number of seats">
           <Input
             type="number"
             min={2}
@@ -273,7 +282,7 @@ export default function EditTablePage() {
           <p className="text-muted-foreground text-xs">Between 2 and 50 (you don&apos;t take a seat).</p>
         </Section>
 
-        <Section step="5" title="Category">
+        <Section step="6" title="Category">
           <p className="text-muted-foreground text-xs">Pick one or more.</p>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => {
@@ -306,7 +315,7 @@ export default function EditTablePage() {
           />
         </Section>
 
-        <Section step="6" title="Description & rules">
+        <Section step="7" title="Description & rules">
           <div className="space-y-1.5">
             <Label htmlFor="description">What&apos;s this table about?</Label>
             <Textarea

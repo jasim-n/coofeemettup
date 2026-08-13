@@ -1,0 +1,31 @@
+---
+description: Email OTP, web bearer authentication, authorization, and privacy rules
+globs: apps/api/src/auth/**,apps/api/src/users/**,apps/web/**,packages/api-client/**,packages/types/**
+alwaysApply: false
+---
+
+# Authentication and Identity
+
+- Login identity is normalized email, not phone.
+- New accounts also require a unique Pakistani mobile number, first/last name, and unique `@username`.
+- OTP codes are stored temporarily in Redis and delivered through provider-neutral email handling.
+- OTP exposure (`devCode` or logs) is development-only and must never be enabled in production.
+- Keep mail delivery failure-tolerant; do not let slow SMTP indefinitely block OTP requests.
+
+## Current web session behavior
+
+- Current web code intentionally creates `ApiClient({ clientType: 'mobile' })`.
+- Verification requests `x-client: mobile`, receives a JWT, and stores it under `jrst_token` in `localStorage`.
+- Authenticated web calls use `Authorization: Bearer`; the API therefore skips CSRF for those calls.
+- The API also supports httpOnly cookie + double-submit CSRF sessions, but that is not the current web-client path.
+- Preserve this behavior unless an explicit security architecture change is requested.
+
+## Security boundaries
+
+- `SessionGuard` must continue enforcing `ACTIVE` account status.
+- Respect `USER`, `ORGANIZER`, and `ADMIN` authorization.
+- Public serializers expose username-based identity only.
+- Never leak email, phone, first name, last name, CNIC data, tokens, or OTPs in public responses.
+- Use self/admin serializers for private account fields.
+- Blocked viewers must not gain profile or messaging access.
+

@@ -36,10 +36,7 @@ export class ReactionsService {
     });
 
     // Group by messageId first
-    const byMessage = new Map<
-      string,
-      (typeof rows)[number][]
-    >();
+    const byMessage = new Map<string, (typeof rows)[number][]>();
     for (const row of rows) {
       const existing = byMessage.get(row.messageId) ?? [];
       existing.push(row);
@@ -90,7 +87,8 @@ export class ReactionsService {
       }
     }
 
-    const dbKind: MessageKind = kind === 'dm' ? MessageKind.DM : MessageKind.GROUP;
+    const dbKind: MessageKind =
+      kind === 'dm' ? MessageKind.DM : MessageKind.GROUP;
 
     // One reaction per user per message: clicking the same emoji removes it
     // (toggle off); clicking a different emoji REPLACES the user's previous one.

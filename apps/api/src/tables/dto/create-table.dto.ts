@@ -38,6 +38,10 @@ export class CreateTableDto {
   @IsString()
   title?: string;
 
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
   @IsISO8601()
   startAt!: string;
 

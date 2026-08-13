@@ -57,6 +57,23 @@ export class TablesService {
     return this.findOne(userId, tableId);
   }
 
+  /**
+   * Upload a cover/banner image and return its URL. Used at create time (before
+   * a table exists) so the host can set a banner; the URL is then passed as
+   * `imageUrl` on create/update.
+   */
+  async uploadCover(userId: string, buffer: Buffer): Promise<{ url: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { canHost: true },
+    });
+    if (!user?.canHost) {
+      throw new ForbiddenException('Only approved hosts can upload banners');
+    }
+    const url = await this.media.uploadImage(buffer, 'table-covers');
+    return { url };
+  }
+
   /** Host uploads an event photo (already stored via MediaService). */
   async addImage(userId: string, tableId: string, buffer: Buffer) {
     const table = await this.prisma.table.findUnique({
@@ -208,6 +225,7 @@ export class TablesService {
         lat: dto.lat ?? null,
         lng: dto.lng ?? null,
         title: dto.title ?? null,
+        imageUrl: dto.imageUrl ?? null,
         startAt: new Date(dto.startAt),
         seats: dto.seats,
         seatsLeft: dto.seats,
@@ -246,6 +264,7 @@ export class TablesService {
 
     const data: Prisma.TableUpdateInput = {};
     if (dto.title !== undefined) data.title = dto.title.trim() || null;
+    if (dto.imageUrl !== undefined) data.imageUrl = dto.imageUrl || null;
     if (dto.category !== undefined) data.category = dto.category;
     if (dto.description !== undefined)
       data.description = dto.description.trim() || null;

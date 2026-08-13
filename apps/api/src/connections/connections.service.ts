@@ -25,16 +25,23 @@ export class ConnectionsService {
   }
 
   async request(me: string, other: string): Promise<{ status: ConnState }> {
-    if (me === other) throw new BadRequestException('Cannot connect with yourself');
+    if (me === other)
+      throw new BadRequestException('Cannot connect with yourself');
 
-    const otherUser = await this.prisma.user.findUnique({ where: { id: other } });
+    const otherUser = await this.prisma.user.findUnique({
+      where: { id: other },
+    });
     if (!otherUser) throw new NotFoundException('User not found');
 
     const pair = await this.findPair(me, other);
 
     if (!pair) {
       await this.prisma.connection.create({
-        data: { requesterId: me, addresseeId: other, status: ConnectionStatus.PENDING },
+        data: {
+          requesterId: me,
+          addresseeId: other,
+          status: ConnectionStatus.PENDING,
+        },
       });
       return { status: 'pending_sent' };
     }
@@ -55,14 +62,22 @@ export class ConnectionsService {
     // PENDING I already sent, or DECLINED → reset with me as requester
     await this.prisma.connection.update({
       where: { id: pair.id },
-      data: { requesterId: me, addresseeId: other, status: ConnectionStatus.PENDING },
+      data: {
+        requesterId: me,
+        addresseeId: other,
+        status: ConnectionStatus.PENDING,
+      },
     });
     return { status: 'pending_sent' };
   }
 
   async accept(me: string, other: string): Promise<{ status: ConnState }> {
     const pair = await this.prisma.connection.findFirst({
-      where: { requesterId: other, addresseeId: me, status: ConnectionStatus.PENDING },
+      where: {
+        requesterId: other,
+        addresseeId: me,
+        status: ConnectionStatus.PENDING,
+      },
     });
     if (!pair) throw new NotFoundException('Pending request not found');
 
@@ -75,7 +90,11 @@ export class ConnectionsService {
 
   async decline(me: string, other: string): Promise<{ status: ConnState }> {
     const pair = await this.prisma.connection.findFirst({
-      where: { requesterId: other, addresseeId: me, status: ConnectionStatus.PENDING },
+      where: {
+        requesterId: other,
+        addresseeId: me,
+        status: ConnectionStatus.PENDING,
+      },
     });
     if (!pair) throw new NotFoundException('Pending request not found');
 

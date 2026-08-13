@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
@@ -75,10 +85,7 @@ export class AdminController {
 
   @Post('admin/tables/:id/cancel')
   @HttpCode(200)
-  async cancelTable(
-    @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
-  ) {
+  async cancelTable(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     const result = await this.admin.cancelTable(id);
     void this.audit.log({
       actorId: user.id,
@@ -168,10 +175,7 @@ export class AdminController {
 
   @Post('admin/users/:id/revoke-verification')
   @HttpCode(200)
-  revokeVerification(
-    @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
-  ) {
+  revokeVerification(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.admin.revokeVerification(user.id, id);
   }
 
@@ -204,10 +208,7 @@ export class AdminController {
 
   @Delete('admin/tables/:id')
   @HttpCode(200)
-  deleteTable(
-    @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
-  ) {
+  deleteTable(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.admin.deleteTable(user.id, id);
   }
 
@@ -226,10 +227,7 @@ export class AdminController {
 
   @Delete('admin/reviews/:id')
   @HttpCode(200)
-  deleteReview(
-    @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
-  ) {
+  deleteReview(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.admin.deleteReview(user.id, id);
   }
 
@@ -296,10 +294,7 @@ export class AdminController {
 
   @Post('admin/mail/test')
   @HttpCode(200)
-  async testMail(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: TestMailDto,
-  ) {
+  async testMail(@CurrentUser() user: AuthUser, @Body() dto: TestMailDto) {
     const result = await this.admin.sendTestMail(dto.email);
     void this.audit.log({
       actorId: user.id,

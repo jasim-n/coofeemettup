@@ -1,0 +1,32 @@
+---
+description: Shared project conventions for safe, consistent implementation
+alwaysApply: true
+---
+
+# Project Conventions
+
+- Preserve unrelated working-tree changes; never discard or overwrite user work.
+- Do not modify mobile unless explicitly requested.
+- Do not commit or push unless explicitly requested.
+- Update root `CHANGELOG.md` under `[Unreleased]` for meaningful UI/product change batches.
+- Do not add credentials, tokens, OTPs, connection strings, personal identifiers, or private history to source-controlled files.
+- Keep `_claude-history/` unchanged and Git-ignored; it is an archive, not active context.
+
+## Reuse established abstractions
+
+- Shared contracts belong in `@jrst/types`.
+- Web/API calls belong in `@jrst/api-client`.
+- Use `table-cta.ts` for Table CTA state.
+- Use `splitCategories()` for comma-separated multi-category Tables.
+- Use `UserLink` for eligible clickable identities.
+- Use the existing category icon helper.
+
+## Coding gotchas
+
+- Bind stored `globalThis.fetch` references.
+- Avoid synchronous React state updates directly inside effect bodies; use guarded async work.
+- Cast Express cookies to a typed record before reading them.
+- Polling is intentional for current chat/map behavior; do not introduce WebSockets without demonstrated need.
+- Presence is based on throttled `lastSeenAt`; online means activity within five minutes.
+- A pre-login `/auth/me` 401 is expected and handled by the auth provider.
+

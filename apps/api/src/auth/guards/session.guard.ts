@@ -53,7 +53,10 @@ export class SessionGuard implements CanActivate {
         !dbUser.lastSeenAt || Date.now() - dbUser.lastSeenAt.getTime() > 60_000;
       if (stale) {
         void this.prisma.user
-          .update({ where: { id: payload.sub }, data: { lastSeenAt: new Date() } })
+          .update({
+            where: { id: payload.sub },
+            data: { lastSeenAt: new Date() },
+          })
           .catch(() => undefined);
       }
 

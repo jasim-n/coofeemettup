@@ -17,6 +17,7 @@ export class UpdateTableDto {
   @IsOptional() @IsNumber() @Min(-90) @Max(90) lat?: number;
   @IsOptional() @IsNumber() @Min(-180) @Max(180) lng?: number;
   @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() imageUrl?: string;
   @IsOptional() @IsISO8601() startAt?: string;
   @IsOptional() @IsInt() @Min(2) @Max(50) seats?: number;
   @IsOptional() @IsString() @Length(1, 200) category?: string;

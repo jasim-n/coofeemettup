@@ -1,0 +1,32 @@
+---
+description: Core JRST repository context and authority hierarchy
+alwaysApply: true
+---
+
+# JRST Project Context
+
+- Coffee Meetups is a private, Pakistan-focused social meetup project.
+- Default scope is `apps/web`, `apps/api`, `packages/types`, and `packages/api-client`.
+- Ignore `apps/mobile` unless the user explicitly requests mobile work.
+- Keep this project's context isolated; never import or export private context across projects.
+- Do not apply DWTC or other organization-wide standards. Use project-local conventions.
+
+## Stack
+
+- Monorepo: pnpm 11 workspaces and Turborepo; Node 24.
+- API: NestJS 11, Prisma 7, PostgreSQL, Redis.
+- Web: Next.js 16 App Router, React 19, Tailwind v4, shadcn/base-ui.
+- Shared contracts: `@jrst/types` and `@jrst/api-client`.
+
+## Source of truth
+
+When sources conflict, use this priority:
+
+1. Current implementation and `apps/api/prisma/schema.prisma`.
+2. `CHANGELOG.md` and recent dated task files.
+3. These Cursor rules.
+4. `tasks/progress.md` for historical gotchas.
+5. `README.md`, older architecture/brand docs, and historical plans.
+
+Older docs still contain Events-first, phone-OTP, cookie-only web auth, coral/green branding, and Mapbox statements. Verify historical claims against current code.
+

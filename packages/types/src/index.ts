@@ -213,6 +213,7 @@ export interface CreateTableInput {
   lat?: number;
   lng?: number;
   title?: string;
+  imageUrl?: string;
   startAt: string;
   seats: number;
   category: string;

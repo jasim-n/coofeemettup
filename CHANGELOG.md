@@ -4,6 +4,15 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-13 — Table banner upload on create/edit
+
+- Hosts can upload an optional **banner image** while creating or editing a
+  Table (`/tables/new`, `/tables/[id]/edit`): preview, replace, and remove.
+- Upload goes through `POST /tables/cover` (host-only) into media storage; the
+  returned URL is saved as `Table.imageUrl`. If skipped/removed, cards fall back
+  to the existing category cover. (`banner-picker`, tables create/update DTOs,
+  api-client `uploadTableCover`)
+
 ### 2026-08-12 — Meetups: hide past & cancelled events from active views
 
 - **Cancelled tables are hidden everywhere.** `applyFilters` now drops any

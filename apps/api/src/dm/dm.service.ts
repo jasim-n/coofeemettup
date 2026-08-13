@@ -17,7 +17,9 @@ export class DmService {
   async send(me: string, other: string, body: string) {
     if (me === other) throw new BadRequestException('Cannot message yourself');
 
-    const otherUser = await this.prisma.user.findUnique({ where: { id: other } });
+    const otherUser = await this.prisma.user.findUnique({
+      where: { id: other },
+    });
     if (!otherUser) throw new NotFoundException('User not found');
 
     const trimmed = body.trim();
@@ -79,7 +81,8 @@ export class DmService {
     const result = otherIds.map((otherId) => {
       const latest = seen.get(otherId)!;
       const unread = allMessages.filter(
-        (m) => m.recipientId === me && m.senderId === otherId && m.readAt == null,
+        (m) =>
+          m.recipientId === me && m.senderId === otherId && m.readAt == null,
       ).length;
       const otherUser = byId.get(otherId);
       return {

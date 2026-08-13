@@ -24,7 +24,9 @@ export class GeoController {
     let data: { features?: PhotonFeature[] };
     try {
       const res = await fetch(url, {
-        headers: { 'User-Agent': 'CoffeeMeetups/1.0 (support@coffeemeetups.dev)' },
+        headers: {
+          'User-Agent': 'CoffeeMeetups/1.0 (support@coffeemeetups.dev)',
+        },
         signal: AbortSignal.timeout(6000),
       });
       if (!res.ok) return [];

@@ -1,0 +1,36 @@
+---
+description: Current Tables-first product behavior and domain boundaries
+globs: apps/{web,api}/**,packages/{types,api-client}/**
+alwaysApply: false
+---
+
+# Tables-First Product
+
+Coffee Meetups helps people join small, in-person gatherings at public cafes.
+
+## Current journey
+
+1. A person signs in or registers through email OTP.
+2. Users discover Tables through Home, Explore, Nearby, or Search.
+3. A user accepts the code of conduct and requests to join.
+4. The host approves or declines the request.
+5. Approval claims a seat; approved guests and the host gain Table chat access.
+6. Eligible participants can review one another after the meetup begins.
+
+## Roles and rules
+
+- `USER` is the default role.
+- A host is a normal user with admin-granted `canHost=true`.
+- `ORGANIZER` is a legacy/elevated role; do not equate it with a Table host.
+- `ADMIN` manages host access, users, Tables, reports, verification, and curation.
+- Hosts cannot join their own Tables.
+- Capacity is 2–50 and seat claims/releases must remain transactional.
+- Joining does not currently require CNIC verification or gender-track matching.
+- Public identity is `@username`; real name, email, and phone are self/admin-only.
+
+## Legacy boundary
+
+Events, bookings, event payments, matching, and event feedback remain in the API/database but are dormant on web. Do not restore `/events`, `/map`, `/receipt`, or `/admin/events` web routes unless explicitly requested.
+
+Paid Table checkout is incomplete even though Table pricing/payment fields exist.
+

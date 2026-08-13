@@ -9,7 +9,10 @@ export class MediaService {
 
   constructor(private readonly config: ConfigService<Env, true>) {}
 
-  async uploadImage(buffer: Buffer, folder = 'coffee-avatars'): Promise<string> {
+  async uploadImage(
+    buffer: Buffer,
+    folder = 'coffee-avatars',
+  ): Promise<string> {
     const cloudName = this.config.get('CLOUDINARY_CLOUD_NAME', { infer: true });
     const apiKey = this.config.get('CLOUDINARY_API_KEY', { infer: true });
     const apiSecret = this.config.get('CLOUDINARY_API_SECRET', { infer: true });

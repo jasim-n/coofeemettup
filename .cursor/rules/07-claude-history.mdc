@@ -1,0 +1,37 @@
+---
+description: Sanitized Claude handover with durable history, current gaps, and obsolete decisions
+alwaysApply: true
+---
+
+# Claude Code Handover
+
+The archived Claude session was reconciled with the codebase on 2026-08-13. Current code remains authoritative.
+
+## Durable completed work
+
+- Product pivoted from admin-created Events to host-created Tables with request/approval joining.
+- Tables support editing before start, completion, transactional seats, invites, chat, unread state, reactions, photos, reviews, saves, and featured content.
+- Social features include connections, DMs, public profiles, search, presence, notifications, report/block, and admin moderation.
+- Public identity migrated to unique `@username`; private account fields were removed from public serializers.
+- Venue search uses an authenticated server-side Photon proxy and fills address/coordinates.
+- Maps use MapLibre/OSM; production application startup no longer runs Prisma migrations.
+
+## Current unfinished work
+
+- Paid Table checkout is not implemented.
+- Production OTP delivery and automated identity verification remain provider-dependent.
+- Table-focused browser coverage is missing; old Events e2e scripts are stale.
+- Search, mutual-friend counts, some social-link UI, and mobile navigation remain partial.
+- Dormant Events/bookings/matching code still needs an explicit future retirement decision.
+
+## Superseded history
+
+- Events-first web routes, instant join/pay, and algorithmic matching are not the current web product.
+- Phone OTP is obsolete; login uses email OTP.
+- Cookie-only web auth is obsolete in current code; web presently uses bearer JWT/localStorage.
+- Coral, green, Syne, Manrope, Plus Jakarta, and Mapbox directions are obsolete.
+- Running migrations during Render startup is obsolete and previously caused deployment lock failures.
+- Historical “all tests green” statements are snapshots, not current guarantees.
+
+Never copy raw archive content, credentials, account identifiers, or personal data into code, rules, issues, or responses.
+

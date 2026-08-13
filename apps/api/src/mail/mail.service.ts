@@ -10,7 +10,13 @@ const PROVIDERS: MailProvider[] = ['brevo', 'gmail'];
 const SETTING_KEY = 'mailProvider';
 const DEFAULT_FROM = 'Coffee Meetups <no-reply@coffeemeetups.dev>';
 
-type Creds = { host?: string; port: number; user?: string; pass?: string; from: string };
+type Creds = {
+  host?: string;
+  port: number;
+  user?: string;
+  pass?: string;
+  from: string;
+};
 
 export interface MailProviderStatus {
   /** The provider that will actually be used for the next send (null = none configured). */
@@ -32,7 +38,8 @@ export class MailService {
   ) {}
 
   private creds(provider: MailProvider): Creds {
-    const get = <K extends keyof Env>(k: K) => this.config.get(k, { infer: true });
+    const get = <K extends keyof Env>(k: K) =>
+      this.config.get(k, { infer: true });
     if (provider === 'brevo') {
       return {
         host: get('BREVO_HOST'),
@@ -90,7 +97,9 @@ export class MailService {
     if (configured.length === 0) return null;
     let desired: MailProvider | null = null;
     try {
-      const row = await this.prisma.appSetting.findUnique({ where: { key: SETTING_KEY } });
+      const row = await this.prisma.appSetting.findUnique({
+        where: { key: SETTING_KEY },
+      });
       if (row && PROVIDERS.includes(row.value as MailProvider)) {
         desired = row.value as MailProvider;
       }
@@ -136,15 +145,27 @@ export class MailService {
       return null;
     }
     // active first, then the remaining configured providers as fallback
-    const order = [active, ...this.configuredProviders().filter((p) => p !== active)];
+    const order = [
+      active,
+      ...this.configuredProviders().filter((p) => p !== active),
+    ];
     for (const provider of order) {
       const transport = this.transport(provider);
       if (!transport) continue;
       try {
-        await transport.sendMail({ from: this.creds(provider).from, to, subject, text, html });
+        await transport.sendMail({
+          from: this.creds(provider).from,
+          to,
+          subject,
+          text,
+          html,
+        });
         return provider;
       } catch (err) {
-        this.logger.error(`Mail send via ${provider} failed for ${to}`, err as Error);
+        this.logger.error(
+          `Mail send via ${provider} failed for ${to}`,
+          err as Error,
+        );
       }
     }
     return null;
@@ -169,7 +190,9 @@ export class MailService {
       '<p>This is a <strong>test email</strong> confirming your OTP sender is working.</p>',
     );
     if (!sent) {
-      throw new Error('No configured mail provider could send — check SMTP credentials.');
+      throw new Error(
+        'No configured mail provider could send — check SMTP credentials.',
+      );
     }
     return sent;
   }

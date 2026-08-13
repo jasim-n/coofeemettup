@@ -1,0 +1,26 @@
+---
+description: Coffee Meetups web design system and identity-link conventions
+globs: apps/web/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Web Design System
+
+- Current system is v2.1: teal primary `#10B89B`, slate neutrals, and Poppins for headings and body.
+- Treat `apps/web/src/app/globals.css` and `layout.tsx` as authoritative.
+- Use CSS variables and existing utilities such as `bg-primary`, `text-primary`, `bg-ink`, `bg-gradient-hero`, `shadow-soft`, and `shadow-glow`.
+- Do not hardcode colors or introduce the obsolete coral, green, Syne, Manrope, or Plus Jakarta systems.
+- Reuse existing shadcn/base-ui components, rounded/pill treatments, and layout patterns.
+- Base-UI Button has no `asChild`; use its `render` prop or apply `buttonVariants` to a Link.
+- Use existing Font Awesome/category icon helpers; avoid emoji as interface icons.
+- Maps use MapLibre with OSM/Photon, not Mapbox.
+
+## User identity links
+
+- Wrap clickable avatar/name identity units with `<UserLink userId={...}>`.
+- Do not include action buttons inside `UserLink`.
+- Do not nest `UserLink` inside a Table-card Link; link the host on the detail page instead.
+- Public profiles live at `/u/[id]` and must use public-safe data.
+
+Prefer the current page/component patterns over outdated design PDFs or historical brand documents.
+
