@@ -96,10 +96,33 @@ export default function LoginPage() {
     setError(null);
     setBusy(true);
     try {
-      await login(email.trim().toLowerCase(), password);
+      await login(email.trim().toLowerCase(), password || undefined);
       router.push('/');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+      if (
+        err instanceof ApiError &&
+        err.status === 400 &&
+        err.message === 'Password setup required. Use email verification.'
+      ) {
+        try {
+          const result = await requestOtp(email.trim().toLowerCase());
+          setIsNewUser(result.isNewUser);
+          if (result.devCode) {
+            setDevCode(result.devCode);
+            setCode(result.devCode);
+          }
+          setStep('code');
+          return;
+        } catch (otpError) {
+          setError(
+            otpError instanceof ApiError
+              ? otpError.message
+              : 'Something went wrong',
+          );
+        }
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Something went wrong');
+      }
     } finally {
       setBusy(false);
     }
@@ -242,14 +265,14 @@ export default function LoginPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="font-semibold">Password</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="Leave blank if you have not set one yet" />
               </div>
               {error && <p className="text-destructive text-sm font-medium">{error}</p>}
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
                 {busy ? 'Signing in…' : 'Sign in →'}
               </Button>
               <button type="button" className="text-primary w-full text-sm font-semibold hover:underline" onClick={() => { setStep('email'); setError(null); }}>
-                First login or create an account with email code
+                Create an account with email code
               </button>
               <button type="button" className="text-muted-foreground w-full text-sm hover:underline" onClick={() => { setStep('reset'); setError(null); setResetRequested(false); setDevCode(null); setCode(''); }}>
                 Forgot password?

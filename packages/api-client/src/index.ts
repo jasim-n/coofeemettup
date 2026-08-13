@@ -188,7 +188,7 @@ export class ApiClient {
     return res;
   }
 
-  async login(email: string, password: string): Promise<AuthResponse> {
+  async login(email: string, password?: string): Promise<AuthResponse> {
     const res = await this.request<AuthResponse>('POST', '/auth/login', {
       email,
       password,

@@ -116,12 +116,18 @@ export class AuthService {
     return this.issueSession(user);
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password?: string) {
     const user = await this.users.findByEmail(email);
-    if (!user || !user.passwordHash) {
-      throw new UnauthorizedException(
-        'Invalid email or password. First-time users must use email verification.',
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    if (!user.passwordHash) {
+      throw new BadRequestException(
+        'Password setup required. Use email verification.',
       );
+    }
+    if (!password) {
+      throw new UnauthorizedException('Invalid email or password');
     }
     if (!(await verifyPassword(password, user.passwordHash))) {
       throw new UnauthorizedException('Invalid email or password');

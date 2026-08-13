@@ -9,6 +9,13 @@ All notable UI/product changes are logged here.
 - Added a centralized route guard that redirects logged-out users to `/login`
   and leaves only authentication and legal pages publicly accessible.
 
+### 2026-08-13 — Auto-detect password setup
+
+- Existing accounts without a password now automatically enter email OTP
+  password setup from the sign-in form.
+- Unknown emails remain on the normal invalid-login path, while accounts that
+  already have passwords cannot use the first-login OTP flow.
+
 ### 2026-08-13 — Password login and password reset
 
 - First-time account verification continues to use email OTP and now requires

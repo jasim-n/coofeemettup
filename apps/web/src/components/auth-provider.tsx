@@ -9,7 +9,7 @@ interface AuthContextValue {
   loading: boolean;
   requestOtp: (email: string) => Promise<{ isNewUser: boolean; devCode?: string }>;
   verifyOtp: (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string; password?: string }) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password?: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ devCode?: string }>;
   resetPassword: (email: string, code: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password?: string) => {
     const res = await api.login(email, password);
     const token = api.getAuthToken();
     if (token) window.localStorage.setItem(TOKEN_KEY, token);
