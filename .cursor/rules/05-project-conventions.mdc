@@ -7,7 +7,7 @@ alwaysApply: true
 
 - Preserve unrelated working-tree changes; never discard or overwrite user work.
 - Do not modify mobile unless explicitly requested.
-- Do not commit or push unless explicitly requested.
+- The user has granted standing authorization to commit and push completed requested changes; preserve unrelated work and do not push destructive or unrelated changes.
 - Update root `CHANGELOG.md` under `[Unreleased]` for meaningful UI/product change batches.
 - Do not add credentials, tokens, OTPs, connection strings, personal identifiers, or private history to source-controlled files.
 - Keep `_claude-history/` unchanged and Git-ignored; it is an archive, not active context.
