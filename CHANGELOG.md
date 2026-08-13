@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-14 — English maps, Pakistan-only
+
+- All MapLibre surfaces use OpenFreeMap English-oriented tiles and are
+  max-bounded to Pakistan (create/edit pin, Nearby, Search).
+- Venue geocode is English + Pakistan bbox only (no out-of-country results).
+
 ### 2026-08-14 — Peer review API redeploy
 
 - Pushed a reviews-service touch so production API rebuilds mutual

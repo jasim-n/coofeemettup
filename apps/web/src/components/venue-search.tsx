@@ -108,7 +108,7 @@ export default function VenueSearch({
         )}
       </div>
       <p className="text-muted-foreground text-xs">
-        Pick a result to auto-fill the venue and drop the pin — or set it manually below.
+        Pakistan venues only (English). Pick a result to fill the venue and drop the pin — or set it on the map.
       </p>
     </div>
   );

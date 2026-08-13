@@ -17,6 +17,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
 import { CategoryPills } from '@/components/category-pills';
+import {
+  ISLAMABAD_CENTER,
+  MAP_STYLE_EN,
+  PAKISTAN_MAX_BOUNDS,
+} from '@/lib/map-style';
 
 /* ─── types ──────────────────────────────────────────────────────────── */
 
@@ -65,21 +70,6 @@ const VIBE_OPTIONS = [
   { id: 'social', label: 'Social' },
   { id: 'intellectual', label: 'Intellectual' },
 ];
-
-/* ─── OSM map style (copied from tables-map.tsx) ─────────────────────── */
-
-const OSM_STYLE = {
-  version: 8 as const,
-  sources: {
-    osm: {
-      type: 'raster' as const,
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster' as const, source: 'osm' }],
-};
 
 /* ─── dynamic imports ────────────────────────────────────────────────── */
 
@@ -339,8 +329,14 @@ function MapPreview({ results }: { results: TableDto[] }) {
       <div className="relative mx-4 mb-4 overflow-hidden rounded-2xl border" style={{ height: 220 }}>
         {/* maplibre-gl CSS is imported in tables-map.tsx; re-import here if needed */}
         <MapGL
-          initialViewState={{ longitude: 73.065, latitude: 33.684, zoom: 10 }}
-          mapStyle={OSM_STYLE}
+          initialViewState={{
+            longitude: ISLAMABAD_CENTER.lng,
+            latitude: ISLAMABAD_CENTER.lat,
+            zoom: 10,
+          }}
+          maxBounds={PAKISTAN_MAX_BOUNDS}
+          minZoom={5}
+          mapStyle={MAP_STYLE_EN}
           style={{ width: '100%', height: '100%' }}
           onLoad={() => setMapReady(true)}
         >

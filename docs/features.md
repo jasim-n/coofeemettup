@@ -6,6 +6,21 @@ Last updated: 2026-08-13.
 
 ---
 
+## Maps (English + Pakistan-only)
+
+### Rules
+
+| Concern | Implementation |
+|---------|----------------|
+| English basemap | OpenFreeMap Liberty (`MAP_STYLE_EN`) — free MapLibre style, Latin/English-oriented labels |
+| View lock | `maxBounds` ≈ Pakistan on LocationPicker, Nearby `TablesMap`, Search mini-map |
+| Pin / click | Ignored outside Pakistan |
+| Place search | Photon `lang=en` + Pakistan `bbox`; drop non-PK / out-of-bbox hits |
+
+Shared: `apps/web/src/lib/map-style.ts`. Geocode: `apps/api/src/geo/geo.controller.ts`.
+
+---
+
 ## My Meetups visibility
 
 ### Rule

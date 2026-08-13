@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import MapGL, { Marker, NavigationControl, Popup } from 'react-map-gl/maplibre';
 import type { MapRef } from 'react-map-gl/maplibre';
-import type { StyleSpecification } from 'maplibre-gl';
 import { ApiError, type TableDto } from '@jrst/api-client';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
@@ -13,20 +12,13 @@ import { Spinner } from '@/components/spinner';
 import { categoryIcon } from '@/lib/category-icon';
 import { Input } from '@/components/ui/input';
 import { Cover } from '@/components/cover-image';
-
-// Free OpenStreetMap raster tiles — no token / account required.
-const OSM_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-};
+import {
+  ISLAMABAD_CENTER,
+  MAP_STYLE_EN,
+  PAKISTAN_CENTER,
+  PAKISTAN_MAX_BOUNDS,
+  isInPakistan,
+} from '@/lib/map-style';
 
 const TIMES = [
   { key: 'morning', label: 'Morning', emoji: '🌅' },
@@ -166,12 +158,22 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
   const locate = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      (pos) =>
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        if (!isInPakistan(latitude, longitude)) {
+          mapRef.current?.flyTo({
+            center: [ISLAMABAD_CENTER.lng, ISLAMABAD_CENTER.lat],
+            zoom: 11,
+            duration: 700,
+          });
+          return;
+        }
         mapRef.current?.flyTo({
-          center: [pos.coords.longitude, pos.coords.latitude],
+          center: [longitude, latitude],
           zoom: 13,
           duration: 700,
-        }),
+        });
+      },
       () => undefined,
       { timeout: 5000 },
     );
@@ -386,8 +388,14 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
         <MapGL
           ref={mapRef}
           onLoad={() => setReady(true)}
-          initialViewState={{ longitude: 73.7, latitude: 32.6, zoom: 6 }}
-          mapStyle={OSM_STYLE}
+          initialViewState={{
+            longitude: PAKISTAN_CENTER.lng,
+            latitude: PAKISTAN_CENTER.lat,
+            zoom: 5.5,
+          }}
+          maxBounds={PAKISTAN_MAX_BOUNDS}
+          minZoom={5}
+          mapStyle={MAP_STYLE_EN}
           style={{ width: '100%', height: '100%' }}
         >
           <NavigationControl position="top-right" showCompass={false} />
