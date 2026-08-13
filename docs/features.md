@@ -17,7 +17,7 @@ On create (`/tables/new`) and edit (`/tables/[id]/edit`), hosts search a place, 
 1. `VenueSearch` → debounced `api.geocode` → Photon proxy `GET /geocode` (auth required).
 2. On select: form sets `venueName`, `venueAddress`, `lat`, `lng`.
 3. `LocationPicker` shows OSM map + draggable pin; click/drag updates `lat`/`lng`.
-4. When `lat`/`lng` change (including after search), the map **flies** to the pin (`MapRef.flyTo`). `initialViewState` alone only applies on first mount — that was the prior gap.
+4. When `lat`/`lng` change (including after search): the **pin Marker is placed at those coords** (remounted by key) and the camera **flies** there. Selecting a search result also scrolls the picker into view.
 
 ### Files
 

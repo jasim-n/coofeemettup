@@ -20,7 +20,11 @@ const OSM_STYLE: StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-/** Click the map or drag the pin to set venue coordinates. Recenters after search select. */
+function validCoord(n: number | undefined): n is number {
+  return n != null && Number.isFinite(n);
+}
+
+/** Click the map or drag the pin to set venue coordinates. */
 export default function LocationPicker({
   lat,
   lng,
@@ -32,26 +36,29 @@ export default function LocationPicker({
 }) {
   const mapRef = useRef<MapRef | null>(null);
   const [ready, setReady] = useState(false);
-  const hasPin =
-    lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng);
+  const hasPin = validCoord(lat) && validCoord(lng);
+  const pinLat = hasPin ? lat : undefined;
+  const pinLng = hasPin ? lng : undefined;
   const center = {
-    lng: hasPin ? lng : 73.0479,
-    lat: hasPin ? lat : 33.6844,
+    lng: pinLng ?? 73.0479,
+    lat: pinLat ?? 33.6844,
   }; // Islamabad fallback
 
-  // After venue search (or any lat/lng change), fly the camera to the pin.
-  // initialViewState alone only applies on first mount.
+  // After venue search (or any lat/lng change): show pin at that point and fly camera there.
+  // initialViewState alone only applies on first mount; Marker key remounts the pin on jumps.
   useEffect(() => {
-    if (!ready || !hasPin || lat == null || lng == null) return;
-    mapRef.current?.flyTo({
-      center: [lng, lat],
+    if (!ready || pinLat == null || pinLng == null) return;
+    const map = mapRef.current;
+    if (!map) return;
+    map.flyTo({
+      center: [pinLng, pinLat],
       zoom: 14,
       duration: 500,
     });
-  }, [ready, hasPin, lat, lng]);
+  }, [ready, pinLat, pinLng]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border">
+    <div id="venue-location-picker" className="overflow-hidden rounded-2xl border">
       <div className="h-56 w-full">
         <MapGL
           ref={mapRef}
@@ -69,22 +76,28 @@ export default function LocationPicker({
           }
         >
           <NavigationControl position="top-right" showCompass={false} />
-          {hasPin && (
+          {pinLat != null && pinLng != null && (
             <Marker
-              longitude={lng}
-              latitude={lat}
+              key={`${pinLat.toFixed(6)},${pinLng.toFixed(6)}`}
+              longitude={pinLng}
+              latitude={pinLat}
               anchor="bottom"
               draggable
               onDragEnd={(e) => onChange(e.lngLat.lat, e.lngLat.lng)}
             >
-              <span className="text-3xl drop-shadow">📍</span>
+              <span
+                className="text-primary pointer-events-none flex flex-col items-center drop-shadow-md"
+                aria-label="Selected venue"
+              >
+                <i className="fa-solid fa-location-dot text-4xl leading-none" />
+              </span>
             </Marker>
           )}
         </MapGL>
       </div>
       <p className="text-muted-foreground bg-muted/50 px-3 py-2 text-xs">
-        {hasPin
-          ? `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)} — tap the map or drag the pin to adjust`
+        {pinLat != null && pinLng != null
+          ? `Pin at ${pinLat.toFixed(5)}, ${pinLng.toFixed(5)} — tap the map or drag the pin to adjust`
           : 'Search a venue above, or tap the map to drop a pin.'}
       </p>
     </div>

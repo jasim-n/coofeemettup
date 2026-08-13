@@ -221,15 +221,20 @@ export default function EditTablePage() {
 
         <div className="lg:col-span-2"><Section step="3" title="Choose venue">
           <VenueSearch
-            onSelect={(r) =>
+            onSelect={(r) => {
               setForm((f) => ({
                 ...f,
                 venueName: r.name,
                 venueAddress: r.label,
-                lat: r.lat.toFixed(6),
-                lng: r.lng.toFixed(6),
-              }))
-            }
+                lat: Number(r.lat).toFixed(6),
+                lng: Number(r.lng).toFixed(6),
+              }));
+              requestAnimationFrame(() => {
+                document
+                  .getElementById('venue-location-picker')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              });
+            }}
           />
           <div className="space-y-1.5">
             <Label htmlFor="venueName">Venue name</Label>

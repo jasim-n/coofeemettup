@@ -4,11 +4,11 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
-### 2026-08-13 — Venue map recenters after search select
+### 2026-08-13 — Venue map pin drops on search select
 
-- On Table create/edit (and admin cafes), choosing a venue search result now
-  flies the pin map to the selected coordinates. Name/address/lat/lng were
-  already filled; only the camera sync was missing.
+- On Table create/edit (and admin cafes), choosing a venue search result fills
+  name/address/coords, **drops the LocationPicker pin on that point**, flies the
+  map camera there, and scrolls the map into view.
 - Documented in [`docs/features.md`](docs/features.md).
 
 ### 2026-08-13 — Peer reviews with score-only profiles
