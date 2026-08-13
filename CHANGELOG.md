@@ -4,6 +4,11 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-14 — Peer review API redeploy
+
+- Pushed a reviews-service touch so production API rebuilds mutual
+  host/guest review targets (joiners see all other attendees, not only host).
+
 ### 2026-08-14 — My Meetups stays open until table is closed
 
 - Hosted and joined (approved/pending) tables remain in **My Meetups** after
