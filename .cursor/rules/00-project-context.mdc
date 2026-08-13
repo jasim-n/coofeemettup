@@ -23,10 +23,11 @@ alwaysApply: true
 When sources conflict, use this priority:
 
 1. Current implementation and `apps/api/prisma/schema.prisma`.
-2. `CHANGELOG.md` and recent dated task files.
-3. These Cursor rules.
-4. `tasks/progress.md` for historical gotchas.
-5. `README.md`, older architecture/brand docs, and historical plans.
+2. `docs/features.md` for shipped feature wiring and structural rules.
+3. `CHANGELOG.md` and recent dated task files.
+4. These Cursor rules.
+5. `tasks/progress.md` for historical gotchas.
+6. `README.md`, older architecture/brand docs, and historical plans.
 
 Older docs still contain Events-first, phone-OTP, cookie-only web auth, coral/green branding, and Mapbox statements. Verify historical claims against current code.
 
