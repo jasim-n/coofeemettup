@@ -4,6 +4,17 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-13 — Peer reviews with score-only profiles
+
+- After a Table’s start time, the host and approved guests can rate **each other**
+  (not only guest → host). Leave-review UI continues to use existing review-target
+  endpoints.
+- Self and public profiles show calculated scores only (`overallRating` plus host /
+  guest breakdowns). Individual review comments are no longer returned on
+  user-facing reputation endpoints; admins still moderate full reviews.
+- **No DB migration** — peer reviews reuse the existing `Review` unique key
+  `(tableId, reviewerId, subjectId)`; scores remain on-read aggregates.
+
 ### 2026-08-13 — Create-account email gate
 
 - Creating an account with an email that already exists is blocked before an OTP

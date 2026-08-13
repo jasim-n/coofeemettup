@@ -18,51 +18,45 @@ export class ReviewsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  /** Who the current user can review for a table (host→guests, guest→host). */
+  /** Host + APPROVED guests for a table (excluding nobody). */
+  private async participantIds(
+    tableId: string,
+    hostId: string,
+  ): Promise<string[]> {
+    const approved = await this.prisma.tableJoinRequest.findMany({
+      where: { tableId, status: 'APPROVED' },
+      select: { userId: true },
+    });
+    return [hostId, ...approved.map((r) => r.userId)];
+  }
+
+  /** Who the current user can review: every other participant after startAt. */
   async targets(userId: string, tableId: string) {
     const table = await this.prisma.table.findUnique({
       where: { id: tableId },
     });
     if (!table) throw new NotFoundException('Table not found');
     const happened = table.startAt.getTime() < Date.now();
-    const isHost = table.hostId === userId;
-    const myReq = await this.prisma.tableJoinRequest.findUnique({
-      where: { tableId_userId: { tableId, userId } },
-    });
-    const isGuest = myReq?.status === 'APPROVED';
-    if (!isHost && !isGuest) return { eligible: false, happened, targets: [] };
-
-    let subjects: {
-      subjectId: string;
-      name: string;
-      role: 'HOST' | 'GUEST';
-    }[] = [];
-    if (isHost) {
-      const approved = await this.prisma.tableJoinRequest.findMany({
-        where: { tableId, status: 'APPROVED' },
-      });
-      const users = await this.prisma.user.findMany({
-        where: { id: { in: approved.map((r) => r.userId) } },
-        select: NAME_SELECT,
-      });
-      subjects = users.map((u) => ({
-        subjectId: u.id,
-        name: u.username ? `@${u.username}` : 'Guest',
-        role: 'GUEST',
-      }));
-    } else {
-      const host = await this.prisma.user.findUnique({
-        where: { id: table.hostId },
-        select: NAME_SELECT,
-      });
-      subjects = [
-        {
-          subjectId: table.hostId,
-          name: host?.username ? `@${host.username}` : 'Host',
-          role: 'HOST',
-        },
-      ];
+    const participants = await this.participantIds(tableId, table.hostId);
+    if (!participants.includes(userId)) {
+      return { eligible: false, happened, targets: [] };
     }
+
+    const subjectIds = participants.filter((id) => id !== userId);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: subjectIds } },
+      select: NAME_SELECT,
+    });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    const subjects = subjectIds.map((id) => {
+      const u = byId.get(id);
+      const isHost = id === table.hostId;
+      return {
+        subjectId: id,
+        name: u?.username ? `@${u.username}` : isHost ? 'Host' : 'Guest',
+        role: isHost ? 'HOST' : 'GUEST',
+      };
+    });
 
     const mine = await this.prisma.review.findMany({
       where: { tableId, reviewerId: userId },
@@ -92,32 +86,19 @@ export class ReviewsService {
     if (userId === dto.subjectId) {
       throw new BadRequestException('You cannot review yourself');
     }
-    const isHost = table.hostId === userId;
-    const myReq = await this.prisma.tableJoinRequest.findUnique({
-      where: { tableId_userId: { tableId, userId } },
-    });
-    const isGuest = myReq?.status === 'APPROVED';
-    if (!isHost && !isGuest) {
+
+    const participants = await this.participantIds(tableId, table.hostId);
+    if (!participants.includes(userId)) {
       throw new ForbiddenException(
         'Only the host and guests can review this table',
       );
     }
-
-    let role: 'HOST' | 'GUEST';
-    if (isHost) {
-      const sreq = await this.prisma.tableJoinRequest.findUnique({
-        where: { tableId_userId: { tableId, userId: dto.subjectId } },
-      });
-      if (sreq?.status !== 'APPROVED') {
-        throw new BadRequestException('That guest was not part of this table');
-      }
-      role = 'GUEST';
-    } else {
-      if (dto.subjectId !== table.hostId) {
-        throw new BadRequestException('You can only review the host');
-      }
-      role = 'HOST';
+    if (!participants.includes(dto.subjectId)) {
+      throw new BadRequestException('That person was not part of this table');
     }
+
+    const role: 'HOST' | 'GUEST' =
+      dto.subjectId === table.hostId ? 'HOST' : 'GUEST';
 
     const review = await this.prisma.review.upsert({
       where: {
@@ -140,16 +121,21 @@ export class ReviewsService {
     void this.notifications.create(
       dto.subjectId,
       'review.received',
-      'You got a new review ⭐',
-      'Someone left you a review after a table.',
+      'Your rating was updated ⭐',
+      'Someone rated you after a table. Your profile score has been updated.',
       { tableId },
     );
     return review;
   }
 
-  /** Public reputation for a user: host + guest averages and recent reviews. */
+  /** Profile reputation: averages only (no individual review text). */
   async reputation(userId: string) {
-    const [hostAgg, guestAgg, recent] = await Promise.all([
+    const [overallAgg, hostAgg, guestAgg] = await Promise.all([
+      this.prisma.review.aggregate({
+        where: { subjectId: userId },
+        _avg: { rating: true },
+        _count: { _all: true },
+      }),
       this.prisma.review.aggregate({
         where: { subjectId: userId, role: 'HOST' },
         _avg: { rating: true },
@@ -160,18 +146,12 @@ export class ReviewsService {
         _avg: { rating: true },
         _count: { _all: true },
       }),
-      this.prisma.review.findMany({
-        where: { subjectId: userId },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-      }),
     ]);
-    const reviewers = await this.prisma.user.findMany({
-      where: { id: { in: [...new Set(recent.map((r) => r.reviewerId))] } },
-      select: NAME_SELECT,
-    });
-    const byId = new Map(reviewers.map((u) => [u.id, u]));
     return {
+      overallRating: {
+        avg: round1(overallAgg._avg.rating),
+        count: overallAgg._count._all,
+      },
       hostRating: {
         avg: round1(hostAgg._avg.rating),
         count: hostAgg._count._all,
@@ -180,16 +160,8 @@ export class ReviewsService {
         avg: round1(guestAgg._avg.rating),
         count: guestAgg._count._all,
       },
-      recent: recent.map((r) => ({
-        id: r.id,
-        rating: r.rating,
-        comment: r.comment,
-        role: r.role,
-        createdAt: r.createdAt.toISOString(),
-        reviewer: {
-          username: byId.get(r.reviewerId)?.username ?? null,
-        },
-      })),
+      // Individual review text is admin-only; keep field for contract compatibility.
+      recent: [],
     };
   }
 }

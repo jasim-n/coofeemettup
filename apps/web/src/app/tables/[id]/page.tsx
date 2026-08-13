@@ -294,10 +294,17 @@ export default function TableDetailPage() {
                   </span>
                 </span>
               </UserLink>
-              {hostRep && hostRep.hostRating.count > 0 && (
+              {hostRep &&
+                (hostRep.overallRating?.count ?? hostRep.hostRating.count) > 0 && (
                 <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <Stars value={Math.round(hostRep.hostRating.avg)} size="text-xs" />
-                  {hostRep.hostRating.avg} ({hostRep.hostRating.count})
+                  <Stars
+                    value={Math.round(
+                      hostRep.overallRating?.avg ?? hostRep.hostRating.avg,
+                    )}
+                    size="text-xs"
+                  />
+                  {hostRep.overallRating?.avg ?? hostRep.hostRating.avg} (
+                  {hostRep.overallRating?.count ?? hostRep.hostRating.count})
                 </span>
               )}
             </div>
@@ -411,10 +418,15 @@ export default function TableDetailPage() {
                     @{table.host?.username ?? 'member'}
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    {hostRep && hostRep.hostRating.count > 0 ? (
+                    {hostRep &&
+                    (hostRep.overallRating?.count ?? hostRep.hostRating.count) > 0 ? (
                       <>
                         <i className="fa-solid fa-star mr-1 text-amber-400" />
-                        {hostRep.hostRating.avg} · {hostRep.hostRating.count} review{hostRep.hostRating.count === 1 ? '' : 's'}
+                        {hostRep.overallRating?.avg ?? hostRep.hostRating.avg} ·{' '}
+                        {hostRep.overallRating?.count ?? hostRep.hostRating.count} review
+                        {(hostRep.overallRating?.count ?? hostRep.hostRating.count) === 1
+                          ? ''
+                          : 's'}
                       </>
                     ) : 'New host'}
                   </p>

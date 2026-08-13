@@ -380,8 +380,8 @@ export default function ProfilePage() {
     )
     .slice(0, 3);
   const avgRating =
-    myReviewsData && myReviewsData.hostRating.count > 0
-      ? myReviewsData.hostRating.avg.toFixed(1)
+    myReviewsData && (myReviewsData.overallRating?.count ?? myReviewsData.hostRating.count) > 0
+      ? (myReviewsData.overallRating?.avg ?? myReviewsData.hostRating.avg).toFixed(1)
       : '—';
   const interestList = parseList(user.interests.join(', ')).filter(Boolean);
   const bioLine =

@@ -340,8 +340,11 @@ export interface ReviewItem {
 }
 
 export interface UserReputation {
+  /** Combined avg of all reviews received (host + guest roles). */
+  overallRating: { avg: number; count: number };
   hostRating: { avg: number; count: number };
   guestRating: { avg: number; count: number };
+  /** Always empty on user-facing endpoints; individual reviews are admin-only. */
   recent: ReviewItem[];
 }
 

@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Stars } from '@/components/stars';
 
+/** Score-only reputation for the signed-in user (no individual review text). */
 export default function MyReviews() {
   const [rep, setRep] = useState<UserReputation | null>(null);
 
@@ -21,40 +22,32 @@ export default function MyReviews() {
   }, []);
 
   if (!rep) return null;
-  const none = rep.hostRating.count === 0 && rep.guestRating.count === 0;
+  const overall = rep.overallRating ?? {
+    avg: 0,
+    count: (rep.hostRating.count || 0) + (rep.guestRating.count || 0),
+  };
+  const none = overall.count === 0;
 
   return (
     <Card className="rounded-3xl shadow-soft">
       <CardHeader>
-        <CardTitle className="text-base">Reviews</CardTitle>
+        <CardTitle className="text-base">Your rating</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {none ? (
           <p className="text-muted-foreground text-sm">
-            No reviews yet — host or join a table to build your reputation.
+            No ratings yet — host or join a table to build your score.
           </p>
         ) : (
           <>
+            <RatingPill label="Overall" avg={overall.avg} count={overall.count} />
             <div className="grid grid-cols-2 gap-3">
               <RatingPill label="As host" avg={rep.hostRating.avg} count={rep.hostRating.count} />
               <RatingPill label="As guest" avg={rep.guestRating.avg} count={rep.guestRating.count} />
             </div>
-            {rep.recent.length > 0 && (
-              <div className="space-y-2">
-                {rep.recent.slice(0, 5).map((r) => (
-                  <div key={r.id} className="rounded-2xl border p-3">
-                    <div className="flex items-center justify-between">
-                      <Stars value={r.rating} size="text-sm" />
-                      <span className="text-muted-foreground text-xs">
-                        @{r.reviewer.username ?? 'member'} · as{' '}
-                        {r.role.toLowerCase()}
-                      </span>
-                    </div>
-                    {r.comment && <p className="mt-1 text-sm">{r.comment}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
+            <p className="text-muted-foreground text-xs">
+              Individual reviews stay private. Only your calculated score is shown.
+            </p>
           </>
         )}
       </CardContent>

@@ -154,9 +154,10 @@ export default function PublicProfilePage() {
 
   const hasVibe = vibeFields.length > 0 || p.intents.length > 0;
 
-  /* Reviews */
-  const hostRatingDisplay =
-    rep && rep.hostRating.count > 0 ? rep.hostRating.avg.toFixed(1) : '—';
+  /* Reviews — score only; individual review text is never shown */
+  const overall = rep?.overallRating;
+  const overallDisplay =
+    overall && overall.count > 0 ? overall.avg.toFixed(1) : '—';
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
@@ -246,12 +247,12 @@ export default function PublicProfilePage() {
           <StatTile icon="fa-bolt" value={p.reliabilityScore} label="Reliability" />
           <StatTile
             icon="fa-star"
-            value={hostRatingDisplay}
-            label="Host rating"
+            value={overallDisplay}
+            label="Rating"
             sub={
-              rep && rep.hostRating.count > 0 ? (
+              overall && overall.count > 0 ? (
                 <p className="text-muted-foreground text-[10px]">
-                  {rep.hostRating.count} review{rep.hostRating.count === 1 ? '' : 's'}
+                  {overall.count} review{overall.count === 1 ? '' : 's'}
                 </p>
               ) : undefined
             }
@@ -315,51 +316,31 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* ── Reviews card ──────────────────────────────────────── */}
+        {/* ── Reviews card (scores only) ────────────────────────── */}
         <section className="bg-card shadow-soft rounded-3xl border p-6 space-y-4">
-          <h2 className="font-heading text-base font-bold tracking-tight">Reviews</h2>
+          <h2 className="font-heading text-base font-bold tracking-tight">Rating</h2>
 
-          {rep && (rep.hostRating.count > 0 || rep.guestRating.count > 0) && (
-            <div className="grid grid-cols-2 gap-3">
-              <RatingPill
-                label="As host"
-                avg={rep.hostRating.avg}
-                count={rep.hostRating.count}
-              />
-              <RatingPill
-                label="As guest"
-                avg={rep.guestRating.avg}
-                count={rep.guestRating.count}
-              />
-            </div>
-          )}
-
-          {rep && rep.recent.length > 0 ? (
-            <div className="space-y-2">
-              {rep.recent.map((r) => (
-                <div key={r.id} className="rounded-2xl border p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <Stars value={r.rating} size="text-sm" />
-                    <span className="text-muted-foreground text-xs shrink-0">
-                      @{r.reviewer.username ?? 'member'} · as{' '}
-                      {r.role.toLowerCase()}
-                    </span>
-                  </div>
-                  {r.comment && (
-                    <p className="mt-1 text-sm">{r.comment}</p>
-                  )}
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    {new Date(r.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
-                </div>
-              ))}
-            </div>
+          {rep && overall && overall.count > 0 ? (
+            <>
+              <RatingPill label="Overall" avg={overall.avg} count={overall.count} />
+              <div className="grid grid-cols-2 gap-3">
+                <RatingPill
+                  label="As host"
+                  avg={rep.hostRating.avg}
+                  count={rep.hostRating.count}
+                />
+                <RatingPill
+                  label="As guest"
+                  avg={rep.guestRating.avg}
+                  count={rep.guestRating.count}
+                />
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Individual reviews stay private. Only calculated scores are shown.
+              </p>
+            </>
           ) : (
-            <p className="text-muted-foreground text-sm">No reviews yet.</p>
+            <p className="text-muted-foreground text-sm">No ratings yet.</p>
           )}
         </section>
       </div>

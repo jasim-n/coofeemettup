@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Stars } from '@/components/stars';
 
-/** Post-event review section for a table (host reviews guests, guests review the host). */
+/** Post-meetup reviews: host and approved guests can rate each other. */
 export default function TableReviews({ tableId }: { tableId: string }) {
   const [data, setData] = useState<ReviewTargetsResponse | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { rating: number; comment: string }>>({});
@@ -66,7 +66,7 @@ export default function TableReviews({ tableId }: { tableId: string }) {
 
   return (
     <div className="space-y-3 border-t pt-4">
-      <p className="eyebrow text-primary">Leave a review</p>
+      <p className="eyebrow text-primary">Rate people who attended</p>
       {error && <p className="text-destructive text-sm">{error}</p>}
       {pending.length === 0 && (
         <p className="text-muted-foreground text-sm">Thanks for your reviews ✓</p>
