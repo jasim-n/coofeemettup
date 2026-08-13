@@ -170,6 +170,7 @@ export class ApiClient {
       lastName?: string;
       username?: string;
       referralCode?: string;
+      password?: string;
     },
   ): Promise<AuthResponse> {
     const res = await this.request<AuthResponse>('POST', '/auth/verify-otp', {
@@ -180,6 +181,38 @@ export class ApiClient {
       lastName: opts?.lastName,
       username: opts?.username,
       referralCode: opts?.referralCode,
+      password: opts?.password,
+    });
+    this.csrfToken = res.csrfToken;
+    if (this.clientType === 'mobile' && res.token) this.authToken = res.token;
+    return res;
+  }
+
+  async login(email: string, password: string): Promise<AuthResponse> {
+    const res = await this.request<AuthResponse>('POST', '/auth/login', {
+      email,
+      password,
+    });
+    this.csrfToken = res.csrfToken;
+    if (this.clientType === 'mobile' && res.token) this.authToken = res.token;
+    return res;
+  }
+
+  requestPasswordReset(
+    email: string,
+  ): Promise<{ ok: true; devCode?: string }> {
+    return this.request('POST', '/auth/request-password-reset', { email });
+  }
+
+  async resetPassword(
+    email: string,
+    code: string,
+    password: string,
+  ): Promise<AuthResponse> {
+    const res = await this.request<AuthResponse>('POST', '/auth/reset-password', {
+      email,
+      code,
+      password,
     });
     this.csrfToken = res.csrfToken;
     if (this.clientType === 'mobile' && res.token) this.authToken = res.token;

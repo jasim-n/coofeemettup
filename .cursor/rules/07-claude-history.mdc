@@ -28,6 +28,7 @@ The archived Claude session was reconciled with the codebase on 2026-08-13. Curr
 
 - Events-first web routes, instant join/pay, and algorithmic matching are not the current web product.
 - Phone OTP is obsolete; login uses email OTP.
+- The current authentication transition now uses email OTP only for first-login password setup and password reset; normal sign-in uses email/password.
 - Cookie-only web auth is obsolete in current code; web presently uses bearer JWT/localStorage.
 - Coral, green, Syne, Manrope, Plus Jakarta, and Mapbox directions are obsolete.
 - Running migrations during Render startup is obsolete and previously caused deployment lock failures.

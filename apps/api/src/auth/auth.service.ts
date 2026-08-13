@@ -10,6 +10,11 @@ import { OtpService } from './otp.service';
 import { normalizePhone } from './phone.util';
 import { validateUsername } from '../users/username.util';
 import type { SessionPayload } from './auth.types';
+import {
+  hashPassword,
+  PASSWORD_MIN_LENGTH,
+  verifyPassword,
+} from './password.util';
 
 @Injectable()
 export class AuthService {
@@ -36,12 +41,18 @@ export class AuthService {
       lastName?: string;
       username?: string;
       referralCode?: string;
+      password?: string;
     },
   ) {
     const ok = await this.otp.verify(email, code);
     if (!ok) throw new UnauthorizedException('Invalid or expired code');
 
     const existing = await this.users.findByEmail(email);
+    if (existing?.passwordHash) {
+      throw new BadRequestException(
+        'This account uses password login. Use forgot password if you need to reset it.',
+      );
+    }
     let user: Awaited<ReturnType<UsersService['findByEmail']>>;
 
     if (existing) {
@@ -51,6 +62,7 @@ export class AuthService {
       if (!opts.phone) {
         throw new BadRequestException('Phone number is required');
       }
+      this.assertPassword(opts.password);
       const firstName = opts.firstName?.trim();
       const lastName = opts.lastName?.trim();
       if (!firstName || !lastName) {
@@ -87,11 +99,71 @@ export class AuthService {
         normalizedPhone,
         { firstName, lastName, username },
         opts.referralCode,
+        await hashPassword(opts.password),
       );
     }
 
+    if (existing && opts.password) {
+      this.assertPassword(opts.password);
+      user = await this.users.setPassword(
+        user.id,
+        await hashPassword(opts.password),
+      );
+    }
+
+    if (!user) throw new UnauthorizedException();
+
+    return this.issueSession(user);
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.users.findByEmail(email);
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedException(
+        'Invalid email or password. First-time users must use email verification.',
+      );
+    }
+    if (!(await verifyPassword(password, user.passwordHash))) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    return this.issueSession(user);
+  }
+
+  async requestPasswordReset(email: string) {
+    const user = await this.users.findByEmail(email);
+    if (!user) return { code: null };
+    const code = await this.otp.request(email);
+    return { code };
+  }
+
+  async resetPassword(email: string, code: string, password: string) {
+    this.assertPassword(password);
+    const ok = await this.otp.verify(email, code);
+    if (!ok) throw new UnauthorizedException('Invalid or expired code');
+    const user = await this.users.findByEmail(email);
+    if (!user) throw new UnauthorizedException('Invalid or expired code');
+    const updated = await this.users.setPassword(
+      user.id,
+      await hashPassword(password),
+    );
+    return this.issueSession(updated);
+  }
+
+  private assertPassword(
+    password: string | undefined,
+  ): asserts password is string {
+    if (!password || password.length < PASSWORD_MIN_LENGTH) {
+      throw new BadRequestException(
+        `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
+      );
+    }
+  }
+
+  private async issueSession(
+    user: NonNullable<Awaited<ReturnType<UsersService['findByEmail']>>>,
+  ) {
     const payload: SessionPayload = { sub: user.id, role: user.role };
     const token = await this.jwt.signAsync(payload);
-    return { user: user, token };
+    return { user, token };
   }
 }

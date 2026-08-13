@@ -7,9 +7,13 @@ alwaysApply: false
 # Authentication and Identity
 
 - Login identity is normalized email, not phone.
+- New accounts use email OTP once to verify the first login and set a password.
+- Subsequent sign-ins use email + password; do not add OTP to the normal login path.
+- Forgot-password uses a separate email OTP reset flow.
 - New accounts also require a unique Pakistani mobile number, first/last name, and unique `@username`.
 - OTP codes are stored temporarily in Redis and delivered through provider-neutral email handling.
 - OTP exposure (`devCode` or logs) is development-only and must never be enabled in production.
+- Passwords are stored only as salted scrypt hashes; never log or persist plaintext passwords.
 - Keep mail delivery failure-tolerant; do not let slow SMTP indefinitely block OTP requests.
 
 ## Current web session behavior

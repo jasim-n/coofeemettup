@@ -92,13 +92,15 @@ Do not rely on `/events`, `/receipt`, or the old `/map` route; those web pages w
 
 ## Authentication and privacy
 
-- The current web login starts with **email OTP**, despite older documentation referring to phone OTP.
+- New accounts use **email OTP once** to verify the first login and set a password; subsequent web sign-ins use email and password.
+- Forgot-password uses email OTP to authorize a password reset.
 - New accounts also collect a Pakistan phone number, first name, last name, and unique username.
 - Current web authentication requests the bearer-token response, stores it under `jrst_token` in `localStorage`, and sends it through `Authorization`.
 - The API also supports an httpOnly cookie with double-submit CSRF, but that is not the current web-client path.
 - Never expose private user fields through public serializers or profile endpoints.
 - CNIC images are sensitive. Existing verification is manual and local; do not expand CNIC storage or handling without an explicit security/privacy review.
 - Never expose `devCode` or log OTP values in production behavior.
+- Store passwords only as salted scrypt hashes; never log or persist plaintext passwords.
 
 ## Contract and data-change workflow
 

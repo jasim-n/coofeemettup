@@ -141,6 +141,7 @@ enum ComeAgain {
 model User {
   id                 String             @id @default(cuid())
   email              String?            @unique // login identity (OTP sent here) — private (self/admin only)
+  passwordHash       String?            // password login after first OTP verification
   phone              String             @unique // required, validated PK mobile — private (self/admin only)
   username           String?            @unique // public @handle — the ONLY identity other users see
   role               Role               @default(USER)

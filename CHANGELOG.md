@@ -4,6 +4,16 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-13 — Password login and password reset
+
+- First-time account verification continues to use email OTP and now requires
+  setting a password.
+- Subsequent sign-ins use email and password instead of OTP.
+- Added email-OTP password reset with automatic sign-in after a successful reset.
+- Added salted scrypt password hashing and a nullable migration-safe password
+  field; existing accounts can complete password setup through the first-login
+  email flow.
+
 ### 2026-08-13 — Table banner upload on create/edit
 
 - Hosts can upload an optional **banner image** while creating or editing a

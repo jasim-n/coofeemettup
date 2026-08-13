@@ -40,4 +40,11 @@ export class VerifyOtpDto {
   @IsOptional()
   @IsString()
   referralCode?: string;
+
+  // Required when creating a new account or setting a password after
+  // first-time OTP verification.
+  @IsOptional()
+  @IsString()
+  @Length(8, 128)
+  password?: string;
 }

@@ -21,11 +21,13 @@ function normalisePkPhone(raw: string): string | null {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { requestOtp, verifyOtp } = useAuth();
+  const { requestOtp, verifyOtp, login, requestPasswordReset, resetPassword } = useAuth();
 
-  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [step, setStep] = useState<'password' | 'email' | 'code' | 'reset'>('password');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [resetPasswordValue, setResetPasswordValue] = useState('');
   const [phone, setPhone] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -35,6 +37,7 @@ export default function LoginPage() {
   >('idle');
   const [isNewUser, setIsNewUser] = useState(false);
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [resetRequested, setResetRequested] = useState(false);
   const [ref, setRef] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
@@ -88,6 +91,53 @@ export default function LoginPage() {
     }
   }
 
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      await login(email.trim().toLowerCase(), password);
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResetRequest(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const result = await requestPasswordReset(email.trim().toLowerCase());
+      if (result.devCode) {
+        setDevCode(result.devCode);
+        setCode(result.devCode);
+      }
+      setResetRequested(true);
+      setStep('reset');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      await resetPassword(email.trim().toLowerCase(), code, resetPasswordValue);
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -124,6 +174,7 @@ export default function LoginPage() {
         lastName: isNewUser ? lastName.trim() : undefined,
         username: isNewUser ? username.trim().replace(/^@/, '').toLowerCase() : undefined,
         referralCode: ref ?? undefined,
+        password,
       });
       router.push('/');
     } catch (err) {
@@ -158,15 +209,17 @@ export default function LoginPage() {
         <div className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6">
           <div className="space-y-1 text-center">
             <p className="eyebrow text-primary">
-              {step === 'email' ? 'Step 1 of 2' : 'Step 2 of 2'}
+      {step === 'password' ? 'Sign in' : step === 'reset' ? 'Reset password' : step === 'email' ? 'First login' : 'Verify email'}
             </p>
             <h1 className="display text-2xl uppercase">
-              {step === 'email' ? 'Sign in' : 'Check your email'}
+              {step === 'password' ? 'Sign in' : step === 'reset' ? 'Reset your password' : 'Check your email'}
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {step === 'email'
-                ? "Enter your email — we'll send a one-time code."
-                : `We sent a 6-digit code to ${email}.`}
+              {step === 'password'
+                ? 'Sign in with your email and password.'
+                : step === 'reset'
+                  ? `We sent a 6-digit code to ${email}.`
+                  : `We sent a 6-digit code to ${email}.`}
             </p>
             {step === 'code' && isNewUser && (
               <p className="text-muted-foreground text-sm leading-relaxed">
@@ -181,7 +234,31 @@ export default function LoginPage() {
             )}
           </div>
 
-          {step === 'email' ? (
+          {step === 'password' ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="font-semibold">Email address</Label>
+                <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="font-semibold">Password</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+              </div>
+              {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+              <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
+                {busy ? 'Signing in…' : 'Sign in →'}
+              </Button>
+              <button type="button" className="text-primary w-full text-sm font-semibold hover:underline" onClick={() => { setStep('email'); setError(null); }}>
+                First login or create an account with email code
+              </button>
+              <button type="button" className="text-muted-foreground w-full text-sm hover:underline" onClick={() => { setStep('reset'); setError(null); setResetRequested(false); setDevCode(null); setCode(''); }}>
+                Forgot password?
+              </button>
+              <button type="button" className="bg-secondary text-secondary-foreground w-full rounded-2xl px-4 py-2.5 text-center text-xs transition-[filter] hover:brightness-95" onClick={() => setEmail('coffeemeetupsadmin@yopmail.com')}>
+                Testing? Tap to use admin email
+              </button>
+            </form>
+          ) : step === 'email' ? (
             <form onSubmit={handleRequest} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="font-semibold">Email address</Label>
@@ -197,16 +274,31 @@ export default function LoginPage() {
               </div>
               {error && <p className="text-destructive text-sm font-medium">{error}</p>}
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
-                {busy ? 'Sending…' : 'Send code →'}
+                {busy ? 'Sending…' : 'Send email code →'}
               </Button>
-              <button
-                type="button"
-                onClick={() => setEmail('coffeemeetupsadmin@yopmail.com')}
-                className="bg-secondary text-secondary-foreground w-full rounded-2xl px-4 py-2.5 text-center text-xs transition-[filter] hover:brightness-95"
-              >
-                Testing? Tap to use admin:{' '}
-                <span className="font-mono font-bold">coffeemeetupsadmin@yopmail.com</span>
+              <button type="button" className="text-muted-foreground w-full text-sm hover:underline" onClick={() => { setStep('reset'); setError(null); setResetRequested(false); setDevCode(null); setCode(''); }}>
+                Forgot password?
               </button>
+            </form>
+          ) : step === 'reset' ? (
+            <form onSubmit={resetRequested ? handleReset : handleResetRequest} className="space-y-4">
+              {!resetRequested ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reset-email" className="font-semibold">Email address</Label>
+                    <Input id="reset-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required />
+                  </div>
+                  <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>{busy ? 'Sending…' : 'Send reset code →'}</Button>
+                </>
+              ) : (
+                <>
+                  <Input inputMode="numeric" maxLength={6} placeholder="Verification code" value={code} onChange={(e) => setCode(e.target.value)} required />
+                  {devCode && <p className="bg-secondary text-secondary-foreground rounded-2xl px-4 py-2.5 text-center text-sm">Dev code: <span className="font-mono font-bold">{devCode}</span></p>}
+                  <Input type="password" placeholder="New password (8+ characters)" value={resetPasswordValue} onChange={(e) => setResetPasswordValue(e.target.value)} autoComplete="new-password" required />
+                  <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>{busy ? 'Resetting…' : 'Set new password →'}</Button>
+                </>
+              )}
+              {error && <p className="text-destructive text-sm font-medium">{error}</p>}
             </form>
           ) : (
             <form onSubmit={handleVerify} className="space-y-4">
@@ -222,6 +314,11 @@ export default function LoginPage() {
                   autoFocus
                   required
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="first-password" className="font-semibold">Set your password</Label>
+                <Input id="first-password" type="password" placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={8} required />
+                <p className="text-muted-foreground text-xs">You’ll use this password for future sign-ins.</p>
               </div>
               {isNewUser && (
                 <>

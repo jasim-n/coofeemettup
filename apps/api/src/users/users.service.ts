@@ -92,6 +92,13 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { username } });
   }
 
+  async setPassword(userId: string, passwordHash: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+  }
+
   /** True if no other user already holds this (normalized) handle. */
   async isUsernameAvailable(username: string) {
     return !(await this.prisma.user.findUnique({ where: { username } }));
@@ -106,6 +113,7 @@ export class UsersService {
     phone: string,
     profile: { firstName: string; lastName: string; username: string },
     referredByCode?: string,
+    passwordHash?: string,
   ) {
     // Only honour a referral code that belongs to a real, different user.
     let referredBy: string | null = null;
@@ -118,6 +126,7 @@ export class UsersService {
     return this.prisma.user.create({
       data: {
         email,
+        passwordHash: passwordHash ?? null,
         phone,
         username: profile.username,
         firstName: profile.firstName,

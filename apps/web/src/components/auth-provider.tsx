@@ -8,7 +8,10 @@ interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
   requestOtp: (email: string) => Promise<{ isNewUser: boolean; devCode?: string }>;
-  verifyOtp: (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string }) => Promise<void>;
+  verifyOtp: (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string; password?: string }) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<{ devCode?: string }>;
+  resetPassword: (email: string, code: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -53,9 +56,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const verifyOtp = useCallback(
-    async (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string }) => {
+    async (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string; password?: string }) => {
       const res = await api.verifyOtp(email, code, opts);
       // Persist the bearer token so the session survives reloads (no cookies).
+      const token = api.getAuthToken();
+      if (token) window.localStorage.setItem(TOKEN_KEY, token);
+      setUser(res.user);
+    },
+    [],
+  );
+
+  const login = useCallback(async (email: string, password: string) => {
+    const res = await api.login(email, password);
+    const token = api.getAuthToken();
+    if (token) window.localStorage.setItem(TOKEN_KEY, token);
+    setUser(res.user);
+  }, []);
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const res = await api.requestPasswordReset(email);
+    return { devCode: res.devCode };
+  }, []);
+
+  const resetPassword = useCallback(
+    async (email: string, code: string, password: string) => {
+      const res = await api.resetPassword(email, code, password);
       const token = api.getAuthToken();
       if (token) window.localStorage.setItem(TOKEN_KEY, token);
       setUser(res.user);
@@ -78,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, requestOtp, verifyOtp, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, requestOtp, verifyOtp, login, requestPasswordReset, resetPassword, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );
