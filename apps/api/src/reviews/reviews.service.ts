@@ -18,7 +18,7 @@ export class ReviewsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  /** Host + APPROVED guests for a table (excluding nobody). */
+  /** Host + APPROVED guests (peer-review participant set). */
   private async participantIds(
     tableId: string,
     hostId: string,
