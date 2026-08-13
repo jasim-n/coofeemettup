@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
+import { AuthGate } from "@/components/auth-gate";
 import { RequestsBadgeProvider } from "@/components/requests-badge";
 import { DesktopNav } from "@/components/desktop-nav";
 
@@ -38,10 +39,12 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <RequestsBadgeProvider>
-            <DesktopNav />
-            {children}
-          </RequestsBadgeProvider>
+          <AuthGate>
+            <RequestsBadgeProvider>
+              <DesktopNav />
+              {children}
+            </RequestsBadgeProvider>
+          </AuthGate>
         </AuthProvider>
       </body>
     </html>

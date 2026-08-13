@@ -4,6 +4,11 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-13 — Protect authenticated web routes
+
+- Added a centralized route guard that redirects logged-out users to `/login`
+  and leaves only authentication and legal pages publicly accessible.
+
 ### 2026-08-13 — Password login and password reset
 
 - First-time account verification continues to use email OTP and now requires
