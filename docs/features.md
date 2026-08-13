@@ -6,6 +6,42 @@ Last updated: 2026-08-13.
 
 ---
 
+## Venue search + pin map (create / edit Table)
+
+### What it does
+
+On create (`/tables/new`) and edit (`/tables/[id]/edit`), hosts search a place, auto-fill venue name/address/coordinates, and see a MapLibre pin they can adjust. Admin cafe create uses the same picker.
+
+### Flow
+
+1. `VenueSearch` → debounced `api.geocode` → Photon proxy `GET /geocode` (auth required).
+2. On select: form sets `venueName`, `venueAddress`, `lat`, `lng`.
+3. `LocationPicker` shows OSM map + draggable pin; click/drag updates `lat`/`lng`.
+4. When `lat`/`lng` change (including after search), the map **flies** to the pin (`MapRef.flyTo`). `initialViewState` alone only applies on first mount — that was the prior gap.
+
+### Files
+
+| Piece | Path |
+|-------|------|
+| Search UI | `apps/web/src/components/venue-search.tsx` |
+| Map pin UI | `apps/web/src/components/location-picker.tsx` |
+| Create / edit pages | `apps/web/src/app/tables/new/page.tsx`, `.../tables/[id]/edit/page.tsx` |
+| Geo API | `apps/api/src/geo/` |
+| Nearby browse map (different) | `apps/web/src/components/tables-map.tsx` — do not reuse for the form |
+
+### Edge cases
+
+| Case | Behavior |
+|------|----------|
+| No pin yet | Map centered on Islamabad fallback; helper invites search or tap |
+| Search select far from current view | Camera flies to new coords at zoom 14 |
+| Manual drag / click | Pin + coords update; camera recenters to new point |
+| Submit without lat/lng | Form error: drop a pin |
+
+**No DB migration** for this UX fix.
+
+---
+
 ## Peer reviews & score-only profiles
 
 ### What it does

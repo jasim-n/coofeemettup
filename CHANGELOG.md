@@ -4,6 +4,13 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-13 — Venue map recenters after search select
+
+- On Table create/edit (and admin cafes), choosing a venue search result now
+  flies the pin map to the selected coordinates. Name/address/lat/lng were
+  already filled; only the camera sync was missing.
+- Documented in [`docs/features.md`](docs/features.md).
+
 ### 2026-08-13 — Peer reviews with score-only profiles
 
 - After a Table’s start time, the host and approved guests can rate **each other**
