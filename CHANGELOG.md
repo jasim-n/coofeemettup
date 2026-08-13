@@ -4,6 +4,15 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-14 — Guest review window (2 days); host never closes
+
+- After the host ends a meetup (`completedAt`), **guests** have **2 days** to
+  submit reviews; then the guest window auto-closes.
+- **Hosts** keep review access indefinitely (required to review).
+- Guest-side 50% score average uses **only submitted** ratings (never divides by
+  missing reviewers). Documented join vs reviewed tracking in `docs/features.md`.
+- Migration: `20260814030000_table_completed_at`.
+
 ### 2026-08-14 — Review score weight + joiner UI
 
 - **Overall score** = 50% average of reviews written by table hosts + 50% average

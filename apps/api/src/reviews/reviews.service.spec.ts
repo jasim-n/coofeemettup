@@ -28,6 +28,8 @@ describe('ReviewsService peer reviews', () => {
           id: tableId,
           hostId,
           startAt: pastStart,
+          status: 'COMPLETED',
+          completedAt: new Date(Date.now() - 60_000),
         }),
         findMany: jest.fn().mockResolvedValue([{ id: tableId, hostId }]),
       },
@@ -77,6 +79,7 @@ describe('ReviewsService peer reviews', () => {
     const { service } = makeService();
     const result = await service.targets(guestA, tableId);
     expect(result.eligible).toBe(true);
+    expect(result.closed).toBe(false);
     expect(result.targets.map((t) => t.subjectId).sort()).toEqual(
       [hostId, guestB].sort(),
     );
@@ -86,6 +89,30 @@ describe('ReviewsService peer reviews', () => {
     expect(result.targets.find((t) => t.subjectId === guestB)?.role).toBe(
       'GUEST',
     );
+  });
+
+  it('guest review window closes 2 days after completedAt; host stays open', async () => {
+    const { service, prisma } = makeService();
+    const closedAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    prisma.table.findUnique.mockResolvedValue({
+      id: tableId,
+      hostId,
+      startAt: pastStart,
+      status: 'COMPLETED',
+      completedAt: closedAt,
+    });
+    const guestView = await service.targets(guestA, tableId);
+    expect(guestView.closed).toBe(true);
+    expect(guestView.eligible).toBe(false);
+    expect(guestView.targets).toEqual([]);
+    await expect(
+      service.create(guestA, tableId, { subjectId: hostId, rating: 5 }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    const hostView = await service.targets(hostId, tableId);
+    expect(hostView.closed).toBe(false);
+    expect(hostView.eligible).toBe(true);
+    expect(hostView.targets.length).toBe(2);
   });
 
   it('host targets include all approved guests', async () => {

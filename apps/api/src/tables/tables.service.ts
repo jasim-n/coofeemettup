@@ -45,13 +45,19 @@ export class TablesService {
     if (table.status !== 'COMPLETED') {
       await this.prisma.table.update({
         where: { id: tableId },
-        data: { status: 'COMPLETED' },
+        data: { status: 'COMPLETED', completedAt: new Date() },
       });
       void this.audit.log({
         actorId: userId,
         action: 'table.completed',
         targetType: 'table',
         targetId: tableId,
+      });
+    } else if (table.completedAt == null) {
+      // Legacy COMPLETED rows without a stamp — set once so the review window can close.
+      await this.prisma.table.update({
+        where: { id: tableId },
+        data: { completedAt: new Date() },
       });
     }
     return this.findOne(userId, tableId);

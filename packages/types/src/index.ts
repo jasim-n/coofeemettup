@@ -190,6 +190,8 @@ export interface TableDto {
   rules: string | null;
   pricePKR: number | null;
   status: TableStatus;
+  /** ISO time host ended the meetup; null until completed. */
+  completedAt?: string | null;
   cafe?: Cafe;
   host?: TableHost;
   /** The current viewer's own request status for this table, if any. */
@@ -326,7 +328,12 @@ export interface ReviewTarget {
 
 export interface ReviewTargetsResponse {
   eligible: boolean;
+  /** Table start time has passed. */
   happened: boolean;
+  /** Guest review window closed (host is never closed). */
+  closed: boolean;
+  /** ISO deadline for guest reviews (completedAt + 2 days); null if not completed yet. */
+  closesAt: string | null;
   targets: ReviewTarget[];
 }
 

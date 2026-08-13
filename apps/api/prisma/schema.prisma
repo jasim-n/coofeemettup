@@ -261,6 +261,8 @@ model Table {
   rules        String?
   pricePKR     Int? // null = free
   status       TableStatus        @default(OPEN)
+  /** Set when host ends the meetup; starts the guest review window. */
+  completedAt  DateTime?
 
   requests     TableJoinRequest[]
   invites      TableInvite[]

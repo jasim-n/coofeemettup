@@ -11,6 +11,17 @@ import { CreateReviewDto } from './dto/create-review.dto';
 const NAME_SELECT = { id: true, username: true };
 const round1 = (n: number | null) => (n == null ? 0 : Math.round(n * 10) / 10);
 
+/** Guest review window length after the host closes the table. */
+export const GUEST_REVIEW_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
+
+type TableForReviews = {
+  id: string;
+  hostId: string;
+  startAt: Date;
+  status: string;
+  completedAt: Date | null;
+};
+
 @Injectable()
 export class ReviewsService {
   constructor(
@@ -30,16 +41,52 @@ export class ReviewsService {
     return [hostId, ...approved.map((r) => r.userId)];
   }
 
-  /** Who the current user can review: every other participant after startAt. */
+  /**
+   * Review window:
+   * - Opens after startAt (meetup has happened).
+   * - Guests: close 2 days after host marks COMPLETED (`completedAt`).
+   *   If not yet completed, guests can still rate after startAt (window open).
+   * - Host: never closes once startAt has passed (host is required to review).
+   */
+  private reviewAccess(
+    table: TableForReviews,
+    userId: string,
+    now = Date.now(),
+  ) {
+    const happened = table.startAt.getTime() < now;
+    const isHost = userId === table.hostId;
+    const closesAt =
+      table.completedAt != null
+        ? new Date(table.completedAt.getTime() + GUEST_REVIEW_WINDOW_MS)
+        : null;
+    const guestClosed =
+      !isHost && closesAt != null && now >= closesAt.getTime();
+    const eligible = happened && !guestClosed;
+    return {
+      happened,
+      isHost,
+      closed: guestClosed,
+      closesAt,
+      eligible,
+    };
+  }
+
+  /** Who the current user can review: every other participant in the open window. */
   async targets(userId: string, tableId: string) {
     const table = await this.prisma.table.findUnique({
       where: { id: tableId },
     });
     if (!table) throw new NotFoundException('Table not found');
-    const happened = table.startAt.getTime() < Date.now();
+    const access = this.reviewAccess(table, userId);
     const participants = await this.participantIds(tableId, table.hostId);
     if (!participants.includes(userId)) {
-      return { eligible: false, happened, targets: [] };
+      return {
+        eligible: false,
+        happened: access.happened,
+        closed: access.closed,
+        closesAt: access.closesAt?.toISOString() ?? null,
+        targets: [],
+      };
     }
 
     const subjectIds = participants.filter((id) => id !== userId);
@@ -64,12 +111,16 @@ export class ReviewsService {
     });
     const reviewed = new Set(mine.map((r) => r.subjectId));
     return {
-      eligible: happened,
-      happened,
-      targets: subjects.map((s) => ({
-        ...s,
-        alreadyReviewed: reviewed.has(s.subjectId),
-      })),
+      eligible: access.eligible,
+      happened: access.happened,
+      closed: access.closed,
+      closesAt: access.closesAt?.toISOString() ?? null,
+      targets: access.eligible
+        ? subjects.map((s) => ({
+            ...s,
+            alreadyReviewed: reviewed.has(s.subjectId),
+          }))
+        : [],
     };
   }
 
@@ -78,9 +129,15 @@ export class ReviewsService {
       where: { id: tableId },
     });
     if (!table) throw new NotFoundException('Table not found');
-    if (table.startAt.getTime() >= Date.now()) {
+    const access = this.reviewAccess(table, userId);
+    if (!access.happened) {
       throw new BadRequestException(
         'You can review after the table has happened',
+      );
+    }
+    if (access.closed) {
+      throw new BadRequestException(
+        'The guest review window has closed (2 days after the host ended the meetup)',
       );
     }
     if (userId === dto.subjectId) {
@@ -132,6 +189,7 @@ export class ReviewsService {
    * Profile reputation: averages only (no individual review text).
    * overallRating = 50% avg of reviews written by table hosts +
    *                 50% avg of reviews written by guests
+   * Guest side averages **only submitted** ratings (e.g. 3 of 4 guests → /3).
    * (if only one side exists, that side is used at 100%).
    * hostRating / guestRating = subject-role breakdowns (as host vs as guest).
    */
@@ -173,6 +231,8 @@ export class ReviewsService {
         fromGuests.push(r.rating);
       }
     }
+    // Average only over ratings that were actually submitted — never pad with
+    // missing reviewers (4 possible guests, 3 submitted → divide by 3).
     const avgOf = (xs: number[]) =>
       xs.length === 0 ? null : xs.reduce((a, b) => a + b, 0) / xs.length;
 

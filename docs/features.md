@@ -122,9 +122,32 @@ After a Table’s `startAt` has passed, the **host and every APPROVED guest** ca
 
 | Field | Meaning |
 |-------|---------|
-| `overallRating` | **50%** avg of reviews written by that table’s **host** + **50%** avg of reviews written by **guests**. If only one side exists, use that side at 100%. `count` = total reviews. |
+| `overallRating` | **50%** avg of reviews **written by** that table’s **host** + **50%** avg of reviews **written by guests who submitted**. Missing guest reviews are **not** counted (3 of 4 submitted → divide by 3). If only one side exists, use that side at 100%. `count` = total submitted reviews. |
 | `hostRating` | Avg while subject was table host (role=`HOST`) |
 | `guestRating` | Avg while subject was approved guest (role=`GUEST`) |
+
+### Review window
+
+| Who | Opens | Closes |
+|-----|-------|--------|
+| Guests | After `startAt` | **2 days after** host ends meetup (`completedAt` + 2d) |
+| Host | After `startAt` | **Never** — host is required to review |
+
+`Table.completedAt` is set when the host ends the meetup. Guests see `closed` / `closesAt` on review-targets.
+
+### Join vs reviewed tracking (no “5 reviewed tables” gate)
+
+There is **no** Tables-era “must have 5 reviewed events” check in product code today (the old admin “≥5 events” metric is dormant Events go/no-go only).
+
+What **is** tracked in DB (derivable, no extra table):
+
+| Fact | Source |
+|------|--------|
+| Joined a table | `TableJoinRequest` (`APPROVED` / etc.) |
+| Reviewed someone on a table | `Review` (`tableId`, `reviewerId`, `subjectId`) |
+| Tables fully reviewed by you | Tables where you have a `Review` row for every other participant |
+
+Joined 7 / reviewed 4 → those are different counts; do **not** treat join count as review count.
 
 ### UI visibility
 
@@ -136,7 +159,9 @@ After a Table’s `startAt` has passed, the **host and every APPROVED guest** ca
 ### Not this feature
 
 - `User.reliabilityScore` — Events no-show / search ranking; **do not** merge star ratings into it.
-- Table status `COMPLETED` — reviews unlock on `startAt < now`, not on host `complete()`.
+- Table status `COMPLETED` — guest review **window** starts at host `complete()`
+  (`completedAt`); reviews are also allowed after `startAt` before complete.
+  Guest window ends `completedAt + 2 days`. Host never closes.
 - Paid-Table checkout — unrelated.
 
 ### Data / schema

@@ -18,7 +18,13 @@ export default function TableReviews({ tableId }: { tableId: string }) {
     try {
       setData(await api.tableReviewTargets(tableId));
     } catch {
-      setData({ eligible: false, happened: false, targets: [] });
+      setData({
+        eligible: false,
+        happened: false,
+        closed: false,
+        closesAt: null,
+        targets: [],
+      });
     }
   }, [tableId]);
 
@@ -34,6 +40,16 @@ export default function TableReviews({ tableId }: { tableId: string }) {
         <p className="eyebrow text-primary mb-1">Reviews</p>
         <p className="text-muted-foreground text-sm">
           You’ll be able to leave a review once the table has happened.
+        </p>
+      </div>
+    );
+  }
+  if (data.closed) {
+    return (
+      <div className="border-t pt-4">
+        <p className="eyebrow text-primary mb-1">Reviews</p>
+        <p className="text-muted-foreground text-sm">
+          The guest review window has closed (2 days after the host ended this meetup).
         </p>
       </div>
     );
@@ -67,6 +83,16 @@ export default function TableReviews({ tableId }: { tableId: string }) {
   return (
     <div className="space-y-3 border-t pt-4">
       <p className="eyebrow text-primary">Rate people who attended</p>
+      {data.closesAt && (
+        <p className="text-muted-foreground text-xs">
+          Guest reviews close{' '}
+          {new Date(data.closesAt).toLocaleString('en-PK', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })}
+          . Hosts can always submit.
+        </p>
+      )}
       {error && <p className="text-destructive text-sm">{error}</p>}
       {pending.length === 0 && (
         <p className="text-muted-foreground text-sm">Thanks for your reviews ✓</p>
