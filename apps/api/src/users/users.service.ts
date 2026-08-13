@@ -36,9 +36,9 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Search active members by @handle/occupation for the invite picker. Excludes
-   * the viewer. Requires a 2+ char query; returns public-safe rows (handle only,
-   * never real name/phone). Real names are private, so search never matches them.
+   * Search active members by @username only (invite picker / people search).
+   * Never matches email, phone, real name, or occupation. Excludes the viewer.
+   * Requires a 2+ char handle query (optional leading @).
    */
   async searchUsers(viewerId: string, q: string, limit = 20) {
     const term = q.trim().replace(/^@/, '');
@@ -47,12 +47,9 @@ export class UsersService {
       where: {
         id: { not: viewerId },
         status: 'ACTIVE',
-        OR: [
-          { username: { contains: term, mode: 'insensitive' } },
-          { occupation: { contains: term, mode: 'insensitive' } },
-        ],
+        username: { contains: term, mode: 'insensitive' },
       },
-      orderBy: { reliabilityScore: 'desc' },
+      orderBy: { username: 'asc' },
       take: Math.min(Math.max(limit, 1), 50),
     });
     return users.map(toPublicUser);

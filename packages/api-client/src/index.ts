@@ -677,7 +677,7 @@ export class ApiClient {
   }
 
   // ---- connections (social graph) ----
-  /** Search active members by name/occupation (invite picker). Needs 2+ chars. */
+  /** Search active members by @username only (invite picker). Needs 2+ chars. */
   searchUsers(q: string, limit = 20): Promise<PublicUser[]> {
     const qs = new URLSearchParams({ q, limit: String(limit) }).toString();
     return this.request('GET', `/users/search?${qs}`);

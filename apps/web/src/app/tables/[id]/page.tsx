@@ -40,10 +40,10 @@ export default function TableDetailPage() {
   const [table, setTable] = useState<TableDto | null>(null);
   const [requests, setRequests] = useState<TableJoinRequestDto[]>([]);
   const [hostRep, setHostRep] = useState<UserReputation | null>(null);
-  const [connections, setConnections] = useState<PublicUser[]>([]);
   const [invited, setInvited] = useState<Set<string>>(new Set());
   const [inviteQuery, setInviteQuery] = useState('');
   const [inviteResults, setInviteResults] = useState<PublicUser[]>([]);
+  const [inviteSearching, setInviteSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -92,45 +92,51 @@ export default function TableDetailPage() {
     };
   }, [load]);
 
-  // Load connections + already-sent invites for the invite picker (host only)
+  // Seed the "Invited ✓" state so it survives a refresh (host only).
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isHost) return;
     let active = true;
-    void (async () => {
-      try {
-        const data = await api.myConnections();
-        if (active) setConnections(data);
-      } catch {
-        /* best-effort */
-      }
-    })();
-    // Seed the "Invited ✓" state so it survives a refresh.
-    if (isHost) {
-      void api
-        .tableInvites(id)
-        .then((invs) => {
-          if (active) setInvited(new Set(invs.map((iv) => iv.inviteeId)));
-        })
-        .catch(() => undefined);
-    }
+    void api
+      .tableInvites(id)
+      .then((invs) => {
+        if (active) setInvited(new Set(invs.map((iv) => iv.inviteeId)));
+      })
+      .catch(() => undefined);
     return () => {
       active = false;
     };
   }, [user, isHost, id]);
 
-  // Invite picker: search ALL active members by name (debounced). Under 2 chars
-  // we show the host's connections as the default list. setState lives inside
-  // the timeout (not the effect body) to satisfy the hooks lint rule.
+  // Invite picker: empty until the host searches by @handle (debounced).
+  // No pre-populated connections list; API matches username only.
   useEffect(() => {
-    const q = inviteQuery.trim();
+    const q = inviteQuery.trim().replace(/^@/, '');
+    let active = true;
     const t = setTimeout(() => {
       if (q.length < 2) {
-        setInviteResults([]);
+        if (active) {
+          setInviteResults([]);
+          setInviteSearching(false);
+        }
         return;
       }
-      api.searchUsers(q).then(setInviteResults).catch(() => setInviteResults([]));
+      if (active) setInviteSearching(true);
+      api
+        .searchUsers(q)
+        .then((rows) => {
+          if (active) setInviteResults(rows);
+        })
+        .catch(() => {
+          if (active) setInviteResults([]);
+        })
+        .finally(() => {
+          if (active) setInviteSearching(false);
+        });
     }, 300);
-    return () => clearTimeout(t);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
   }, [inviteQuery]);
 
   // Load event photos — only for members (host or approved); endpoint 403s for others.
@@ -510,33 +516,45 @@ export default function TableDetailPage() {
             <section className="bg-card shadow-soft rounded-3xl border p-6">
               <h2 className="font-heading mb-1 text-lg font-bold tracking-tight">Invite people</h2>
               <p className="text-muted-foreground mb-3 text-xs">
-                Search anyone by name, or invite from your connections below.
+                Search by @username only — phone, email, and names won’t match.
               </p>
               <div className="relative mb-3">
                 <i className="fa-solid fa-magnifying-glass text-muted-foreground pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm" />
                 <Input
                   value={inviteQuery}
                   onChange={(e) => setInviteQuery(e.target.value)}
-                  placeholder="Search people to invite…"
+                  placeholder="Search @username…"
+                  autoComplete="off"
                   className="pl-10"
                 />
               </div>
               {(() => {
-                const q = inviteQuery.trim();
-                const searching = q.length >= 2;
-                const people = searching ? inviteResults : connections;
-                if (people.length === 0) {
+                const q = inviteQuery.trim().replace(/^@/, '');
+                const hasQuery = q.length >= 2;
+                if (!hasQuery) {
                   return (
-                    <p className="text-muted-foreground text-sm">
-                      {searching
-                        ? `No people match “${q}”.`
-                        : 'Type at least 2 letters to search, or connect with people first.'}
-                    </p>
+                    <div className="bg-muted/40 text-muted-foreground flex min-h-28 items-center justify-center rounded-2xl border border-dashed px-4 py-6 text-center text-sm">
+                      Start typing a @username to find someone to invite.
+                    </div>
+                  );
+                }
+                if (inviteSearching) {
+                  return (
+                    <div className="bg-muted/40 text-muted-foreground flex min-h-28 items-center justify-center rounded-2xl border border-dashed px-4 py-6 text-center text-sm">
+                      Searching…
+                    </div>
+                  );
+                }
+                if (inviteResults.length === 0) {
+                  return (
+                    <div className="bg-muted/40 text-muted-foreground flex min-h-28 items-center justify-center rounded-2xl border border-dashed px-4 py-6 text-center text-sm">
+                      No @username matches “{q}”.
+                    </div>
                   );
                 }
                 return (
                   <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-                    {people.map((person) => {
+                    {inviteResults.map((person) => {
                       const alreadyInvited = invited.has(person.id);
                       return (
                         <div

@@ -6,6 +6,24 @@ Last updated: 2026-08-13.
 
 ---
 
+## Invite people (Table host)
+
+### What it does
+
+Hosts invite members from the table detail page. The picker stays **empty** until the host searches; there is no pre-populated connections or suggested-users list.
+
+### Rules
+
+| Rule | Detail |
+|------|--------|
+| Query | `@username` only (optional leading `@`; min 2 chars) |
+| No match on | email, phone, real name, occupation |
+| Empty state | Dashed empty container until a handle search runs |
+| API | `GET /users/search` → `UsersService.searchUsers` (username `contains`, case-insensitive) |
+| UI | `/tables/[id]` host “Invite people” section |
+
+---
+
 ## Multi-category pills (Tables)
 
 ### What it does

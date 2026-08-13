@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-13 — Invite picker: handle search only
+
+- Table “Invite people” no longer pre-lists connections; the list stays empty
+  until the host searches by `@username`.
+- Member search matches username only (not email, phone, name, or occupation).
+
 ### 2026-08-13 — Multi-category pills on Table UI
 
 - Comma-separated / multi-select categories now render as **separate pills** on
