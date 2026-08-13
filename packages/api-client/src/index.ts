@@ -157,8 +157,11 @@ export class ApiClient {
   }
 
   // ---- auth ----
-  requestOtp(email: string): Promise<{ ok: true; isNewUser: boolean; devCode?: string }> {
-    return this.request('POST', '/auth/request-otp', { email });
+  requestOtp(
+    email: string,
+    intent: 'signup' | 'login' = 'login',
+  ): Promise<{ ok: true; isNewUser: boolean; devCode?: string }> {
+    return this.request('POST', '/auth/request-otp', { email, intent });
   }
 
   async verifyOtp(

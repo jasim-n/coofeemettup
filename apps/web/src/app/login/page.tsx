@@ -75,8 +75,10 @@ export default function LoginPage() {
     setError(null);
     setBusy(true);
     try {
+      // Create-account path: API rejects existing emails before sending a code.
       const { isNewUser: newUser, devCode: dev } = await requestOtp(
         email.trim().toLowerCase(),
+        'signup',
       );
       setIsNewUser(newUser);
       if (dev) {
@@ -232,17 +234,33 @@ export default function LoginPage() {
         <div className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6">
           <div className="space-y-1 text-center">
             <p className="eyebrow text-primary">
-      {step === 'password' ? 'Sign in' : step === 'reset' ? 'Reset password' : step === 'email' ? 'First login' : 'Verify email'}
+              {step === 'password'
+                ? 'Sign in'
+                : step === 'reset'
+                  ? 'Reset password'
+                  : step === 'email'
+                    ? 'Create account'
+                    : 'Verify email'}
             </p>
             <h1 className="display text-2xl uppercase">
-              {step === 'password' ? 'Sign in' : step === 'reset' ? 'Reset your password' : 'Check your email'}
+              {step === 'password'
+                ? 'Sign in'
+                : step === 'reset'
+                  ? 'Reset your password'
+                  : step === 'email'
+                    ? 'Create your account'
+                    : 'Check your email'}
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {step === 'password'
                 ? 'Sign in with your email and password.'
-                : step === 'reset'
-                  ? `We sent a 6-digit code to ${email}.`
-                  : `We sent a 6-digit code to ${email}.`}
+                : step === 'email'
+                  ? 'We’ll email a code to verify a new account. Existing accounts should sign in instead.'
+                  : step === 'reset'
+                    ? resetRequested
+                      ? `We sent a 6-digit code to ${email}.`
+                      : 'Enter your email and we’ll send a reset code if an account exists.'
+                    : `We sent a 6-digit code to ${email}.`}
             </p>
             {step === 'code' && isNewUser && (
               <p className="text-muted-foreground text-sm leading-relaxed">
@@ -299,8 +317,17 @@ export default function LoginPage() {
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
                 {busy ? 'Sending…' : 'Send email code →'}
               </Button>
-              <button type="button" className="text-muted-foreground w-full text-sm hover:underline" onClick={() => { setStep('reset'); setError(null); setResetRequested(false); setDevCode(null); setCode(''); }}>
-                Forgot password?
+              <button
+                type="button"
+                className="text-muted-foreground w-full text-sm hover:underline"
+                onClick={() => {
+                  setStep('password');
+                  setError(null);
+                  setDevCode(null);
+                  setCode('');
+                }}
+              >
+                Already have an account? Sign in
               </button>
             </form>
           ) : step === 'reset' ? (

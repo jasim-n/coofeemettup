@@ -7,7 +7,10 @@ import { api, TOKEN_KEY } from '@/lib/api';
 interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
-  requestOtp: (email: string) => Promise<{ isNewUser: boolean; devCode?: string }>;
+  requestOtp: (
+    email: string,
+    intent?: 'signup' | 'login',
+  ) => Promise<{ isNewUser: boolean; devCode?: string }>;
   verifyOtp: (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string; password?: string }) => Promise<void>;
   login: (email: string, password?: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ devCode?: string }>;
@@ -50,10 +53,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refresh]);
 
-  const requestOtp = useCallback(async (email: string) => {
-    const res = await api.requestOtp(email);
-    return { isNewUser: res.isNewUser, devCode: res.devCode };
-  }, []);
+  const requestOtp = useCallback(
+    async (email: string, intent: 'signup' | 'login' = 'login') => {
+      const res = await api.requestOtp(email, intent);
+      return { isNewUser: res.isNewUser, devCode: res.devCode };
+    },
+    [],
+  );
 
   const verifyOtp = useCallback(
     async (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string; password?: string }) => {

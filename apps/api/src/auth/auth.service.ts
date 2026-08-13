@@ -26,8 +26,27 @@ export class AuthService {
 
   async requestOtp(
     email: string,
+    intent: 'signup' | 'login' = 'login',
   ): Promise<{ code: string; isNewUser: boolean }> {
-    const isNewUser = !(await this.users.findByEmail(email));
+    const existing = await this.users.findByEmail(email);
+    const isNewUser = !existing;
+
+    // Create-account path must not silently switch into an existing account.
+    if (intent === 'signup' && existing) {
+      throw new BadRequestException(
+        existing.passwordHash
+          ? 'An account already exists for this email. Sign in with your password, or use Forgot password.'
+          : 'An account already exists for this email. Sign in and leave the password blank to finish setup.',
+      );
+    }
+
+    // Passworded accounts must use password login / forgot-password, not OTP login.
+    if (intent === 'login' && existing?.passwordHash) {
+      throw new BadRequestException(
+        'This account uses password login. Use forgot password if you need to reset it.',
+      );
+    }
+
     const code = await this.otp.request(email);
     return { code, isNewUser };
   }

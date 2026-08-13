@@ -4,6 +4,11 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-13 — Create-account email gate
+
+- Creating an account with an email that already exists is blocked before an OTP
+  is sent; users are directed to sign in or forgot-password instead.
+
 ### 2026-08-13 — Protect authenticated web routes
 
 - Added a centralized route guard that redirects logged-out users to `/login`

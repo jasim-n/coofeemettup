@@ -49,7 +49,10 @@ export class AuthController {
     @Body() dto: RequestOtpDto,
   ): Promise<{ ok: true; isNewUser: boolean; devCode?: string }> {
     const email = dto.email.trim().toLowerCase();
-    const { code, isNewUser } = await this.auth.requestOtp(email);
+    const { code, isNewUser } = await this.auth.requestOtp(
+      email,
+      dto.intent ?? 'login',
+    );
     const isDev = this.config.get('NODE_ENV', { infer: true }) !== 'production';
     const exposeOtp =
       isDev || this.config.get('EXPOSE_DEV_OTP', { infer: true }) === 'true';
