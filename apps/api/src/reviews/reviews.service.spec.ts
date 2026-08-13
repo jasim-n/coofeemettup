@@ -10,7 +10,13 @@ describe('ReviewsService peer reviews', () => {
 
   const pastStart = new Date(Date.now() - 60_000);
 
-  function makeService() {
+  function makeService(
+    reviewRows: Array<{
+      rating: number;
+      reviewerId: string;
+      tableId: string;
+    }> = [],
+  ) {
     const upsertCreates: Array<{
       role: string;
       subjectId: string;
@@ -23,6 +29,7 @@ describe('ReviewsService peer reviews', () => {
           hostId,
           startAt: pastStart,
         }),
+        findMany: jest.fn().mockResolvedValue([{ id: tableId, hostId }]),
       },
       tableJoinRequest: {
         findMany: jest
@@ -44,7 +51,7 @@ describe('ReviewsService peer reviews', () => {
           ),
       },
       review: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn().mockResolvedValue(reviewRows),
         upsert: jest.fn(
           (args: {
             create: { role: string; subjectId: string; reviewerId: string };
@@ -124,13 +131,19 @@ describe('ReviewsService peer reviews', () => {
     expect(notifications.create).toHaveBeenCalled();
   });
 
-  it('reputation includes overallRating and empty recent', async () => {
-    const { service, prisma } = makeService();
-    const rep = await service.reputation(hostId);
-    expect(rep.overallRating).toEqual({ avg: 4.5, count: 2 });
+  it('reputation overall is 50% host-written + 50% guest-written', async () => {
+    const { service, prisma } = makeService([
+      { rating: 5, reviewerId: hostId, tableId },
+      { rating: 3, reviewerId: guestA, tableId },
+      { rating: 5, reviewerId: guestB, tableId },
+    ]);
+    const rep = await service.reputation(guestA);
+    // host avg 5, guest avg (3+5)/2=4 → overall 0.5*5+0.5*4=4.5
+    expect(rep.overallRating).toEqual({ avg: 4.5, count: 3 });
     expect(rep.hostRating.count).toBe(2);
     expect(rep.guestRating.count).toBe(2);
     expect(rep.recent).toEqual([]);
-    expect(prisma.review.aggregate).toHaveBeenCalledTimes(3);
+    expect(prisma.review.aggregate).toHaveBeenCalledTimes(2);
+    expect(prisma.table.findMany).toHaveBeenCalled();
   });
 });

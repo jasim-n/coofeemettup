@@ -128,13 +128,18 @@ export class ReviewsService {
     return review;
   }
 
-  /** Profile reputation: averages only (no individual review text). */
+  /**
+   * Profile reputation: averages only (no individual review text).
+   * overallRating = 50% avg of reviews written by table hosts +
+   *                 50% avg of reviews written by guests
+   * (if only one side exists, that side is used at 100%).
+   * hostRating / guestRating = subject-role breakdowns (as host vs as guest).
+   */
   async reputation(userId: string) {
-    const [overallAgg, hostAgg, guestAgg] = await Promise.all([
-      this.prisma.review.aggregate({
+    const [rows, hostAgg, guestAgg] = await Promise.all([
+      this.prisma.review.findMany({
         where: { subjectId: userId },
-        _avg: { rating: true },
-        _count: { _all: true },
+        select: { rating: true, reviewerId: true, tableId: true },
       }),
       this.prisma.review.aggregate({
         where: { subjectId: userId, role: 'HOST' },
@@ -147,10 +152,45 @@ export class ReviewsService {
         _count: { _all: true },
       }),
     ]);
+
+    const tableIds = [...new Set(rows.map((r) => r.tableId))];
+    const tables =
+      tableIds.length === 0
+        ? []
+        : await this.prisma.table.findMany({
+            where: { id: { in: tableIds } },
+            select: { id: true, hostId: true },
+          });
+    const hostByTable = new Map(tables.map((t) => [t.id, t.hostId]));
+
+    const fromHost: number[] = [];
+    const fromGuests: number[] = [];
+    for (const r of rows) {
+      const tableHostId = hostByTable.get(r.tableId);
+      if (tableHostId != null && r.reviewerId === tableHostId) {
+        fromHost.push(r.rating);
+      } else {
+        fromGuests.push(r.rating);
+      }
+    }
+    const avgOf = (xs: number[]) =>
+      xs.length === 0 ? null : xs.reduce((a, b) => a + b, 0) / xs.length;
+
+    const hostWrittenAvg = avgOf(fromHost);
+    const guestWrittenAvg = avgOf(fromGuests);
+    let overallAvg = 0;
+    if (hostWrittenAvg != null && guestWrittenAvg != null) {
+      overallAvg = 0.5 * hostWrittenAvg + 0.5 * guestWrittenAvg;
+    } else if (hostWrittenAvg != null) {
+      overallAvg = hostWrittenAvg;
+    } else if (guestWrittenAvg != null) {
+      overallAvg = guestWrittenAvg;
+    }
+
     return {
       overallRating: {
-        avg: round1(overallAgg._avg.rating),
-        count: overallAgg._count._all,
+        avg: round1(overallAvg),
+        count: rows.length,
       },
       hostRating: {
         avg: round1(hostAgg._avg.rating),

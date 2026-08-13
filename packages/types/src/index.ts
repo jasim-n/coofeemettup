@@ -340,9 +340,14 @@ export interface ReviewItem {
 }
 
 export interface UserReputation {
-  /** Combined avg of all reviews received (host + guest roles). */
+  /**
+   * Weighted score: 50% avg of reviews written by table hosts +
+   * 50% avg of reviews written by guests (one side alone → 100% that side).
+   */
   overallRating: { avg: number; count: number };
+  /** Reviews received while the subject was table host. */
   hostRating: { avg: number; count: number };
+  /** Reviews received while the subject was an approved guest. */
   guestRating: { avg: number; count: number };
   /** Always empty on user-facing endpoints; individual reviews are admin-only. */
   recent: ReviewItem[];

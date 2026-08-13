@@ -118,6 +118,21 @@ On create (`/tables/new`) and edit (`/tables/[id]/edit`), hosts search a place, 
 
 After a Table’s `startAt` has passed, the **host and every APPROVED guest** can rate every other participant (host ↔ guests and guest ↔ guest). Profiles (self and public) show **calculated scores only**. Individual review comments stay private to **admin moderation**.
 
+### Score formula
+
+| Field | Meaning |
+|-------|---------|
+| `overallRating` | **50%** avg of reviews written by that table’s **host** + **50%** avg of reviews written by **guests**. If only one side exists, use that side at 100%. `count` = total reviews. |
+| `hostRating` | Avg while subject was table host (role=`HOST`) |
+| `guestRating` | Avg while subject was approved guest (role=`GUEST`) |
+
+### UI visibility
+
+| Viewer / subject | Shown |
+|------------------|--------|
+| Non-host (`canHost=false`) self or public profile | **Overall only** |
+| Host (`canHost=true`) | Overall + as-host / as-guest pills |
+
 ### Not this feature
 
 - `User.reliabilityScore` — Events no-show / search ranking; **do not** merge star ratings into it.

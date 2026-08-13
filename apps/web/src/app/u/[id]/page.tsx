@@ -323,20 +323,24 @@ export default function PublicProfilePage() {
           {rep && overall && overall.count > 0 ? (
             <>
               <RatingPill label="Overall" avg={overall.avg} count={overall.count} />
-              <div className="grid grid-cols-2 gap-3">
-                <RatingPill
-                  label="As host"
-                  avg={rep.hostRating.avg}
-                  count={rep.hostRating.count}
-                />
-                <RatingPill
-                  label="As guest"
-                  avg={rep.guestRating.avg}
-                  count={rep.guestRating.count}
-                />
-              </div>
+              {p.canHost && (
+                <div className="grid grid-cols-2 gap-3">
+                  <RatingPill
+                    label="As host"
+                    avg={rep.hostRating.avg}
+                    count={rep.hostRating.count}
+                  />
+                  <RatingPill
+                    label="As guest"
+                    avg={rep.guestRating.avg}
+                    count={rep.guestRating.count}
+                  />
+                </div>
+              )}
               <p className="text-muted-foreground text-xs">
-                Individual reviews stay private. Only calculated scores are shown.
+                {p.canHost
+                  ? 'Overall is 50% host reviews + 50% guest reviews. Individual comments stay private.'
+                  : 'Individual reviews stay private. Only the overall score is shown.'}
               </p>
             </>
           ) : (

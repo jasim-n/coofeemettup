@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react';
 import { type UserReputation } from '@jrst/api-client';
 import { api } from '@/lib/api';
+import { useAuth } from '@/components/auth-provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Stars } from '@/components/stars';
 
 /** Score-only reputation for the signed-in user (no individual review text). */
 export default function MyReviews() {
+  const { user } = useAuth();
   const [rep, setRep] = useState<UserReputation | null>(null);
+  const showBreakdown = !!user?.canHost;
 
   useEffect(() => {
     let active = true;
@@ -41,12 +44,24 @@ export default function MyReviews() {
         ) : (
           <>
             <RatingPill label="Overall" avg={overall.avg} count={overall.count} />
-            <div className="grid grid-cols-2 gap-3">
-              <RatingPill label="As host" avg={rep.hostRating.avg} count={rep.hostRating.count} />
-              <RatingPill label="As guest" avg={rep.guestRating.avg} count={rep.guestRating.count} />
-            </div>
+            {showBreakdown && (
+              <div className="grid grid-cols-2 gap-3">
+                <RatingPill
+                  label="As host"
+                  avg={rep.hostRating.avg}
+                  count={rep.hostRating.count}
+                />
+                <RatingPill
+                  label="As guest"
+                  avg={rep.guestRating.avg}
+                  count={rep.guestRating.count}
+                />
+              </div>
+            )}
             <p className="text-muted-foreground text-xs">
-              Individual reviews stay private. Only your calculated score is shown.
+              {showBreakdown
+                ? 'Overall is 50% host reviews + 50% guest reviews. Individual comments stay private.'
+                : 'Individual reviews stay private. Only your overall score is shown.'}
             </p>
           </>
         )}

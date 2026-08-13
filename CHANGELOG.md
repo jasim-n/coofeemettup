@@ -4,6 +4,13 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-14 — Review score weight + joiner UI
+
+- **Overall score** = 50% average of reviews written by table hosts + 50% average
+  of reviews written by guests (one side only → that side at 100%).
+- Non-hosts see **overall only** on self/public rating UI; hosts still see
+  overall plus as-host / as-guest breakdown.
+
 ### 2026-08-14 — English maps, Pakistan-only
 
 - All MapLibre surfaces use OpenFreeMap English-oriented tiles and are
