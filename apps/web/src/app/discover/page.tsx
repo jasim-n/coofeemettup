@@ -11,6 +11,7 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
+import { CategoryPills } from '@/components/category-pills';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
 import { tableCta } from '@/lib/table-cta';
 
@@ -154,9 +155,12 @@ function TableCoverCard({
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        <span className="glass ring-border/40 absolute left-3 top-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
-          <i className={`fa-solid ${categoryIcon(t.category)}`} /> {t.category}
-        </span>
+        <CategoryPills
+          category={t.category}
+          variant="glass"
+          max={3}
+          className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)]"
+        />
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>

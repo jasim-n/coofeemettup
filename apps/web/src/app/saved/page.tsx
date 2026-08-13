@@ -6,12 +6,12 @@ import { type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
-import { categoryIcon } from '@/lib/category-icon';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
+import { CategoryPills } from '@/components/category-pills';
 import { tableCta } from '@/lib/table-cta';
 
 export default function SavedPage() {
@@ -95,9 +95,12 @@ export default function SavedPage() {
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                    <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
-                      <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
-                    </span>
+                    <CategoryPills
+                      category={t.category}
+                      variant="glass"
+                      max={3}
+                      className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)]"
+                    />
                     <SaveButton tableId={t.id} saved={t.saved} className="absolute right-3 top-3" />
                   </div>
                   <div className="p-4">

@@ -12,7 +12,8 @@ import { Avatar } from '@/components/avatar';
 import { PageLoader } from '@/components/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { categoryIcon } from '@/lib/category-icon';
+import { categoryIcon, splitCategories } from '@/lib/category-icon';
+import { CategoryPills } from '@/components/category-pills';
 import { haversineKm, formatDistance } from '@/lib/geo';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
@@ -65,8 +66,8 @@ function applyFilters(
       if (day !== 0 && day !== 6) return false;
     }
 
-    // category filter
-    if (category && t.category !== category) return false;
+    // category filter (match any part of a multi-category table)
+    if (category && !splitCategories(t.category).includes(category)) return false;
 
     // date from filter
     if (fromDate) {
@@ -199,10 +200,7 @@ function MeetupCoverCard({ t, viewerId }: { t: TableDto; viewerId?: string | nul
         </span>
       </div>
       <div className="p-4">
-        <p className="text-muted-foreground mb-0.5 text-xs font-semibold">
-          <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />
-          {t.category}
-        </p>
+        <CategoryPills category={t.category} variant="muted" max={3} className="mb-0.5" />
         <h3 className="font-heading truncate text-sm font-bold tracking-tight">
           {t.title ?? t.category}
         </h3>
@@ -490,7 +488,8 @@ export default function MeetupsPage() {
   }, []);
 
   const categories = useMemo(
-    () => [...new Set([...browse, ...joined].map((t) => t.category))],
+    () =>
+      [...new Set([...browse, ...joined].flatMap((t) => splitCategories(t.category)))].sort(),
     [browse, joined],
   );
 
@@ -911,11 +910,15 @@ export default function MeetupsPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       </div>
                       <div className="p-4 space-y-2">
+                        <CategoryPills
+                          category={inv.table.category}
+                          variant="muted"
+                          max={3}
+                        />
                         <Link
                           href={`/tables/${inv.table.id}`}
                           className="font-heading block truncate text-sm font-bold tracking-tight hover:underline"
                         >
-                          <i className={`fa-solid ${categoryIcon(inv.table.category)} mr-1`} />
                           {inv.table.title ?? inv.table.category}
                         </Link>
                         <p className="text-muted-foreground text-xs">

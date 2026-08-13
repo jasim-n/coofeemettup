@@ -14,6 +14,7 @@ import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
+import { CategoryPills } from '@/components/category-pills';
 import { tableCta } from '@/lib/table-cta';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
@@ -402,9 +403,13 @@ function FeaturedCarousel({ images }: { images: FeaturedImageDto[] }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-5">
                 <p className="font-heading truncate text-lg font-bold text-white">{heading}</p>
-                <p className="truncate text-xs text-white/70">
-                  <i className={`fa-solid ${categoryIcon(img.category)}`} /> {img.category}
-                </p>
+                <CategoryPills
+                  category={img.category}
+                  variant="glass"
+                  max={3}
+                  pillClassName="text-white ring-white/20"
+                  className="mt-1"
+                />
               </div>
             </Link>
           );
@@ -529,9 +534,12 @@ function TableCoverCard({ t, viewerId }: { t: TableDto; viewerId?: string | null
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
-          <i className={`fa-solid ${categoryIcon(t.category)}`} /> {t.category}
-        </span>
+        <CategoryPills
+          category={t.category}
+          variant="glass"
+          max={3}
+          className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)]"
+        />
       </div>
       <div className="p-4">
         <h3 className="font-heading text-base font-bold tracking-tight">{t.title ?? t.category}</h3>

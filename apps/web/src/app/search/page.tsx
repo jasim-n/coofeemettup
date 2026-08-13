@@ -8,7 +8,7 @@ import { type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
-import { categoryIcon } from '@/lib/category-icon';
+import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
 import { tableCta } from '@/lib/table-cta';
 import { Cover } from '@/components/cover-image';
@@ -16,6 +16,7 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
+import { CategoryPills } from '@/components/category-pills';
 
 /* ─── types ──────────────────────────────────────────────────────────── */
 
@@ -173,9 +174,7 @@ function TableListRow({ t }: { t: TableDto }) {
       {/* content */}
       <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
         <div>
-          <Badge variant="secondary" className="mb-1.5">
-            <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
-          </Badge>
+          <CategoryPills category={t.category} variant="badge" max={3} className="mb-1.5" />
           <h3 className="font-heading line-clamp-1 text-base font-bold tracking-tight">
             {t.title ?? t.category}
           </h3>
@@ -242,9 +241,12 @@ function TableCoverCard({
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        <span className="glass ring-border/40 absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold ring-1">
-          <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
-        </span>
+        <CategoryPills
+          category={t.category}
+          variant="glass"
+          max={3}
+          className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)]"
+        />
       </div>
       <div className="p-4">
         <h3 className="font-heading line-clamp-1 text-base font-bold tracking-tight">
@@ -420,9 +422,7 @@ function MightLike({ tables }: { tables: TableDto[] }) {
                     <p className="font-heading line-clamp-1 text-sm font-bold">
                       {t.title ?? t.category}
                     </p>
-                    <p className="text-muted-foreground truncate text-xs">
-                      <i className={`fa-solid ${categoryIcon(t.category)} mr-1`} />{t.category}
-                    </p>
+                    <CategoryPills category={t.category} variant="muted" max={2} />
                     <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
                       <i className="fa-solid fa-location-dot" />{t.venueName ?? t.cafe?.name ?? 'See map'}
                     </p>
@@ -715,7 +715,16 @@ function SearchInner() {
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const filtered = (tables ?? []).filter((t) => {
-      if (selectedCats.length > 0 && !selectedCats.includes(t.category)) return false;
+      if (
+        selectedCats.length > 0 &&
+        !selectedCats.some((c) =>
+          splitCategories(t.category).some(
+            (part) => part.toLowerCase() === c.toLowerCase(),
+          ),
+        )
+      ) {
+        return false;
+      }
       if (!matchesPrice(t, priceFilter)) return false;
       if (!matchesDate(t, dateFilter)) return false;
       if (!matchesTime(t, timeFilter)) return false;

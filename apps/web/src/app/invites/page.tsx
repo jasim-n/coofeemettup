@@ -12,6 +12,7 @@ import { Avatar } from '@/components/avatar';
 import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 import { Button } from '@/components/ui/button';
+import { CategoryPills } from '@/components/category-pills';
 const personName = (u: { username?: string | null }) =>
   `@${u.username ?? 'member'}`;
 
@@ -61,9 +62,13 @@ function InviteCard({
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        <span className="glass absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white ring-1 ring-white/20">
-          <i className={`fa-solid ${categoryIcon(table.category)} mr-1`} />{table.category}
-        </span>
+        <CategoryPills
+          category={table.category}
+          variant="glass"
+          max={3}
+          className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)]"
+          pillClassName="text-white ring-white/20"
+        />
       </div>
 
       <div className="p-5 space-y-3">

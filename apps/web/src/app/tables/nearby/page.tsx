@@ -8,7 +8,8 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
-import { categoryIcon } from '@/lib/category-icon';
+import { categoryIcon, splitCategories } from '@/lib/category-icon';
+import { CategoryPills } from '@/components/category-pills';
 import { haversineKm, formatDistance } from '@/lib/geo';
 import { tableCta } from '@/lib/table-cta';
 
@@ -162,11 +163,7 @@ function TableRow({
         <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
           <i className="fa-solid fa-location-dot" /> {venue}
         </p>
-        {/* category chip */}
-        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold">
-          <i className={`fa-solid ${categoryIcon(t.category)}`} />
-          {t.category}
-        </span>
+        <CategoryPills category={t.category} variant="chip" max={3} className="mt-1" />
         {/* meta row */}
         <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
           {dist != null && (
@@ -254,7 +251,8 @@ export default function NearbyTablesPage() {
 
   /* derived categories */
   const categories = useMemo(
-    () => [...new Set((tables ?? []).map((t) => t.category))].sort(),
+    () =>
+      [...new Set((tables ?? []).flatMap((t) => splitCategories(t.category)))].sort(),
     [tables],
   );
 
@@ -262,7 +260,7 @@ export default function NearbyTablesPage() {
   const filtered = useMemo(() => {
     const list = (tables ?? []).filter((t) => {
       // category filter
-      if (category && t.category !== category) return false;
+      if (category && !splitCategories(t.category).includes(category)) return false;
       // status filter
       const s = tableStatus(t);
       if (status !== 'all' && s !== status) return false;

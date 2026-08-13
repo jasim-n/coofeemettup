@@ -6,6 +6,26 @@ Last updated: 2026-08-13.
 
 ---
 
+## Multi-category pills (Tables)
+
+### What it does
+
+Tables store categories as one comma-separated `category` string (preset chips + custom text on create/edit). On the user-facing UI each part is shown as its **own pill**, not one bundled tag.
+
+### Wiring
+
+| Piece | Path |
+|-------|------|
+| Split helper | `splitCategories()` in `apps/web/src/lib/category-icon.ts` |
+| Pill UI | `apps/web/src/components/category-pills.tsx` (`CategoryPills`) |
+| Surfaces | Table detail, Discover, home, Meetups, Nearby, Saved, Invites, Search, Calendar |
+
+Filters that pick a single vibe match **any** split part of a table’s category. Tight cards may show `max` pills plus `+N`.
+
+**No DB migration** — storage format unchanged.
+
+---
+
 ## Venue search + pin map (create / edit Table)
 
 ### What it does

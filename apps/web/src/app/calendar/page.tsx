@@ -7,7 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { PageLoader } from '@/components/spinner';
-import { categoryIcon } from '@/lib/category-icon';
+import { CategoryPills } from '@/components/category-pills';
 
 /* ─── module-level NOW (same pattern as meetups/page.tsx) ────────── */
 const NOW = Date.now();
@@ -282,10 +282,12 @@ export default function CalendarPage() {
                             <i className="fa-solid fa-location-dot" />
                             {t.venueName ?? t.cafe?.name ?? 'See map'}
                           </p>
-                          <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
-                            <i className={`fa-solid ${categoryIcon(t.category)}`} />
-                            {t.category}
-                          </p>
+                          <CategoryPills
+                            category={t.category}
+                            variant="muted"
+                            max={3}
+                            className="mt-0.5"
+                          />
                           {t.myRequestStatus && (
                             <span
                               className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${

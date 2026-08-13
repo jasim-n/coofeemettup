@@ -25,7 +25,8 @@ import TableReviews from '@/components/table-reviews';
 import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
 import { UserLink } from '@/components/user-link';
-import { categoryIcon } from '@/lib/category-icon';
+import { CategoryPills } from '@/components/category-pills';
+import { splitCategories } from '@/lib/category-icon';
 import { haversineKm, formatDistance } from '@/lib/geo';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
@@ -231,6 +232,7 @@ export default function TableDetailPage() {
     coords && mapLat != null && mapLng != null
       ? formatDistance(haversineKm(coords.lat, coords.lng, mapLat, mapLng))
       : null;
+  const categories = splitCategories(table.category);
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
@@ -253,9 +255,7 @@ export default function TableDetailPage() {
 
           {/* title block */}
           <div>
-            <Badge variant="secondary">
-              <i className={`fa-solid ${categoryIcon(table.category)} mr-1`} /> {table.category}
-            </Badge>
+            <CategoryPills category={table.category} variant="badge" />
             <h1 className="display mt-2 text-3xl">{table.title ?? table.category}</h1>
             <div className="text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
               {mapsUrl ? (
@@ -315,7 +315,11 @@ export default function TableDetailPage() {
             <StatTile icon="fa-users" value={`${filled} / ${table.seats}`} label="Seats filled" />
             <StatTile icon="fa-chair" value={String(table.seatsLeft)} label="Seats left" />
             <StatTile icon="fa-ticket" value={price} label="Per person" />
-            <StatTile icon="fa-wand-magic-sparkles" value={table.category} label="Vibe" />
+            <StatTile
+              icon="fa-wand-magic-sparkles"
+              value={categories[0] ?? '—'}
+              label={categories.length > 1 ? `+${categories.length - 1} vibes` : 'Vibe'}
+            />
           </div>
 
           {/* about */}

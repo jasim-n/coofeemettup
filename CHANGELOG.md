@@ -4,6 +4,13 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-13 — Multi-category pills on Table UI
+
+- Comma-separated / multi-select categories now render as **separate pills** on
+  table detail and listing cards (Discover, home, Meetups, Nearby, Saved,
+  Invites, Search, Calendar), via shared `CategoryPills` + `splitCategories`.
+- Category filters match any part of a multi-category table.
+
 ### 2026-08-13 — Venue map pin drops on search select
 
 - On Table create/edit (and admin cafes), choosing a venue search result fills
