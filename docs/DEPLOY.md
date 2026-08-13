@@ -36,8 +36,11 @@ Neon/Upstash dashboards:
 4. Deploy. When it's up, open **`https://<your-api>.onrender.com/api/health`** → should return
    `{"status":"ok","db":"up",...}`. **Copy the API URL.**
 
-Migrations run automatically on every deploy (`prisma migrate deploy`). The Neon DB is
-already migrated + seeded, so nothing else to do.
+Migrations are applied out-of-band against the Neon database before deploying.
+Do not add `prisma migrate deploy` to Render's start command: the pooled Neon
+connection can time out while acquiring Prisma's advisory lock. The Neon DB is
+already migrated + seeded, so the Render service should only start the compiled
+API.
 
 ---
 
