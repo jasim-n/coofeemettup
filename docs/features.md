@@ -45,6 +45,15 @@ Nearby, Search, Calendar, Saved, Invites, Profile, and the tables map.
 
 ---
 
+## Member profiles (admin-only)
+
+Other members' public profiles (`/u/[id]`, `GET /users/:id/profile`) are
+**admin / organizer only**. Members may still open their own `/profile` (and
+`/u/:selfId`). `UserLink` does not navigate for non-admins. Connect and Message
+on `/u/[id]` are admin-only.
+
+---
+
 ## Account lock (admin Suspend / Ban)
 
 ### What it does

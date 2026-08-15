@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { useAuth } from '@/components/auth-provider';
+import { isAdminRole } from '@/lib/roles';
 
 /**
- * Wraps a user's identity block (avatar + name) so tapping it opens that
- * person's public profile at /u/[id]. Never wrap action buttons in this.
+ * Identity block (avatar + name). Links to /u/[id] for admins only;
+ * everyone else sees a non-clickable label. Own identity links to /profile.
  */
 export function UserLink({
   userId,
@@ -15,9 +17,18 @@ export function UserLink({
   className?: string;
   children: React.ReactNode;
 }) {
+  const { user } = useAuth();
+  const isSelf = Boolean(user && user.id === userId);
+  const canOpen = isSelf || isAdminRole(user?.role);
+
+  if (!canOpen) {
+    return <span className={className}>{children}</span>;
+  }
+
+  const href = isSelf ? '/profile' : `/u/${userId}`;
   return (
     <Link
-      href={`/u/${userId}`}
+      href={href}
       className={`rounded-lg outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring/50 ${className}`}
     >
       {children}

@@ -1,9 +1,11 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { Role } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { toPublicProfile, toPublicUser } from './user.serializer';
@@ -154,7 +156,19 @@ export class UsersService {
     return { code: user.referralCode!, count };
   }
 
-  async getPublicProfile(viewerId: string, targetId: string) {
+  async getPublicProfile(
+    viewer: { id: string; role: Role },
+    targetId: string,
+  ) {
+    const viewerId = viewer.id;
+    if (
+      viewerId !== targetId &&
+      viewer.role !== 'ADMIN' &&
+      viewer.role !== 'ORGANIZER'
+    ) {
+      throw new ForbiddenException('Only administrators can view member profiles');
+    }
+
     const u = await this.prisma.user.findUnique({ where: { id: targetId } });
     if (!u) throw new NotFoundException('User not found');
 

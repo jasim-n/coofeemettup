@@ -16,6 +16,7 @@ import { Avatar } from '@/components/avatar';
 import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 import { formatDateTime } from '@/lib/format';
+import { isAdminRole } from '@/lib/roles';
 import { useFadeScrollbar } from '@/hooks/use-fade-scrollbar';
 
 const POLL_MS = 10_000;
@@ -60,6 +61,7 @@ type TabFilter = 'All' | 'Unread' | 'Groups';
 
 export default function MessagesPage() {
   const { user, loading } = useAuth();
+  const isAdmin = isAdminRole(user?.role);
 
   // ---- unified convo list ----
   const [convos, setConvos] = useState<Convo[]>([]);
@@ -478,13 +480,15 @@ export default function MessagesPage() {
                       </p>
                     </div>
                   </UserLink>
-                  <Link
-                    href={`/u/${(selected as DmConvo).userId}`}
-                    className="text-muted-foreground hover:bg-muted grid size-9 shrink-0 place-items-center rounded-full transition-colors"
-                    aria-label="View profile"
-                  >
-                    <i className="fa-solid fa-ellipsis" />
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      href={`/u/${(selected as DmConvo).userId}`}
+                      className="text-muted-foreground hover:bg-muted grid size-9 shrink-0 place-items-center rounded-full transition-colors"
+                      aria-label="View profile"
+                    >
+                      <i className="fa-solid fa-ellipsis" />
+                    </Link>
+                  )}
                 </>
               ) : (
                 <>

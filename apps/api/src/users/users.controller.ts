@@ -88,6 +88,6 @@ export class UsersController {
 
   @Get(':id/profile')
   publicProfile(@CurrentUser() me: AuthUser, @Param('id') id: string) {
-    return this.users.getPublicProfile(me.id, id);
+    return this.users.getPublicProfile(me, id);
   }
 }

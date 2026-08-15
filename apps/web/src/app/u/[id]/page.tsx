@@ -10,6 +10,7 @@ import {
 } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { isAdminRole } from '@/lib/roles';
 import { Avatar } from '@/components/avatar';
 import { ConnectButton } from '@/components/connect-button';
 import { Stars } from '@/components/stars';
@@ -100,13 +101,22 @@ function RatingPill({
 
 export default function PublicProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const isAdmin = isAdminRole(user?.role);
+  const isOwnId = Boolean(user && user.id === id);
 
   const [profile, setProfile] = useState<PublicProfileDto | null>(null);
   const [rep, setRep] = useState<UserReputation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+    // Only admins may view other members' public profiles.
+    if (!isAdmin && !isOwnId) {
+      setError('unavailable');
+      setProfile(null);
+      return;
+    }
     let active = true;
     void (async () => {
       try {
@@ -117,6 +127,7 @@ export default function PublicProfilePage() {
         if (!active) return;
         setProfile(profileData);
         setRep(repData);
+        setError(null);
       } catch (err) {
         if (!active) return;
         setError(err instanceof ApiError ? err.message : 'Failed to load profile');
@@ -125,7 +136,9 @@ export default function PublicProfilePage() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, authLoading, isAdmin, isOwnId]);
+
+  if (authLoading) return <PageLoader />;
 
   if (error && !profile) {
     return (
@@ -215,7 +228,7 @@ export default function PublicProfilePage() {
               </p>
             </div>
 
-            {/* Action row */}
+            {/* Action row — Connect / Message are admin-only */}
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               {isSelf ? (
                 <Link
@@ -224,7 +237,7 @@ export default function PublicProfilePage() {
                 >
                   Edit profile
                 </Link>
-              ) : user ? (
+              ) : isAdmin ? (
                 <>
                   <ConnectButton userId={id} initial={connectionState} />
                   <Link

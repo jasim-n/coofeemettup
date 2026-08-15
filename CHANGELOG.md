@@ -4,6 +4,14 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-15 — Member profiles admin-only
+
+- Other members' `/u/[id]` pages are visible to admins (and organizers) only;
+  API `GET /users/:id/profile` returns 403 for everyone else (self still allowed).
+- Connect and Message on public profiles are admin-only.
+- `UserLink` (handles in chat, tables, invites, etc.) no longer navigates for
+  non-admins; own identity still opens `/profile`.
+
 ### 2026-08-15 — UI list cache on remaining table pages
 
 - Nearby, Search, Calendar, Saved, Invites, Profile, and the tables map share
