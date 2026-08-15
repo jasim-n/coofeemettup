@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ApiError, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
@@ -234,9 +235,12 @@ export default function DiscoverPage() {
     let active = true;
     void (async () => {
       try {
-        const browsePromise = api.browseTables();
+        const keys = tablesCacheKeys(user?.id);
+        const browsePromise = swrGet(keys.browse, () => api.browseTables());
         const joinedPromise = user
-          ? api.myJoinedTables().catch(() => [] as TableDto[])
+          ? swrGet(keys.joined, () => api.myJoinedTables()).catch(
+              () => [] as TableDto[],
+            )
           : Promise.resolve([] as TableDto[]);
         const [list, joined] = await Promise.all([browsePromise, joinedPromise]);
         if (active) {

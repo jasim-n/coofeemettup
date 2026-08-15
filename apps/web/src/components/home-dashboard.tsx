@@ -9,6 +9,7 @@ import {
   type TableDto,
 } from '@jrst/api-client';
 import { api } from '@/lib/api';
+import { swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
@@ -39,10 +40,13 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
     let active = true;
     void (async () => {
       try {
+        const keys = tablesCacheKeys(user.id);
         const [t, j, h, n, f] = await Promise.all([
-          api.browseTables(),
-          api.myJoinedTables(),
-          api.myHostedTables().catch(() => [] as TableDto[]),
+          swrGet(keys.browse, () => api.browseTables()),
+          swrGet(keys.joined, () => api.myJoinedTables()),
+          swrGet(keys.hosted, () => api.myHostedTables()).catch(
+            () => [] as TableDto[],
+          ),
           api.notifications().catch(() => ({ items: [] as NotificationDto[], unread: 0 })),
           api.featuredImages().catch(() => [] as FeaturedImageDto[]),
         ]);
@@ -62,7 +66,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user.id]);
 
   const viewerId = user.id;
   const upcoming = tables.slice(0, 6);

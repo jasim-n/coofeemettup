@@ -673,6 +673,17 @@ export class ApiClient {
     return this.request('DELETE', `/admin/tables/${tableId}`);
   }
 
+  adminInvalidateCache(
+    scope: 'all' | 'tables' | 'tables:browse' | 'tables:mine' = 'all',
+    userId?: string,
+  ): Promise<{ ok: true; scope: string; removed: number }> {
+    return this.request('POST', '/admin/cache/invalidate', { scope, userId });
+  }
+
+  adminFlushCache(): Promise<{ ok: true; scope: string; removed: number }> {
+    return this.request('DELETE', '/admin/cache');
+  }
+
   adminListReviews(limit = 30, offset = 0): Promise<AdminReviewsResponse> {
     const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) }).toString();
     return this.request('GET', `/admin/reviews?${qs}`);

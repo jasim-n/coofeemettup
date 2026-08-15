@@ -20,6 +20,7 @@ import { ResolveReportDto } from './dto/resolve-report.dto';
 import { SetMailProviderDto } from './dto/set-mail-provider.dto';
 import { TestMailDto } from './dto/test-mail.dto';
 import { SetFeaturedDto } from './dto/set-featured.dto';
+import { InvalidateCacheDto } from './dto/invalidate-cache.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -310,5 +311,23 @@ export class AdminController {
       meta: { email: dto.email, provider: result.provider },
     });
     return result;
+  }
+
+  // ── Cache invalidation ─────────────────────────────────────────────────────
+
+  @Post('admin/cache/invalidate')
+  @HttpCode(200)
+  invalidateCache(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: InvalidateCacheDto,
+  ) {
+    return this.admin.invalidateCache(user.id, dto.scope, dto.userId);
+  }
+
+  /** Alias: wipe every tables cache namespace. */
+  @Delete('admin/cache')
+  @HttpCode(200)
+  flushCache(@CurrentUser() user: AuthUser) {
+    return this.admin.invalidateCache(user.id, 'all');
   }
 }

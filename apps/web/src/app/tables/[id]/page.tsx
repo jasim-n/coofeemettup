@@ -28,6 +28,7 @@ import { UserLink } from '@/components/user-link';
 import { CategoryPills } from '@/components/category-pills';
 import { splitCategories } from '@/lib/category-icon';
 import { haversineKm, formatDistance } from '@/lib/geo';
+import { invalidateTablesClientCache } from '@/lib/data-cache';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
 
@@ -165,6 +166,7 @@ export default function TableDetailPage() {
     setBusy(true);
     try {
       await action();
+      invalidateTablesClientCache();
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');

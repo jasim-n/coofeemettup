@@ -6,6 +6,7 @@ import { ApiError, type TableJoinRequestDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { useRequestsBadge } from '@/components/requests-badge';
 import { api } from '@/lib/api';
+import { invalidateTablesClientCache } from '@/lib/data-cache';
 import { formatDateTime } from '@/lib/format';
 import { categoryIcon } from '@/lib/category-icon';
 import { UserLink } from '@/components/user-link';
@@ -49,6 +50,7 @@ export default function RequestsPage() {
     setBusy(r.id);
     try {
       await api.approveTableRequest(r.tableId, r.id);
+      invalidateTablesClientCache();
       await refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not approve request');
@@ -61,6 +63,7 @@ export default function RequestsPage() {
     setBusy(r.id);
     try {
       await api.declineTableRequest(r.tableId, r.id);
+      invalidateTablesClientCache();
       await refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not decline request');

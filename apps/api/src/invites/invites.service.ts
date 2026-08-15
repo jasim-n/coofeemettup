@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { InviteStatus } from '../../generated/prisma/client';
 import { toPublicUser } from '../users/user.serializer';
+import { CacheService } from '../redis/cache.service';
 
 const TABLE_SELECT = {
   id: true,
@@ -23,6 +24,7 @@ export class InvitesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly cache: CacheService,
   ) {}
 
   /** Invitees the host has already invited to this table (excludes declined). */
@@ -201,6 +203,15 @@ export class InvitesService {
       'Your invite was accepted.',
       { tableId },
     );
+
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+      select: { hostId: true },
+    });
+    void this.cache.invalidateTableMutation({
+      hostId: table?.hostId,
+      userIds: [me],
+    });
 
     return { ok: true as const };
   }

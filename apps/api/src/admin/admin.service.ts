@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { MailService, type MailProvider } from '../mail/mail.service';
 import { TablesService } from '../tables/tables.service';
+import { CacheService } from '../redis/cache.service';
 import { Prisma } from '../../generated/prisma/client';
 import type {
   AttendanceStatus,
@@ -32,6 +33,7 @@ export class AdminService {
     private readonly audit: AuditService,
     private readonly mail: MailService,
     private readonly tables: TablesService,
+    private readonly cache: CacheService,
   ) {}
 
   // ── Mail provider (OTP sender) ──────────────────────────────────────────────
@@ -411,6 +413,14 @@ export class AdminService {
       where: { id },
       data: { status: 'CANCELLED' },
     });
+    const guests = await this.prisma.tableJoinRequest.findMany({
+      where: { tableId: id },
+      select: { userId: true },
+    });
+    void this.cache.invalidateTableMutation({
+      hostId: table.hostId,
+      userIds: guests.map((g) => g.userId),
+    });
     return { ok: true as const };
   }
 
@@ -476,6 +486,11 @@ export class AdminService {
     });
     if (!table) throw new NotFoundException('Table not found');
 
+    const guests = await this.prisma.tableJoinRequest.findMany({
+      where: { tableId },
+      select: { userId: true },
+    });
+
     await this.prisma.$transaction([
       this.prisma.tableJoinRequest.deleteMany({ where: { tableId } }),
       this.prisma.review.deleteMany({ where: { tableId } }),
@@ -491,7 +506,46 @@ export class AdminService {
       targetId: tableId,
     });
 
+    void this.cache.invalidateTableMutation({
+      hostId: table.hostId,
+      userIds: guests.map((g) => g.userId),
+    });
+
     return { ok: true as const };
+  }
+
+  /** Manual Redis cache flush (admin). Mutations also invalidate automatically. */
+  async invalidateCache(
+    actorId: string,
+    scope: 'all' | 'tables' | 'tables:browse' | 'tables:mine',
+    userId?: string,
+  ) {
+    let removed = 0;
+    if (scope === 'all' || scope === 'tables') {
+      removed = await this.cache.invalidateAllTables();
+    } else if (scope === 'tables:browse') {
+      await this.cache.invalidateBrowse();
+      removed = 1;
+    } else if (scope === 'tables:mine') {
+      if (userId) {
+        await this.cache.invalidateUserLists(userId);
+        removed = 3;
+      } else {
+        removed = await this.cache.delByPrefix(
+          `${CacheService.TABLES_PREFIX}mine:`,
+        );
+      }
+    }
+
+    void this.audit.log({
+      actorId,
+      action: 'cache.invalidated',
+      targetType: 'cache',
+      targetId: scope,
+      meta: { userId: userId ?? null, removed },
+    });
+
+    return { ok: true as const, scope, removed };
   }
 
   // ── Review moderation ─────────────────────────────────────────────────────

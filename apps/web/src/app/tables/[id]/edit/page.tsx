@@ -7,6 +7,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ApiError, type UpdateTableInput } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { invalidateTablesClientCache } from '@/lib/data-cache';
 import VenueSearch from '@/components/venue-search';
 import { BannerPicker } from '@/components/banner-picker';
 import { Button } from '@/components/ui/button';
@@ -178,6 +179,7 @@ export default function EditTablePage() {
         pricePKR: form.price.trim() ? Number(form.price) : undefined,
       };
       await api.updateTable(id, input);
+      invalidateTablesClientCache();
       router.push(`/tables/${id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not save changes');

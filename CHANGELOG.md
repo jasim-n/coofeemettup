@@ -4,6 +4,15 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-15 — Redis + UI cache for Discover / Meetups
+
+- Backend caches shared OPEN browse list and per-user joined/hosted/saved lists
+  in Redis (TTL safety net + explicit invalidation on create/update/join/leave/
+  approve/decline/complete/save/invite-accept/admin cancel·delete·kick).
+- Admin flush: `POST /admin/cache/invalidate` and `DELETE /admin/cache`.
+- Web Discover, Meetups, and home use in-memory stale-while-revalidate; mutations
+  clear the client `tables:` cache prefix.
+
 ### 2026-08-15 — Messages overlay scrollbars
 
 - Left / center / right Messages panes use fade overlay scrollbars: hidden until

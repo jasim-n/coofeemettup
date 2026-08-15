@@ -10,6 +10,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
 import { ReactionsService } from '../reactions/reactions.service';
 import { MediaService } from '../media/media.service';
+import { CacheService } from '../redis/cache.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { Prisma } from '../../generated/prisma/client';
@@ -17,6 +18,10 @@ import { toPublicUser } from '../users/user.serializer';
 
 // Public identity only — hosts/participants are shown by @handle, never real name.
 const HOST_SELECT = { id: true, username: true };
+
+type BrowseTableRow = Prisma.TableGetPayload<{
+  include: { cafe: true; host: { select: typeof HOST_SELECT } };
+}>;
 
 @Injectable()
 export class TablesService {
@@ -26,6 +31,7 @@ export class TablesService {
     private readonly audit: AuditService,
     private readonly reactions: ReactionsService,
     private readonly media: MediaService,
+    private readonly cache: CacheService,
   ) {}
 
   // ---------- host: end event + event photos ----------
@@ -53,12 +59,14 @@ export class TablesService {
         targetType: 'table',
         targetId: tableId,
       });
+      void this.cache.invalidateTableMutation({ hostId: table.hostId });
     } else if (table.completedAt == null) {
       // Legacy COMPLETED rows without a stamp — set once so the review window can close.
       await this.prisma.table.update({
         where: { id: tableId },
         data: { completedAt: new Date() },
       });
+      void this.cache.invalidateTableMutation({ hostId: table.hostId });
     }
     return this.findOne(userId, tableId);
   }
@@ -249,6 +257,7 @@ export class TablesService {
       targetId: table.id,
       meta: { category: table.category, seats: table.seats },
     });
+    void this.cache.invalidateTableMutation({ hostId: userId });
     return table;
   }
 
@@ -303,15 +312,22 @@ export class TablesService {
       targetType: 'table',
       targetId: tableId,
     });
+    void this.cache.invalidateTableMutation({ hostId: userId });
     return this.findOne(userId, tableId);
   }
 
-  mineHosting(userId: string) {
-    return this.prisma.table.findMany({
+  async mineHosting(userId: string) {
+    const key = this.cache.mineHostingKey(userId);
+    const cached = await this.cache.getJson<BrowseTableRow[]>(key);
+    if (cached) return cached;
+
+    const rows = await this.prisma.table.findMany({
       where: { hostId: userId },
       include: { cafe: true, host: { select: HOST_SELECT } },
       orderBy: { startAt: 'desc' },
     });
+    await this.cache.setJson(key, rows, CacheService.TTL_MINE_SEC);
+    return rows;
   }
 
   // ---------- discovery ----------
@@ -324,11 +340,22 @@ export class TablesService {
   }
 
   async browse(userId: string) {
-    const tables = await this.prisma.table.findMany({
-      where: { status: 'OPEN' },
-      include: { cafe: true, host: { select: HOST_SELECT } },
-      orderBy: { startAt: 'asc' },
-    });
+    let tables = await this.cache.getJson<BrowseTableRow[]>(
+      CacheService.BROWSE_OPEN,
+    );
+    if (!tables) {
+      tables = await this.prisma.table.findMany({
+        where: { status: 'OPEN' },
+        include: { cafe: true, host: { select: HOST_SELECT } },
+        orderBy: { startAt: 'asc' },
+      });
+      await this.cache.setJson(
+        CacheService.BROWSE_OPEN,
+        tables,
+        CacheService.TTL_BROWSE_SEC,
+      );
+    }
+    // Per-viewer fields stay live (cheap) so we can share one browse cache.
     const saved = await this.savedSet(userId);
     const ids = tables.map((t) => t.id);
     const statusBy = await this.myStatusByTable(userId, ids);
@@ -394,6 +421,13 @@ export class TablesService {
   }
 
   async mineJoined(userId: string) {
+    const key = this.cache.mineJoinedKey(userId);
+    const cached =
+      await this.cache.getJson<
+        Array<BrowseTableRow & { myRequestStatus: string; saved: boolean }>
+      >(key);
+    if (cached) return cached;
+
     const reqs = await this.prisma.tableJoinRequest.findMany({
       where: { userId },
       include: {
@@ -402,11 +436,13 @@ export class TablesService {
       orderBy: { createdAt: 'desc' },
     });
     const saved = await this.savedSet(userId);
-    return reqs.map((r) => ({
+    const rows = reqs.map((r) => ({
       ...r.table,
       myRequestStatus: r.status,
       saved: saved.has(r.table.id),
     }));
+    await this.cache.setJson(key, rows, CacheService.TTL_MINE_SEC);
+    return rows;
   }
 
   async toggleSave(userId: string, tableId: string) {
@@ -427,10 +463,24 @@ export class TablesService {
       where: { id: userId },
       data: { savedTableIds: next },
     });
+    // Saved flags are overlaid live on browse; mine lists embed `saved`.
+    void this.cache.invalidateUserLists(userId);
     return { saved: !isSaved };
   }
 
   async mineSaved(userId: string) {
+    const key = this.cache.mineSavedKey(userId);
+    const cached = await this.cache.getJson<
+      Array<
+        BrowseTableRow & {
+          saved: true;
+          myRequestStatus: string | null;
+          myInvite: { id: string; status: string } | null;
+        }
+      >
+    >(key);
+    if (cached) return cached;
+
     const u = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { savedTableIds: true },
@@ -443,12 +493,14 @@ export class TablesService {
     });
     const statusBy = await this.myStatusByTable(userId, ids);
     const inviteBy = await this.myInviteByTable(userId, ids);
-    return tables.map((t) => ({
+    const rows = tables.map((t) => ({
       ...t,
-      saved: true,
+      saved: true as const,
       myRequestStatus: statusBy.get(t.id) ?? null,
       myInvite: inviteBy.get(t.id) ?? null,
     }));
+    await this.cache.setJson(key, rows, CacheService.TTL_MINE_SEC);
+    return rows;
   }
 
   // ---------- join lifecycle ----------
@@ -500,6 +552,8 @@ export class TablesService {
       `${user.username ? '@' + user.username : 'Someone'} asked to join your table.`,
       { tableId },
     );
+    // Joined list embeds status; browse overlays stay live — no shared browse bust.
+    void this.cache.invalidateUserLists(userId);
     return request;
   }
 
@@ -603,6 +657,10 @@ export class TablesService {
         : 'The host approved your request. Tap the table to open the group chat.',
       { tableId },
     );
+    void this.cache.invalidateTableMutation({
+      hostId: table.hostId,
+      userIds: [req.userId],
+    });
     return { ok: true as const };
   }
 
@@ -628,6 +686,7 @@ export class TablesService {
       'The host couldn’t fit you in this time — plenty more tables to explore.',
       { tableId },
     );
+    void this.cache.invalidateUserLists(req.userId);
     return { ok: true as const };
   }
 
@@ -642,22 +701,32 @@ export class TablesService {
       );
     }
     const wasApproved = req.status === 'APPROVED';
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+      select: { hostId: true },
+    });
     await this.prisma.$transaction(async (tx) => {
       await tx.tableJoinRequest.update({
         where: { id: req.id },
         data: { status: 'CANCELLED' },
       });
       if (wasApproved) {
-        const table = await tx.table.findUnique({ where: { id: tableId } });
+        const row = await tx.table.findUnique({ where: { id: tableId } });
         await tx.table.update({
           where: { id: tableId },
           data: {
             seatsLeft: { increment: 1 },
-            ...(table?.status === 'FULL' ? { status: 'OPEN' as const } : {}),
+            ...(row?.status === 'FULL' ? { status: 'OPEN' as const } : {}),
           },
         });
       }
     });
+    void this.cache.invalidateTableMutation({
+      hostId: table?.hostId,
+      userIds: [userId],
+      browse: wasApproved, // seats/OPEN↔FULL only when an approved seat freed
+    });
+    if (!wasApproved) void this.cache.invalidateUserLists(userId);
     return { ok: true as const };
   }
 
@@ -897,6 +966,11 @@ export class TablesService {
       targetType: 'table',
       targetId: tableId,
       meta: { userId, asAdmin },
+    });
+
+    void this.cache.invalidateTableMutation({
+      hostId: table.hostId,
+      userIds: [userId],
     });
 
     return { ok: true as const };

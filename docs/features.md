@@ -6,6 +6,44 @@ Last updated: 2026-08-15.
 
 ---
 
+## Tables list cache (Redis + UI)
+
+### Backend (Redis)
+
+| Key | Contents | TTL |
+|-----|----------|-----|
+| `cache:tables:browse:open` | Shared OPEN tables (+ cafe/host), no per-user fields | 60s |
+| `cache:tables:mine:joined:{userId}` | Viewer joined list | 45s |
+| `cache:tables:mine:hosting:{userId}` | Viewer hosted list | 45s |
+| `cache:tables:mine:saved:{userId}` | Viewer saved list | 45s |
+
+Browse overlays (`saved`, `myRequestStatus`, `myInvite`) stay live per request.
+
+Mutations invalidate the affected keys (create/update/complete/approve/leave/
+remove/save/invite-accept/admin cancel·delete). Safety TTL still expires keys.
+
+### Admin invalidation API
+
+| Method | Path | Body |
+|--------|------|------|
+| `POST` | `/admin/cache/invalidate` | `{ scope: 'all' \| 'tables' \| 'tables:browse' \| 'tables:mine', userId? }` |
+| `DELETE` | `/admin/cache` | flush all table caches |
+
+### UI
+
+Module-level SWR (`apps/web/src/lib/data-cache.ts`) on Discover, Meetups, home.
+`invalidateTablesClientCache()` after list-affecting mutations.
+
+### Files
+
+| Piece | Path |
+|-------|------|
+| Cache service | `apps/api/src/redis/cache.service.ts` |
+| Wiring | `TablesService` / `InvitesService` / `AdminService` |
+| Client SWR | `apps/web/src/lib/data-cache.ts` |
+
+---
+
 ## Account lock (admin Suspend / Ban)
 
 ### What it does

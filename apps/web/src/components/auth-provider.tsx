@@ -27,12 +27,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await api.me();
+      // Fail fast on LAN/firewall hangs (Windows → Mac) instead of spinning forever.
+      const res = await Promise.race([
+        api.me(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new ApiError(0, 'Auth request timed out')), 8_000),
+        ),
+      ]);
       setUser(res.user);
     } catch (err) {
       // 401 = no active session (including suspended/banned). Clear token so
       // a locked account cannot keep using a stale JWT from localStorage.
-      if (err instanceof ApiError && err.status === 401) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 0)) {
         window.localStorage.removeItem(TOKEN_KEY);
         api.setAuthToken(null);
         setUser(null);

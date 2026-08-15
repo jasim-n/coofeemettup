@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ApiError, type AdminTableDto, type AdminTableParticipants } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { invalidateTablesClientCache } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -119,6 +120,7 @@ export default function AdminTablesPage() {
     setErrorFor(t.id, 'cancel', null);
     try {
       await api.adminCancelTable(t.id);
+      invalidateTablesClientCache();
       await refresh();
     } catch (err) {
       setErrorFor(t.id, 'cancel', err instanceof ApiError ? err.message : 'Could not cancel table');
@@ -138,6 +140,7 @@ export default function AdminTablesPage() {
     setErrorFor(t.id, 'delete', null);
     try {
       await api.adminDeleteTable(t.id);
+      invalidateTablesClientCache();
       setTables((prev) => (prev ?? []).filter((x) => x.id !== t.id));
     } catch (err) {
       setErrorFor(t.id, 'delete', err instanceof ApiError ? err.message : 'Could not delete table');
@@ -178,6 +181,7 @@ export default function AdminTablesPage() {
     setParticipantError((prev) => { const n = { ...prev }; delete n[key]; return n; });
     try {
       await api.adminRemoveParticipant(tableId, userId);
+      invalidateTablesClientCache();
       await refetchParticipants(tableId);
     } catch (err) {
       setParticipantError((prev) => ({

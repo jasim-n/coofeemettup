@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { ApiError, type InviteDto, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import {
+  invalidateTablesClientCache,
+  swrGet,
+  tablesCacheKeys,
+} from '@/lib/data-cache';
 import { tableCta } from '@/lib/table-cta';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
@@ -442,10 +447,13 @@ export default function MeetupsPage() {
     // listsLoading starts true; the finally below clears it after this one-shot load.
     void (async () => {
       try {
+        const keys = tablesCacheKeys(user.id);
         const [b, j, h] = await Promise.all([
-          api.browseTables(),
-          api.myJoinedTables(),
-          api.myHostedTables().catch(() => [] as TableDto[]),
+          swrGet(keys.browse, () => api.browseTables()),
+          swrGet(keys.joined, () => api.myJoinedTables()),
+          swrGet(keys.hosted, () => api.myHostedTables()).catch(
+            () => [] as TableDto[],
+          ),
         ]);
         if (active) {
           setBrowse(b);
@@ -468,7 +476,8 @@ export default function MeetupsPage() {
     let active = true;
     void (async () => {
       try {
-        const data = await api.myInvites();
+        const keys = tablesCacheKeys(user.id);
+        const data = await swrGet(keys.invites, () => api.myInvites());
         if (active) setInvites(data);
       } catch {
         /* best-effort */
@@ -572,6 +581,7 @@ export default function MeetupsPage() {
     try {
       if (action === 'accept') await api.acceptInvite(id);
       else await api.maybeInvite(id);
+      invalidateTablesClientCache();
       setInvites((prev) => prev.filter((inv) => inv.id !== id));
     } catch {
       /* best-effort */
