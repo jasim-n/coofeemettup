@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ApiError, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
-import { swrGet, tablesCacheKeys } from '@/lib/data-cache';
+import { peekCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
@@ -218,9 +218,19 @@ function TableCoverCard({
 export default function DiscoverPage() {
   const { user } = useAuth();
 
-  const [tables, setTables] = useState<TableDto[] | null>(null);
-  const [myJoined, setMyJoined] = useState<TableDto[]>([]);
+  const [tables, setTables] = useState<TableDto[] | null>(
+    () => peekCache<TableDto[]>(tablesCacheKeys(user?.id).browse) ?? null,
+  );
+  const [myJoined, setMyJoined] = useState<TableDto[]>(
+    () => peekCache<TableDto[]>(tablesCacheKeys(user?.id).joined) ?? [],
+  );
   const [error, setError] = useState<string | null>(null);
+
+  // Re-seed on render when auth resolves / cache fills (no effect setState).
+  const seedBrowse = peekCache<TableDto[]>(tablesCacheKeys(user?.id).browse);
+  const seedJoined = peekCache<TableDto[]>(tablesCacheKeys(user?.id).joined);
+  const tablesView = tables ?? seedBrowse ?? null;
+  const myJoinedView = myJoined.length > 0 ? myJoined : (seedJoined ?? []);
 
   // filters
   const [q, setQ] = useState('');
@@ -233,9 +243,10 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     let active = true;
+    const keys = tablesCacheKeys(user?.id);
+
     void (async () => {
       try {
-        const keys = tablesCacheKeys(user?.id);
         const browsePromise = swrGet(keys.browse, () => api.browseTables());
         const joinedPromise = user
           ? swrGet(keys.joined, () => api.myJoinedTables()).catch(
@@ -266,13 +277,13 @@ export default function DiscoverPage() {
   }, []);
 
   const categories = useMemo(
-    () => [...new Set((tables ?? []).flatMap((t) => splitCategories(t.category)))].sort(),
-    [tables],
+    () => [...new Set((tablesView ?? []).flatMap((t) => splitCategories(t.category)))].sort(),
+    [tablesView],
   );
 
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return (tables ?? []).filter((t) => {
+    return (tablesView ?? []).filter((t) => {
       if (category && !splitCategories(t.category).includes(category)) return false;
       if (!matchesPrice(t, priceTier)) return false;
       if (!matchesWhen(t, when, customDate)) return false;
@@ -284,7 +295,7 @@ export default function DiscoverPage() {
       }
       return true;
     });
-  }, [tables, q, category, priceTier, when, customDate, coords, distanceKm]);
+  }, [tablesView, q, category, priceTier, when, customDate, coords, distanceKm]);
 
   // split into recommended (first 4) + more
   const recommended = results.slice(0, 3);
@@ -293,7 +304,7 @@ export default function DiscoverPage() {
   // top categories by table count
   const catCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const t of tables ?? []) {
+    for (const t of tablesView ?? []) {
       for (const c of splitCategories(t.category)) {
         counts[c] = (counts[c] ?? 0) + 1;
       }
@@ -301,19 +312,19 @@ export default function DiscoverPage() {
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8);
-  }, [tables]);
+  }, [tablesView]);
 
   // upcoming joined tables (future, APPROVED or PENDING)
   const upcomingJoined = useMemo(
     () =>
-      myJoined
+      myJoinedView
         .filter(
           (t) =>
             (t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING') &&
             new Date(t.startAt).getTime() > NOW,
         )
         .slice(0, 2),
-    [myJoined],
+    [myJoinedView],
   );
 
   const resetFilters = () => {
@@ -646,7 +657,7 @@ export default function DiscoverPage() {
             <div className="mb-3">
               <p className="font-heading font-bold tracking-tight">🔥 Trending now</p>
             </div>
-            {tables === null ? (
+            {tablesView === null ? (
               <ul className="space-y-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <li key={i} className="flex items-center gap-3 py-2">
@@ -748,12 +759,12 @@ export default function DiscoverPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{city}</p>
-                    {tables === null ? (
+                    {tablesView === null ? (
                       <div className="bg-muted animate-pulse mt-1 h-2.5 w-16 rounded" />
                     ) : (
                       <p className="text-muted-foreground text-xs">
-                        {cityCount(tables, city)}{' '}
-                        {cityCount(tables, city) === 1 ? 'table' : 'tables'}
+                        {cityCount(tablesView ?? [], city)}{' '}
+                        {cityCount(tablesView ?? [], city) === 1 ? 'table' : 'tables'}
                       </p>
                     )}
                   </div>

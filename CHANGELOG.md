@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-15 — Instant UI cache paint for home / lists
+
+- Home no longer waits on notifications/featured before clearing the spinner.
+- List cache hydrates from memory + sessionStorage on first paint; SWR fresh
+  window extended to 60s (stale 5m).
+
 ### 2026-08-15 — Redis + UI cache for Discover / Meetups
 
 - Backend caches shared OPEN browse list and per-user joined/hosted/saved lists

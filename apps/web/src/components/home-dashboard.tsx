@@ -9,7 +9,7 @@ import {
   type TableDto,
 } from '@jrst/api-client';
 import { api } from '@/lib/api';
-import { swrGet, tablesCacheKeys } from '@/lib/data-cache';
+import { peekCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
@@ -29,37 +29,51 @@ function ago(iso: string, now: number) {
 
 /** Desktop content dashboard — Design System v2.0 home. */
 export function HomeDashboard({ user }: { user: PublicUser }) {
-  const [tables, setTables] = useState<TableDto[]>([]);
-  const [joined, setJoined] = useState<TableDto[]>([]);
-  const [hosted, setHosted] = useState<TableDto[]>([]);
+  const keys = tablesCacheKeys(user.id);
+  const [tables, setTables] = useState(
+    () => peekCache<TableDto[]>(keys.browse) ?? [],
+  );
+  const [joined, setJoined] = useState(
+    () => peekCache<TableDto[]>(keys.joined) ?? [],
+  );
+  const [hosted, setHosted] = useState(
+    () => peekCache<TableDto[]>(keys.hosted) ?? [],
+  );
   const [activity, setActivity] = useState<NotificationDto[]>([]);
   const [featured, setFeatured] = useState<FeaturedImageDto[]>([]);
-  const [busy, setBusy] = useState(true);
+  // Only block UI when we have nothing cached to paint.
+  const [busy, setBusy] = useState(() => peekCache(keys.browse) == null);
 
   useEffect(() => {
     let active = true;
+    const k = tablesCacheKeys(user.id);
     void (async () => {
       try {
-        const keys = tablesCacheKeys(user.id);
-        const [t, j, h, n, f] = await Promise.all([
-          swrGet(keys.browse, () => api.browseTables()),
-          swrGet(keys.joined, () => api.myJoinedTables()),
-          swrGet(keys.hosted, () => api.myHostedTables()).catch(
+        // Lists first — cache hits resolve immediately and clear the spinner.
+        const [t, j, h] = await Promise.all([
+          swrGet(k.browse, () => api.browseTables()),
+          swrGet(k.joined, () => api.myJoinedTables()),
+          swrGet(k.hosted, () => api.myHostedTables()).catch(
             () => [] as TableDto[],
           ),
-          api.notifications().catch(() => ({ items: [] as NotificationDto[], unread: 0 })),
+        ]);
+        if (!active) return;
+        setTables(t);
+        setJoined(j);
+        setHosted(h);
+        setBusy(false);
+
+        // Side rails: never block the main dashboard on these.
+        const [n, f] = await Promise.all([
+          api
+            .notifications()
+            .catch(() => ({ items: [] as NotificationDto[], unread: 0 })),
           api.featuredImages().catch(() => [] as FeaturedImageDto[]),
         ]);
-        if (active) {
-          setTables(t);
-          setJoined(j);
-          setHosted(h);
-          setActivity(n.items.slice(0, 3));
-          setFeatured(f);
-        }
+        if (!active) return;
+        setActivity(n.items.slice(0, 3));
+        setFeatured(f);
       } catch {
-        /* non-fatal on the dashboard */
-      } finally {
         if (active) setBusy(false);
       }
     })();

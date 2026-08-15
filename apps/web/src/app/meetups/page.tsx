@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import {
   invalidateTablesClientCache,
+  peekCache,
   swrGet,
   tablesCacheKeys,
 } from '@/lib/data-cache';
@@ -427,6 +428,19 @@ export default function MeetupsPage() {
   const [error, setError] = useState<string | null>(null);
   const [listsLoading, setListsLoading] = useState(true);
 
+  // Sync seed from cache during render (no effect setState) so revisits paint instantly.
+  const seedKeys = tablesCacheKeys(user?.id);
+  const seedBrowse = peekCache<TableDto[]>(seedKeys.browse);
+  const seedJoined = peekCache<TableDto[]>(seedKeys.joined);
+  const seedHosted = peekCache<TableDto[]>(seedKeys.hosted);
+  const seedInvites = peekCache<InviteDto[]>(seedKeys.invites);
+  const browseView = browse.length > 0 ? browse : (seedBrowse ?? []);
+  const joinedView = joined.length > 0 ? joined : (seedJoined ?? []);
+  const hostedView = hosted.length > 0 ? hosted : (seedHosted ?? []);
+  const invitesView = invites.length > 0 ? invites : (seedInvites ?? []);
+  const listsPending =
+    listsLoading && browseView.length === 0 && joinedView.length === 0 && hostedView.length === 0;
+
   // filters
   const [when, setWhen] = useState<WhenFilter>('upcoming');
   const [category, setCategory] = useState('');
@@ -444,10 +458,10 @@ export default function MeetupsPage() {
   useEffect(() => {
     if (!user) return;
     let active = true;
-    // listsLoading starts true; the finally below clears it after this one-shot load.
+    const keys = tablesCacheKeys(user.id);
+
     void (async () => {
       try {
-        const keys = tablesCacheKeys(user.id);
         const [b, j, h] = await Promise.all([
           swrGet(keys.browse, () => api.browseTables()),
           swrGet(keys.joined, () => api.myJoinedTables()),
@@ -474,9 +488,9 @@ export default function MeetupsPage() {
   useEffect(() => {
     if (!user) return;
     let active = true;
+    const keys = tablesCacheKeys(user.id);
     void (async () => {
       try {
-        const keys = tablesCacheKeys(user.id);
         const data = await swrGet(keys.invites, () => api.myInvites());
         if (active) setInvites(data);
       } catch {
@@ -498,14 +512,14 @@ export default function MeetupsPage() {
 
   const categories = useMemo(
     () =>
-      [...new Set([...browse, ...joined].flatMap((t) => splitCategories(t.category)))].sort(),
-    [browse, joined],
+      [...new Set([...browseView, ...joinedView].flatMap((t) => splitCategories(t.category)))].sort(),
+    [browseView, joinedView],
   );
 
   // filtered subsets
   const filteredBrowse = useMemo(
-    () => applyFilters(browse, when, category, fromDate, toDate, coords, radiusKm),
-    [browse, when, category, fromDate, toDate, coords, radiusKm],
+    () => applyFilters(browseView, when, category, fromDate, toDate, coords, radiusKm),
+    [browseView, when, category, fromDate, toDate, coords, radiusKm],
   );
 
   const upcomingCards = useMemo(
@@ -518,8 +532,8 @@ export default function MeetupsPage() {
   // startAt passes. Time "when" filters are not applied here (use 'all').
   const activeJoined = useMemo(() => {
     const mine = [
-      ...hosted,
-      ...joined.filter(
+      ...hostedView,
+      ...joinedView.filter(
         (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
       ),
     ];
@@ -529,13 +543,13 @@ export default function MeetupsPage() {
       (t) => t.status !== 'CANCELLED' && t.status !== 'COMPLETED',
     );
     return applyFilters(live, 'all', category, fromDate, toDate, coords, radiusKm);
-  }, [hosted, joined, category, fromDate, toDate, coords, radiusKm]);
+  }, [hostedView, joinedView, category, fromDate, toDate, coords, radiusKm]);
 
   // Past tab — closed meetups I hosted or joined (not cancelled).
   const pastJoined = useMemo(() => {
     const mine = [
-      ...hosted.filter((t) => t.status === 'COMPLETED'),
-      ...joined.filter(
+      ...hostedView.filter((t) => t.status === 'COMPLETED'),
+      ...joinedView.filter(
         (t) =>
           t.status === 'COMPLETED' &&
           (t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING'),
@@ -543,7 +557,7 @@ export default function MeetupsPage() {
     ];
     const seen = new Set<string>();
     return mine.filter((t) => (seen.has(t.id) ? false : seen.add(t.id)));
-  }, [hosted, joined]);
+  }, [hostedView, joinedView]);
 
   if (loading) return <PageLoader />;
   if (!user)
@@ -560,7 +574,7 @@ export default function MeetupsPage() {
   const TABS: { id: TabId; label: string; badge?: number }[] = [
     { id: 'upcoming', label: 'Upcoming' },
     { id: 'my', label: 'My Meetups' },
-    { id: 'invitations', label: 'Invitations', badge: invites.length },
+    { id: 'invitations', label: 'Invitations', badge: invitesView.length },
     { id: 'past', label: 'Past' },
     { id: 'saved', label: 'Saved' },
   ];
@@ -822,7 +836,7 @@ export default function MeetupsPage() {
                     View all →
                   </Link>
                 </div>
-                {listsLoading ? (
+                {listsPending ? (
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {Array.from({ length: 4 }, (_, i) => <SkeletonCard key={i} />)}
                   </div>
@@ -847,7 +861,7 @@ export default function MeetupsPage() {
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="font-heading text-lg font-bold tracking-tight">My Meetups</h2>
                 </div>
-                {listsLoading ? (
+                {listsPending ? (
                   <div className="bg-card shadow-soft rounded-3xl border p-5 divide-y divide-border/60">
                     {Array.from({ length: 3 }, (_, i) => <SkeletonTableRow key={i} />)}
                   </div>
@@ -878,7 +892,7 @@ export default function MeetupsPage() {
           {tab === 'my' && (
             <div className="space-y-4">
               <h2 className="font-heading text-lg font-bold tracking-tight">My Meetups</h2>
-              {listsLoading ? (
+              {listsPending ? (
                 <div className="bg-card shadow-soft rounded-3xl border p-5 divide-y divide-border/60">
                   {Array.from({ length: 3 }, (_, i) => <SkeletonTableRow key={i} />)}
                 </div>
@@ -902,7 +916,7 @@ export default function MeetupsPage() {
                   View all →
                 </Link>
               </div>
-              {invites.length === 0 ? (
+              {invitesView.length === 0 ? (
                 <div className="rounded-3xl border border-dashed py-16 text-center">
                   <i className="fa-regular fa-envelope-open text-muted-foreground mb-3 text-4xl" />
                   <p className="font-heading mt-2 font-bold">No invitations yet</p>
@@ -912,7 +926,7 @@ export default function MeetupsPage() {
                 </div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {invites.map((inv) => (
+                  {invitesView.map((inv) => (
                     <div key={inv.id} className="bg-card shadow-soft ring-border/60 overflow-hidden rounded-3xl ring-1">
                       <div className="relative h-32">
                         <Cover category={inv.table.category} className="h-full w-full object-cover" />
@@ -993,7 +1007,7 @@ export default function MeetupsPage() {
         {/* ── RIGHT RAIL ─────────────────────────────────────────── */}
         <aside className="space-y-4">
           {/* Calendar */}
-          <CalendarCard joined={joined} />
+          <CalendarCard joined={joinedView} />
 
           {/* Suggested */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
@@ -1003,11 +1017,11 @@ export default function MeetupsPage() {
                 See all
               </Link>
             </div>
-            {browse.slice(0, 3).length === 0 ? (
+            {browseView.slice(0, 3).length === 0 ? (
               <p className="text-muted-foreground text-sm">No suggestions right now.</p>
             ) : (
               <div className="space-y-1">
-                {browse.slice(0, 3).map((t) => (
+                {browseView.slice(0, 3).map((t) => (
                   <SuggestedRow key={t.id} t={t} />
                 ))}
               </div>
@@ -1022,13 +1036,13 @@ export default function MeetupsPage() {
                 View all
               </Link>
             </div>
-            {invites.length === 0 ? (
+            {invitesView.length === 0 ? (
               <div className="rounded-2xl border border-dashed py-6 text-center">
                 <p className="text-muted-foreground text-sm">No invitations yet</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {invites.slice(0, 2).map((inv) => (
+                {invitesView.slice(0, 2).map((inv) => (
                   <div key={inv.id} className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       <div className="ring-border/40 h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-1">
@@ -1070,9 +1084,9 @@ export default function MeetupsPage() {
                     </div>
                   </div>
                 ))}
-                {invites.length > 2 && (
+                {invitesView.length > 2 && (
                   <Link href="/invites" className="text-primary block text-center text-xs font-semibold hover:underline pt-1">
-                    +{invites.length - 2} more →
+                    +{invitesView.length - 2} more →
                   </Link>
                 )}
               </div>
