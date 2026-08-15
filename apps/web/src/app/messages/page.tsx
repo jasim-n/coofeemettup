@@ -16,6 +16,7 @@ import { Avatar } from '@/components/avatar';
 import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 import { formatDateTime } from '@/lib/format';
+import { useFadeScrollbar } from '@/hooks/use-fade-scrollbar';
 
 const POLL_MS = 10_000;
 
@@ -100,6 +101,9 @@ export default function MessagesPage() {
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const leftScrollRef = useFadeScrollbar();
+  const centerScrollRef = useFadeScrollbar();
+  const rightScrollRef = useFadeScrollbar();
 
   // ---- load + poll all convos + connections ----
   // Both DM and group threads carry a real last-message time + unread count, so
@@ -383,7 +387,7 @@ export default function MessagesPage() {
           </div>
 
           {/* conversation list */}
-          <div className="flex-1 overflow-y-auto">
+          <div ref={leftScrollRef} className="scrollbar-fade flex-1 overflow-y-auto">
             {convoLoading ? (
               <div className="text-muted-foreground grid h-full place-items-center py-8 text-sm">
                 <span>Loading…</span>
@@ -537,7 +541,10 @@ export default function MessagesPage() {
             )}
 
             {/* messages area */}
-            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            <div
+              ref={centerScrollRef}
+              className="scrollbar-fade flex-1 space-y-3 overflow-y-auto px-4 py-4"
+            >
               {chatLoading ? (
                 <div className="text-muted-foreground grid h-full place-items-center text-sm">
                   <span>Loading messages…</span>
@@ -826,7 +833,11 @@ export default function MessagesPage() {
         )}
 
         {/* ========== RIGHT RAIL ========== */}
-        <aside className="space-y-4 overflow-y-auto" onClick={() => setPickerOpen(false)}>
+        <aside
+          ref={rightScrollRef}
+          className="scrollbar-fade space-y-4 overflow-y-auto"
+          onClick={() => setPickerOpen(false)}
+        >
           {/* active now (presence stub) */}
           {presencePool.length > 0 && (
             <div className="bg-card shadow-soft rounded-3xl border p-4">

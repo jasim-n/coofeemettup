@@ -4,6 +4,11 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-15 — Messages overlay scrollbars
+
+- Left / center / right Messages panes use fade overlay scrollbars: hidden until
+  scroll (or hover), thin thumb, no classic Windows width steal.
+
 ### 2026-08-15 — Account lock seal + table chat close + host kick
 
 - **Admin Suspend / Ban** already locked accounts; auth now seals login, OTP,

@@ -222,6 +222,38 @@
     text-transform: uppercase;
     font-size: 0.7rem;
   }
+
+  /*
+   * Overlay fade scrollbar (Messages panes, etc.):
+   * - Custom thin track so Windows never paints the classic width-stealing bar
+   * - Thumb transparent until hover or [data-scrolling], so idle looks clean
+   * - Fixed overlay width → showing/hiding the thumb does not reflow content
+   */
+  .scrollbar-fade {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .scrollbar-fade:hover,
+  .scrollbar-fade[data-scrolling='true'] {
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent)
+      transparent;
+  }
+  .scrollbar-fade::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-fade::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-fade::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 999px;
+  }
+  .scrollbar-fade:hover::-webkit-scrollbar-thumb,
+  .scrollbar-fade[data-scrolling='true']::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+  }
+
   /* Let a MapLibre popup render our own card chrome instead of its default box. */
   .table-popup .maplibregl-popup-content {
     padding: 0;
