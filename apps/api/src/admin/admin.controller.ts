@@ -206,6 +206,12 @@ export class AdminController {
     return this.admin.removeParticipant(user.id, id, userId);
   }
 
+  @Post('admin/tables/:id/chat/close')
+  @HttpCode(200)
+  closeTableChat(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.admin.closeTableChat(user.id, id);
+  }
+
   @Delete('admin/tables/:id')
   @HttpCode(200)
   deleteTable(@CurrentUser() user: AuthUser, @Param('id') id: string) {

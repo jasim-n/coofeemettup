@@ -47,6 +47,14 @@ export class AuthService {
       );
     }
 
+    if (existing && existing.status !== 'ACTIVE') {
+      throw new UnauthorizedException(
+        existing.status === 'BANNED'
+          ? 'This account has been banned'
+          : 'This account has been suspended',
+      );
+    }
+
     const code = await this.otp.request(email);
     return { code, isNewUser };
   }
@@ -140,6 +148,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
+    this.assertActiveAccount(user.status);
     if (!user.passwordHash) {
       throw new BadRequestException(
         'Password setup required. Use email verification.',
@@ -157,6 +166,7 @@ export class AuthService {
   async requestPasswordReset(email: string) {
     const user = await this.users.findByEmail(email);
     if (!user) return { code: null };
+    if (user.status !== 'ACTIVE') return { code: null };
     const code = await this.otp.request(email);
     return { code };
   }
@@ -167,6 +177,7 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Invalid or expired code');
     const user = await this.users.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid or expired code');
+    this.assertActiveAccount(user.status);
     const updated = await this.users.setPassword(
       user.id,
       await hashPassword(password),
@@ -184,9 +195,20 @@ export class AuthService {
     }
   }
 
+  /** Locked accounts must not receive tokens or self profile payloads. */
+  private assertActiveAccount(status: string) {
+    if (status === 'ACTIVE') return;
+    throw new UnauthorizedException(
+      status === 'BANNED'
+        ? 'This account has been banned'
+        : 'This account has been suspended',
+    );
+  }
+
   private async issueSession(
     user: NonNullable<Awaited<ReturnType<UsersService['findByEmail']>>>,
   ) {
+    this.assertActiveAccount(user.status);
     const payload: SessionPayload = { sub: user.id, role: user.role };
     const token = await this.jwt.signAsync(payload);
     return { user, token };

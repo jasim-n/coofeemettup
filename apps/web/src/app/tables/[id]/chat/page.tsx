@@ -19,13 +19,18 @@ export default function TableChatPage() {
   const { user, loading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [member, setMember] = useState<boolean | null>(null);
+  const [closed, setClosed] = useState(false);
+  const [closesAt, setClosesAt] = useState<string | null>(null);
+  const [canClose, setCanClose] = useState(false);
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [reactPickerId, setReactPickerId] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
 
   async function toggleReaction(messageId: string, emoji: string) {
+    if (closed) return;
     try {
       const updated = await api.toggleReaction('group', messageId, emoji);
       setMessages((prev) =>
@@ -41,6 +46,9 @@ export default function TableChatPage() {
     const res = await api.tableChat(id);
     setMember(res.member);
     setMessages(res.messages);
+    setClosed(res.closed);
+    setClosesAt(res.closesAt);
+    setCanClose(res.canClose);
     if (res.member) void api.markGroupRead(id).catch(() => undefined);
   }, [id]);
 
@@ -76,7 +84,7 @@ export default function TableChatPage() {
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const text = body.trim();
-    if (!text) return;
+    if (!text || closed) return;
     setSending(true);
     setError(null);
     try {
@@ -90,19 +98,66 @@ export default function TableChatPage() {
     }
   }
 
+  async function closeChat() {
+    if (!window.confirm('Close this group chat? Nobody will be able to send new messages.')) {
+      return;
+    }
+    setClosing(true);
+    setError(null);
+    try {
+      await api.closeTableChat(id);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not close chat');
+    } finally {
+      setClosing(false);
+    }
+  }
+
+  const closesLabel =
+    closesAt &&
+    new Date(closesAt).toLocaleString('en-PK', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
   return (
     <main className="mx-auto flex h-[100dvh] w-full max-w-[1508px] flex-col px-4 py-4">
-      <div className="mb-3 flex items-center justify-between px-2">
+      <div className="mb-3 flex items-center justify-between gap-3 px-2">
         <div>
           <p className="eyebrow text-primary">Table</p>
           <h1 className="font-heading text-xl font-bold tracking-tight">Group chat</h1>
         </div>
-        <Link href={`/tables/${id}`} className="text-muted-foreground text-sm font-semibold hover:underline">
-          ← Table
-        </Link>
+        <div className="flex items-center gap-3">
+          {canClose && (
+            <Button
+              size="xs"
+              variant="outline"
+              disabled={closing}
+              onClick={() => void closeChat()}
+            >
+              {closing ? 'Closing…' : 'Close chat'}
+            </Button>
+          )}
+          <Link href={`/tables/${id}`} className="text-muted-foreground text-sm font-semibold hover:underline">
+            ← Table
+          </Link>
+        </div>
       </div>
 
       {error && <p className="text-destructive px-2 pb-2 text-sm">{error}</p>}
+
+      {member && closed && (
+        <p className="text-muted-foreground mb-2 px-2 text-sm">
+          This chat is closed
+          {closesLabel ? ` (since ${closesLabel})` : ''}. You can still read past messages.
+        </p>
+      )}
+      {member && !closed && closesAt && closesLabel && (
+        <p className="text-muted-foreground mb-2 px-2 text-sm">
+          Chat auto-closes {closesLabel} (24h after the meetup ended).
+        </p>
+      )}
 
       <div className="bg-card flex-1 space-y-3 overflow-y-auto rounded-3xl border p-4 shadow-soft">
         {member === false && (
@@ -112,7 +167,7 @@ export default function TableChatPage() {
         )}
         {member && messages.length === 0 && (
           <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
-            <p>No messages yet — say hi 👋</p>
+            <p>{closed ? 'No messages were sent before this chat closed.' : 'No messages yet — say hi 👋'}</p>
           </div>
         )}
         {messages.map((m) => {
@@ -141,34 +196,36 @@ export default function TableChatPage() {
                       minute: '2-digit',
                     })}
                   </span>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setReactPickerId(reactPickerId === m.id ? null : m.id)}
-                      className="text-muted-foreground/60 hover:text-primary text-[11px]"
-                      aria-label="React"
-                    >
-                      <i className="fa-regular fa-face-smile" />
-                    </button>
-                    {reactPickerId === m.id && (
-                      <div
-                        className={`bg-card shadow-soft absolute bottom-5 z-10 flex gap-1 rounded-full border px-2 py-1 ${
-                          mine ? 'right-0' : 'left-0'
-                        }`}
+                  {!closed && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setReactPickerId(reactPickerId === m.id ? null : m.id)}
+                        className="text-muted-foreground/60 hover:text-primary text-[11px]"
+                        aria-label="React"
                       >
-                        {QUICK_EMOJIS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => void toggleReaction(m.id, emoji)}
-                            className="rounded-full p-0.5 text-base transition-transform hover:scale-125"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                        <i className="fa-regular fa-face-smile" />
+                      </button>
+                      {reactPickerId === m.id && (
+                        <div
+                          className={`bg-card shadow-soft absolute bottom-5 z-10 flex gap-1 rounded-full border px-2 py-1 ${
+                            mine ? 'right-0' : 'left-0'
+                          }`}
+                        >
+                          {QUICK_EMOJIS.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => void toggleReaction(m.id, emoji)}
+                              className="rounded-full p-0.5 text-base transition-transform hover:scale-125"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {m.reactions && m.reactions.length > 0 && (
                   <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
@@ -176,12 +233,13 @@ export default function TableChatPage() {
                       <button
                         key={r.emoji}
                         type="button"
+                        disabled={closed}
                         onClick={() => void toggleReaction(m.id, r.emoji)}
                         className={`rounded-full px-2 py-0.5 text-xs ring-1 transition-colors ${
                           r.mine
                             ? 'bg-secondary text-primary ring-primary/40 font-semibold'
                             : 'bg-card text-muted-foreground ring-border/60'
-                        }`}
+                        } ${closed ? 'cursor-default opacity-80' : ''}`}
                       >
                         {r.emoji} {r.count}
                       </button>
@@ -195,7 +253,7 @@ export default function TableChatPage() {
         <div ref={endRef} />
       </div>
 
-      {member && (
+      {member && !closed && (
         <form onSubmit={send} className="mt-3 flex gap-2">
           <Input
             value={body}

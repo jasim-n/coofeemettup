@@ -2,7 +2,69 @@
 
 Living reference for **what each shipped feature does**, **where it lives**, and **structural rules**. Prefer this over Events-era `docs/architecture.md` when they disagree. Code and `schema.prisma` remain authoritative.
 
-Last updated: 2026-08-13.
+Last updated: 2026-08-15.
+
+---
+
+## Account lock (admin Suspend / Ban)
+
+### What it does
+
+Admins lock accounts from `/admin/users` via **Suspend** (`SUSPENDED`) or **Ban** (`BANNED`). Locked users cannot obtain a session or call authenticated APIs (including chats and DMs).
+
+### Enforcement (no workaround)
+
+| Gate | Behavior |
+|------|----------|
+| Password login | Rejected with banned/suspended message |
+| OTP request / verify → session | Blocked for non-`ACTIVE` |
+| Password reset request | Silent no-op (no code) for locked accounts |
+| Password reset → session | Blocked |
+| Every authenticated request | `SessionGuard` re-checks DB `status` (stale JWT useless) |
+| Web `/auth/me` 401 | Clears `jrst_token` from localStorage |
+
+Reactivate only by setting status back to `ACTIVE` in admin.
+
+### Files
+
+| Piece | Path |
+|-------|------|
+| Admin UI | `apps/web/src/app/admin/users/page.tsx` |
+| Status API | `AdminService.setUserStatus` |
+| Auth seal | `apps/api/src/auth/auth.service.ts` |
+| Request gate | `apps/api/src/auth/guards/session.guard.ts` |
+
+---
+
+## Table group chat close + remove participant
+
+### Chat close rules
+
+| Trigger | Effect |
+|---------|--------|
+| Auto | `completedAt + 24h` → chat closed (checked on read/write; no cron) |
+| Host | `POST /tables/:id/chat/close` sets `chatClosedAt` |
+| Admin | `POST /admin/tables/:id/chat/close` |
+
+Closed = no new messages or reactions; history remains readable for members.
+
+### Remove participant
+
+| Actor | Endpoint |
+|-------|----------|
+| Host | `DELETE /tables/:id/participants/:userId` |
+| Admin | `DELETE /admin/tables/:id/participants/:userId` |
+
+Cancels the join request; if was `APPROVED`, restores a seat (`seatsLeft++`, `FULL`→`OPEN` when needed). Cannot remove the host.
+
+### Files
+
+| Piece | Path |
+|-------|------|
+| Service | `TablesService.closeChat` / `removeParticipant` / `getChat` |
+| Host UI | Table detail Guests list; chat page Close chat |
+| Admin UI | `/admin/tables` Close chat + Manage remove |
+| Migration | `chatClosedAt` on `Table` |
 
 ---
 

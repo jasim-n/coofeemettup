@@ -662,6 +662,9 @@ export class TablesService {
   }
 
   // ---------- per-table chat (host + approved guests) ----------
+  /** Group chat auto-closes 24h after the host ends the meetup. */
+  static readonly CHAT_AUTO_CLOSE_MS = 24 * 60 * 60 * 1000;
+
   private async isMember(userId: string, tableId: string): Promise<boolean> {
     const table = await this.prisma.table.findUnique({
       where: { id: tableId },
@@ -674,9 +677,54 @@ export class TablesService {
     return req?.status === 'APPROVED';
   }
 
+  /** Effective chat close time: manual `chatClosedAt`, else completedAt + 24h. */
+  private chatClosesAt(table: {
+    chatClosedAt: Date | null;
+    completedAt: Date | null;
+  }): Date | null {
+    if (table.chatClosedAt) return table.chatClosedAt;
+    if (table.completedAt) {
+      return new Date(
+        table.completedAt.getTime() + TablesService.CHAT_AUTO_CLOSE_MS,
+      );
+    }
+    return null;
+  }
+
+  private isChatClosed(
+    table: { chatClosedAt: Date | null; completedAt: Date | null },
+    now = Date.now(),
+  ): { closed: boolean; closesAt: Date | null } {
+    const closesAt = this.chatClosesAt(table);
+    return {
+      closesAt,
+      closed: closesAt != null && now >= closesAt.getTime(),
+    };
+  }
+
   async getChat(userId: string, tableId: string) {
-    if (!(await this.isMember(userId, tableId))) {
-      return { member: false, messages: [] };
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
+    if (!table) {
+      return {
+        member: false,
+        closed: true,
+        closesAt: null,
+        canClose: false,
+        messages: [],
+      };
+    }
+    const member = await this.isMember(userId, tableId);
+    const { closed, closesAt } = this.isChatClosed(table);
+    if (!member) {
+      return {
+        member: false,
+        closed,
+        closesAt: closesAt?.toISOString() ?? null,
+        canClose: false,
+        messages: [],
+      };
     }
     const me = await this.prisma.user.findUnique({ where: { id: userId } });
     const blocked = new Set(me?.blockedUserIds ?? []);
@@ -703,7 +751,13 @@ export class TablesService {
       username: byId.get(r.userId)?.username ?? null,
       reactions: reactionMap.get(r.id) ?? [],
     }));
-    return { member: true, messages };
+    return {
+      member: true,
+      closed,
+      closesAt: closesAt?.toISOString() ?? null,
+      canClose: table.hostId === userId && !closed,
+      messages,
+    };
   }
 
   async postChat(userId: string, tableId: string, body: string) {
@@ -712,11 +766,139 @@ export class TablesService {
         'Only the host and approved guests can chat',
       );
     }
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
+    if (!table) throw new NotFoundException('Table not found');
+    if (this.isChatClosed(table).closed) {
+      throw new ForbiddenException('This group chat is closed');
+    }
     const text = body.trim();
     if (!text) throw new BadRequestException('Message cannot be empty');
     await this.prisma.groupMessage.create({
       data: { groupId: tableId, userId, body: text.slice(0, 1000) },
     });
+    return { ok: true as const };
+  }
+
+  /** Host (or admin via AdminService) closes the group chat immediately. */
+  async closeChat(actorId: string, tableId: string, asAdmin = false) {
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
+    if (!table) throw new NotFoundException('Table not found');
+    if (!asAdmin && table.hostId !== actorId) {
+      throw new ForbiddenException('Only the host can close this chat');
+    }
+    if (table.chatClosedAt) {
+      return {
+        ok: true as const,
+        chatClosedAt: table.chatClosedAt.toISOString(),
+      };
+    }
+    const updated = await this.prisma.table.update({
+      where: { id: tableId },
+      data: { chatClosedAt: new Date() },
+      select: { chatClosedAt: true },
+    });
+    void this.audit.log({
+      actorId,
+      action: 'table.chat.closed',
+      targetType: 'table',
+      targetId: tableId,
+      meta: { asAdmin },
+    });
+    return {
+      ok: true as const,
+      chatClosedAt: updated.chatClosedAt!.toISOString(),
+    };
+  }
+
+  /** Host view of approved guests (for kick UI). */
+  async listParticipants(userId: string, tableId: string) {
+    await this.assertHost(tableId, userId);
+    const reqs = await this.prisma.tableJoinRequest.findMany({
+      where: { tableId, status: 'APPROVED' },
+      orderBy: { createdAt: 'asc' },
+    });
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: reqs.map((r) => r.userId) } },
+    });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    return reqs.map((r) => {
+      const u = byId.get(r.userId);
+      return {
+        userId: r.userId,
+        status: r.status,
+        createdAt: r.createdAt.toISOString(),
+        user: u ? toPublicUser(u) : null,
+      };
+    });
+  }
+
+  /**
+   * Host removes an approved/pending guest. Cannot remove the host.
+   * Admin path uses the same logic with asAdmin=true.
+   */
+  async removeParticipant(
+    actorId: string,
+    tableId: string,
+    userId: string,
+    asAdmin = false,
+  ) {
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
+    if (!table) throw new NotFoundException('Table not found');
+    if (!asAdmin && table.hostId !== actorId) {
+      throw new ForbiddenException('Only the host can remove participants');
+    }
+    if (userId === table.hostId) {
+      throw new BadRequestException('Cannot remove the host from the table');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const req = await tx.tableJoinRequest.findUnique({
+        where: { tableId_userId: { tableId, userId } },
+        select: { id: true, status: true },
+      });
+
+      if (!req || req.status === 'CANCELLED') {
+        throw new BadRequestException(
+          'No active join request found for this participant',
+        );
+      }
+
+      const wasApproved = req.status === 'APPROVED';
+
+      await tx.tableJoinRequest.update({
+        where: { id: req.id },
+        data: { status: 'CANCELLED' },
+      });
+
+      if (wasApproved) {
+        const updated = await tx.table.update({
+          where: { id: tableId },
+          data: { seatsLeft: { increment: 1 } },
+          select: { status: true, seatsLeft: true },
+        });
+        if (updated.status === 'FULL' && updated.seatsLeft > 0) {
+          await tx.table.update({
+            where: { id: tableId },
+            data: { status: 'OPEN' },
+          });
+        }
+      }
+    });
+
+    void this.audit.log({
+      actorId,
+      action: 'table.participant.removed',
+      targetType: 'table',
+      targetId: tableId,
+      meta: { userId, asAdmin },
+    });
+
     return { ok: true as const };
   }
 }

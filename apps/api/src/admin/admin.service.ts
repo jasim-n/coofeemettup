@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { MailService, type MailProvider } from '../mail/mail.service';
+import { TablesService } from '../tables/tables.service';
 import { Prisma } from '../../generated/prisma/client';
 import type {
   AttendanceStatus,
@@ -30,6 +31,7 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly mail: MailService,
+    private readonly tables: TablesService,
   ) {}
 
   // ── Mail provider (OTP sender) ──────────────────────────────────────────────
@@ -461,49 +463,11 @@ export class AdminService {
   }
 
   async removeParticipant(actorId: string, tableId: string, userId: string) {
-    await this.prisma.$transaction(async (tx) => {
-      const req = await tx.tableJoinRequest.findUnique({
-        where: { tableId_userId: { tableId, userId } },
-        select: { id: true, status: true },
-      });
+    return this.tables.removeParticipant(actorId, tableId, userId, true);
+  }
 
-      if (!req || req.status === 'CANCELLED') {
-        throw new BadRequestException(
-          'No active join request found for this participant',
-        );
-      }
-
-      const wasApproved = req.status === 'APPROVED';
-
-      await tx.tableJoinRequest.update({
-        where: { id: req.id },
-        data: { status: 'CANCELLED' },
-      });
-
-      if (wasApproved) {
-        const updated = await tx.table.update({
-          where: { id: tableId },
-          data: { seatsLeft: { increment: 1 } },
-          select: { status: true, seatsLeft: true },
-        });
-        if (updated.status === 'FULL' && updated.seatsLeft > 0) {
-          await tx.table.update({
-            where: { id: tableId },
-            data: { status: 'OPEN' },
-          });
-        }
-      }
-    });
-
-    void this.audit.log({
-      actorId,
-      action: 'table.participant.removed',
-      targetType: 'table',
-      targetId: tableId,
-      meta: { userId },
-    });
-
-    return { ok: true as const };
+  async closeTableChat(actorId: string, tableId: string) {
+    return this.tables.closeChat(actorId, tableId, true);
   }
 
   async deleteTable(actorId: string, tableId: string) {

@@ -39,6 +39,14 @@ export default function TableDetailPage() {
   const { user } = useAuth();
   const [table, setTable] = useState<TableDto | null>(null);
   const [requests, setRequests] = useState<TableJoinRequestDto[]>([]);
+  const [participants, setParticipants] = useState<
+    Array<{
+      userId: string;
+      status: string;
+      createdAt: string;
+      user: PublicUser | null;
+    }>
+  >([]);
   const [hostRep, setHostRep] = useState<UserReputation | null>(null);
   const [invited, setInvited] = useState<Set<string>>(new Set());
   const [inviteQuery, setInviteQuery] = useState('');
@@ -74,7 +82,12 @@ export default function TableDetailPage() {
     setTable(t);
     api.userReviews(t.hostId).then(setHostRep).catch(() => undefined);
     if (user && t.hostId === user.id) {
-      setRequests(await api.tableRequests(id));
+      const [reqs, members] = await Promise.all([
+        api.tableRequests(id),
+        api.tableParticipants(id),
+      ]);
+      setRequests(reqs);
+      setParticipants(members);
     }
   }, [id, user]);
 
@@ -507,6 +520,51 @@ export default function TableDetailPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-6 border-t pt-4">
+                <h3 className="font-heading mb-2 text-base font-bold tracking-tight">
+                  Guests
+                </h3>
+                {participants.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No approved guests yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {participants.map((p) => (
+                      <div
+                        key={p.userId}
+                        className="flex items-center justify-between gap-2 rounded-2xl border p-3"
+                      >
+                        <span className="flex items-center gap-2 text-sm font-medium">
+                          <UserLink userId={p.userId} className="flex items-center gap-2">
+                            <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">
+                              {initial(p.user?.username)}
+                            </span>
+                            @{p.user?.username ?? 'member'}
+                          </UserLink>
+                        </span>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          className="text-rose-600 border-rose-300 hover:bg-rose-50"
+                          disabled={busy}
+                          onClick={() =>
+                            setConfirm({
+                              title: 'Remove guest?',
+                              message: `@${p.user?.username ?? 'member'} will lose their seat and chat access.`,
+                              confirmLabel: 'Remove',
+                              destructive: true,
+                              onConfirm: () =>
+                                void run(() => api.removeTableParticipant(id, p.userId)),
+                            })
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
           )}

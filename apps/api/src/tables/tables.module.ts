@@ -7,5 +7,6 @@ import { ReactionsModule } from '../reactions/reactions.module';
   imports: [ReactionsModule],
   controllers: [TablesController],
   providers: [TablesService],
+  exports: [TablesService],
 })
 export class TablesModule {}

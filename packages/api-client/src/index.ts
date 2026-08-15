@@ -617,6 +617,28 @@ export class ApiClient {
     return this.request('POST', `/tables/${id}/chat`, { body });
   }
 
+  closeTableChat(id: string): Promise<{ ok: true; chatClosedAt: string }> {
+    return this.request('POST', `/tables/${id}/chat/close`);
+  }
+
+  tableParticipants(id: string): Promise<
+    Array<{
+      userId: string;
+      status: string;
+      createdAt: string;
+      user: PublicUser | null;
+    }>
+  > {
+    return this.request('GET', `/tables/${id}/participants`);
+  }
+
+  removeTableParticipant(
+    tableId: string,
+    userId: string,
+  ): Promise<{ ok: true }> {
+    return this.request('DELETE', `/tables/${tableId}/participants/${userId}`);
+  }
+
   saveTable(id: string): Promise<{ saved: boolean }> {
     return this.request('POST', `/tables/${id}/save`);
   }
@@ -639,6 +661,12 @@ export class ApiClient {
 
   adminRemoveParticipant(tableId: string, userId: string): Promise<{ ok: true }> {
     return this.request('DELETE', `/admin/tables/${tableId}/participants/${userId}`);
+  }
+
+  adminCloseTableChat(
+    tableId: string,
+  ): Promise<{ ok: true; chatClosedAt: string }> {
+    return this.request('POST', `/admin/tables/${tableId}/chat/close`);
   }
 
   adminDeleteTable(tableId: string): Promise<{ ok: true }> {

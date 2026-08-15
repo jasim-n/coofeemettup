@@ -85,6 +85,13 @@ export class ReactionsService {
           );
         }
       }
+      const closedManual = table.chatClosedAt != null;
+      const closedAuto =
+        table.completedAt != null &&
+        Date.now() >= table.completedAt.getTime() + 24 * 60 * 60 * 1000;
+      if (closedManual || closedAuto) {
+        throw new ForbiddenException('This group chat is closed');
+      }
     }
 
     const dbKind: MessageKind =

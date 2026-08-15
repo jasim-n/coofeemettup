@@ -263,6 +263,8 @@ model Table {
   status       TableStatus        @default(OPEN)
   /** Set when host ends the meetup; starts the guest review window. */
   completedAt  DateTime?
+  /** Manual chat close (host/admin). Also auto-closes 24h after completedAt. */
+  chatClosedAt DateTime?
 
   requests     TableJoinRequest[]
   invites      TableInvite[]

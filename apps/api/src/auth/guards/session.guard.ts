@@ -45,7 +45,11 @@ export class SessionGuard implements CanActivate {
         select: { status: true, lastSeenAt: true },
       });
       if (!dbUser || dbUser.status !== 'ACTIVE') {
-        throw new UnauthorizedException('Your account has been suspended');
+        throw new UnauthorizedException(
+          dbUser?.status === 'BANNED'
+            ? 'This account has been banned'
+            : 'This account has been suspended',
+        );
       }
 
       // Presence: bump lastSeenAt at most once a minute (fire-and-forget).

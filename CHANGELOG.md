@@ -4,6 +4,17 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-15 — Account lock seal + table chat close + host kick
+
+- **Admin Suspend / Ban** already locked accounts; auth now seals login, OTP,
+  password reset, and clears stale web tokens so locked users cannot re-enter
+  chats or APIs.
+- Table group chat **auto-closes 24h after** `completedAt`; host and admin can
+  **close chat early**. Closed chats are read-only (no send/reactions).
+- **Host** can remove approved guests (seat restored); admin remove path
+  unchanged and shares the same service logic.
+- Migration: `20260815140000_table_chat_closed_at`.
+
 ### 2026-08-14 — Guest review window (2 days); host never closes
 
 - After the host ends a meetup (`completedAt`), **guests** have **2 days** to

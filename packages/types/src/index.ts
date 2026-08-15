@@ -192,6 +192,8 @@ export interface TableDto {
   status: TableStatus;
   /** ISO time host ended the meetup; null until completed. */
   completedAt?: string | null;
+  /** ISO time chat was manually closed; auto-close also applies 24h after completedAt. */
+  chatClosedAt?: string | null;
   cafe?: Cafe;
   host?: TableHost;
   /** The current viewer's own request status for this table, if any. */
@@ -306,6 +308,12 @@ export interface ChatResponse {
 
 export interface TableChatResponse {
   member: boolean;
+  /** True when posting is blocked (manual close or 24h after completedAt). */
+  closed: boolean;
+  /** ISO time chat closed / will auto-close; null if still open with no deadline. */
+  closesAt: string | null;
+  /** Viewer may manually close chat (host). */
+  canClose: boolean;
   messages: ChatMessage[];
 }
 

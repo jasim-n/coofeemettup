@@ -178,6 +178,27 @@ export class TablesController {
     return this.tables.getChat(user.id, id);
   }
 
+  @Post(':id/chat/close')
+  @HttpCode(200)
+  closeChat(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.tables.closeChat(user.id, id);
+  }
+
+  @Get(':id/participants')
+  participants(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.tables.listParticipants(user.id, id);
+  }
+
+  @Delete(':id/participants/:userId')
+  @HttpCode(200)
+  removeParticipant(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.tables.removeParticipant(user.id, id, userId);
+  }
+
   @Post(':id/read')
   @HttpCode(200)
   markRead(@CurrentUser() user: AuthUser, @Param('id') id: string) {

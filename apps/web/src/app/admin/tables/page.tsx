@@ -37,8 +37,8 @@ function participantName(u: { firstName: string | null; lastInitial: string | nu
   return 'Guest';
 }
 
-type TableBusy = { cancel?: boolean; delete?: boolean; manage?: boolean };
-type TableErrors = { cancel?: string; delete?: string; manage?: string };
+type TableBusy = { cancel?: boolean; delete?: boolean; manage?: boolean; closeChat?: boolean };
+type TableErrors = { cancel?: string; delete?: string; manage?: string; closeChat?: string };
 
 export default function AdminTablesPage() {
   const { user, loading } = useAuth();
@@ -189,6 +189,30 @@ export default function AdminTablesPage() {
     }
   }
 
+  async function closeChat(t: AdminTableDto) {
+    if (!window.confirm('Close this table’s group chat? Guests will not be able to send new messages.')) {
+      return;
+    }
+    setBusyFor(t.id, 'closeChat', true);
+    setErrorFor(t.id, 'closeChat', null);
+    try {
+      const res = await api.adminCloseTableChat(t.id);
+      setTables((prev) =>
+        (prev ?? []).map((row) =>
+          row.id === t.id ? { ...row, chatClosedAt: res.chatClosedAt } : row,
+        ),
+      );
+    } catch (err) {
+      setErrorFor(
+        t.id,
+        'closeChat',
+        err instanceof ApiError ? err.message : 'Could not close chat',
+      );
+    } finally {
+      setBusyFor(t.id, 'closeChat', false);
+    }
+  }
+
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       {/* Header */}
@@ -268,7 +292,7 @@ export default function AdminTablesPage() {
             const errs = tableErrors[t.id] ?? {};
             const isExpanded = !!expanded[t.id];
             const pdata = participants[t.id];
-            const anyBusy = busy.cancel || busy.delete || busy.manage;
+            const anyBusy = busy.cancel || busy.delete || busy.manage || busy.closeChat;
 
             return (
               <Card key={t.id} className="flex-row gap-0 p-0">
@@ -352,6 +376,24 @@ export default function AdminTablesPage() {
                         >
                           {busy.cancel ? <Spinner className="size-3 text-primary" /> : 'Cancel'}
                         </Button>
+                      )}
+
+                      {!t.chatClosedAt && (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          disabled={!!anyBusy}
+                          onClick={() => void closeChat(t)}
+                        >
+                          {busy.closeChat ? (
+                            <Spinner className="size-3 text-primary" />
+                          ) : (
+                            'Close chat'
+                          )}
+                        </Button>
+                      )}
+                      {t.chatClosedAt && (
+                        <Badge variant="secondary">Chat closed</Badge>
                       )}
 
                       {/* Delete (hard) */}

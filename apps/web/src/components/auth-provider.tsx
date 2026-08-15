@@ -30,8 +30,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await api.me();
       setUser(res.user);
     } catch (err) {
-      // 401 = no active session. Anything else is a real error — surface it.
+      // 401 = no active session (including suspended/banned). Clear token so
+      // a locked account cannot keep using a stale JWT from localStorage.
       if (err instanceof ApiError && err.status === 401) {
+        window.localStorage.removeItem(TOKEN_KEY);
+        api.setAuthToken(null);
         setUser(null);
       } else {
         throw err;
