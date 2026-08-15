@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { peekCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
@@ -16,14 +17,18 @@ import { tableCta } from '@/lib/table-cta';
 
 export default function SavedPage() {
   const { user, loading } = useAuth();
+  const seedSaved = peekCache<TableDto[]>(tablesCacheKeys(user?.id).saved);
   const [tables, setTables] = useState<TableDto[] | null>(null);
+  const tablesView = tables ?? seedSaved ?? null;
 
   useEffect(() => {
     if (!user) return;
     let active = true;
     void (async () => {
       try {
-        const list = await api.mySavedTables();
+        const list = await swrGet(tablesCacheKeys(user.id).saved, () =>
+          api.mySavedTables(),
+        );
         if (active) setTables(list);
       } catch {
         if (active) setTables([]);
@@ -55,10 +60,10 @@ export default function SavedPage() {
 
       <div className="mt-8">
         {/* loading */}
-        {tables === null && <PageLoader label="Loading saved tables…" />}
+        {tablesView === null && <PageLoader label="Loading saved tables…" />}
 
         {/* empty state */}
-        {tables !== null && tables.length === 0 && (
+        {tablesView !== null && tablesView.length === 0 && (
           <div className="rounded-3xl border border-dashed py-20 text-center">
             <span className="text-4xl">
               <i className="fa-regular fa-bookmark text-muted-foreground" />
@@ -77,9 +82,9 @@ export default function SavedPage() {
         )}
 
         {/* grid */}
-        {tables !== null && tables.length > 0 && (
+        {tablesView !== null && tablesView.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {tables.map((t) => {
+            {tablesView.map((t) => {
               const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
               const cta = tableCta(t, user?.id);
               return (

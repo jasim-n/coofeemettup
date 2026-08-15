@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ApiError, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { peekCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime } from '@/lib/format';
 import { PageLoader } from '@/components/spinner';
 import { CategoryPills } from '@/components/category-pills';
@@ -34,10 +35,21 @@ function tablesForDay(tables: TableDto[], year: number, month: number, day: numb
 export default function CalendarPage() {
   const { user, loading } = useAuth();
 
+  const seedKeys = tablesCacheKeys(user?.id);
+  const seedJoined = peekCache<TableDto[]>(seedKeys.joined);
+  const seedHosted = peekCache<TableDto[]>(seedKeys.hosted);
+
   const [joined, setJoined] = useState<TableDto[]>([]);
   const [hosted, setHosted] = useState<TableDto[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [fetching, setFetching] = useState(true);
+  const [fetching, setFetching] = useState(
+    () => seedJoined == null && seedHosted == null,
+  );
+
+  const joinedView = joined.length > 0 ? joined : (seedJoined ?? []);
+  const hostedView = hosted.length > 0 ? hosted : (seedHosted ?? []);
+  const showLoader =
+    loading || (Boolean(user) && fetching && joinedView.length === 0 && hostedView.length === 0);
 
   // viewed month state — initialised from NOW once
   const [viewYear, setViewYear] = useState(() => new Date(NOW).getFullYear());
@@ -50,9 +62,12 @@ export default function CalendarPage() {
     if (!user) return;
     let active = true;
     async function load() {
-      if (active) setFetching(true);
+      const keys = tablesCacheKeys(user!.id);
       try {
-        const [j, h] = await Promise.all([api.myJoinedTables(), api.myHostedTables()]);
+        const [j, h] = await Promise.all([
+          swrGet(keys.joined, () => api.myJoinedTables()),
+          swrGet(keys.hosted, () => api.myHostedTables()),
+        ]);
         if (active) {
           setJoined(j);
           setHosted(h);
@@ -69,7 +84,7 @@ export default function CalendarPage() {
     };
   }, [user]);
 
-  if (loading || (user && fetching)) return <PageLoader />;
+  if (showLoader) return <PageLoader />;
 
   if (!user) {
     return (
@@ -96,9 +111,9 @@ export default function CalendarPage() {
   });
 
   // deduplicated tables (joined + hosted, no dupes by id)
-  const allTables = [...joined];
-  const hostedIds = new Set(joined.map((t) => t.id));
-  for (const t of hosted) {
+  const allTables = [...joinedView];
+  const hostedIds = new Set(joinedView.map((t) => t.id));
+  for (const t of hostedView) {
     if (!hostedIds.has(t.id)) allTables.push(t);
   }
 

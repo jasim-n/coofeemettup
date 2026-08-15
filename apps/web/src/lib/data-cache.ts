@@ -165,7 +165,24 @@ export function tablesCacheKeys(userId: string | null | undefined) {
     joined: `tables:joined:${uid}`,
     hosted: `tables:hosted:${uid}`,
     invites: `tables:invites:${uid}`,
+    saved: `tables:saved:${uid}`,
   };
+}
+
+/** Write-through helper (e.g. map poll) so other pages see fresh data. */
+export function putCache<T>(
+  key: string,
+  data: T,
+  opts?: { freshMs?: number; staleMs?: number },
+): void {
+  const freshMs = opts?.freshMs ?? DEFAULT_FRESH_MS;
+  const staleMs = opts?.staleMs ?? DEFAULT_STALE_MS;
+  const t = Date.now();
+  remember(key, {
+    data,
+    freshUntil: t + freshMs,
+    staleUntil: t + staleMs,
+  });
 }
 
 /** Call after any table/invite mutation so lists refresh on next visit. */

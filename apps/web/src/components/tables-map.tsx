@@ -6,7 +6,9 @@ import Link from 'next/link';
 import MapGL, { Marker, NavigationControl, Popup } from 'react-map-gl/maplibre';
 import type { MapRef } from 'react-map-gl/maplibre';
 import { ApiError, type TableDto } from '@jrst/api-client';
+import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { peekCache, putCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Spinner } from '@/components/spinner';
 import { categoryIcon } from '@/lib/category-icon';
@@ -50,10 +52,14 @@ interface Pin {
 const POLL_MS = 15_000;
 
 export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {}) {
-  const [tables, setTables] = useState<TableDto[]>([]);
+  const { user } = useAuth();
+  const browseKey = tablesCacheKeys(user?.id).browse;
+  const seedBrowse = peekCache<TableDto[]>(browseKey);
+
+  const [tables, setTables] = useState<TableDto[]>(() => seedBrowse ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => seedBrowse == null);
   const mapRef = useRef<MapRef | null>(null);
   const railRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [ready, setReady] = useState(false);
@@ -76,9 +82,15 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
 
   useEffect(() => {
     let active = true;
-    const load = async () => {
+    const key = tablesCacheKeys(user?.id).browse;
+    const load = async (forceNetwork: boolean) => {
       try {
-        const next = await api.browseTables();
+        const next = forceNetwork
+          ? await api.browseTables().then((data) => {
+              putCache(key, data);
+              return data;
+            })
+          : await swrGet(key, () => api.browseTables());
         if (active) {
           setError(null);
           setTables(next);
@@ -89,13 +101,13 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
         if (active) setLoading(false);
       }
     };
-    void load();
-    const timer = setInterval(() => void load(), POLL_MS);
+    void load(false);
+    const timer = setInterval(() => void load(true), POLL_MS);
     return () => {
       active = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [user?.id]);
 
   const pins = useMemo(() => {
     const out: Pin[] = [];

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { type NotificationDto, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { peekCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
@@ -207,9 +208,12 @@ function TableRow({
 export default function NearbyTablesPage() {
   const { user } = useAuth(); // ensure auth context is loaded
 
+  const seedKeys = tablesCacheKeys(user?.id);
+  const seedBrowse = peekCache<TableDto[]>(seedKeys.browse);
+
   const [tables, setTables] = useState<TableDto[] | null>(null);
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
-  const [loadingTables, setLoadingTables] = useState(true);
+  const [loadingTables, setLoadingTables] = useState(() => seedBrowse == null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // filters
@@ -218,19 +222,24 @@ export default function NearbyTablesPage() {
   const [status, setStatus] = useState<'all' | 'available' | 'few' | 'full'>('all');
   const [visible, setVisible] = useState(PAGE_SIZE);
 
+  const tablesView = tables ?? seedBrowse ?? null;
+  const listsPending = loadingTables && tablesView == null;
+
   /* data fetch */
   useEffect(() => {
     let active = true;
+    const keys = tablesCacheKeys(user?.id);
     void (async () => {
       try {
-        const [list, notif] = await Promise.all([
-          api.browseTables(),
-          api.notifications().catch(() => ({ items: [] as NotificationDto[], unread: 0 })),
-        ]);
+        const list = await swrGet(keys.browse, () => api.browseTables());
         if (active) {
           setTables(list);
-          setNotifications(notif.items);
+          setLoadingTables(false);
         }
+        const notif = await api
+          .notifications()
+          .catch(() => ({ items: [] as NotificationDto[], unread: 0 }));
+        if (active) setNotifications(notif.items);
       } finally {
         if (active) setLoadingTables(false);
       }
@@ -238,7 +247,7 @@ export default function NearbyTablesPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user?.id]);
 
   /* geolocation — request once on mount */
   useEffect(() => {
@@ -252,13 +261,13 @@ export default function NearbyTablesPage() {
   /* derived categories */
   const categories = useMemo(
     () =>
-      [...new Set((tables ?? []).flatMap((t) => splitCategories(t.category)))].sort(),
-    [tables],
+      [...new Set((tablesView ?? []).flatMap((t) => splitCategories(t.category)))].sort(),
+    [tablesView],
   );
 
   /* filtered + sorted list */
   const filtered = useMemo(() => {
-    const list = (tables ?? []).filter((t) => {
+    const list = (tablesView ?? []).filter((t) => {
       // category filter
       if (category && !splitCategories(t.category).includes(category)) return false;
       // status filter
@@ -284,16 +293,16 @@ export default function NearbyTablesPage() {
     return list.slice().sort(
       (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime(),
     );
-  }, [tables, category, status, radiusKm, coords]);
+  }, [tablesView, category, status, radiusKm, coords]);
 
   /* summary stats */
   const stats = useMemo(() => {
-    const all = tables ?? [];
+    const all = tablesView ?? [];
     const seatsLeft = all.reduce((s, t) => s + Math.max(0, t.seatsLeft), 0);
     const venues = new Set(all.map((t) => t.venueName ?? t.cafe?.name).filter(Boolean)).size;
     const freeTables = all.filter((t) => t.pricePKR == null).length;
     return { total: all.length, seatsLeft, venues, freeTables };
-  }, [tables]);
+  }, [tablesView]);
 
   const resetFilters = () => {
     setRadiusKm(null);
@@ -456,7 +465,7 @@ export default function NearbyTablesPage() {
           </div>
 
           {/* table list */}
-          {loadingTables && (
+          {listsPending && (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <SkeletonCard key={i} />
@@ -464,7 +473,7 @@ export default function NearbyTablesPage() {
             </div>
           )}
 
-          {!loadingTables && filtered.length === 0 && (
+          {!listsPending && filtered.length === 0 && (
             <div className="rounded-3xl border border-dashed py-16 text-center">
               <i className="fa-solid fa-location-dot text-muted-foreground text-3xl" />
               <p className="text-muted-foreground mt-3 text-sm">
@@ -480,7 +489,7 @@ export default function NearbyTablesPage() {
             </div>
           )}
 
-          {!loadingTables && filtered.length > 0 && (
+          {!listsPending && filtered.length > 0 && (
             <>
               <div className="space-y-3">
                 {filtered.slice(0, visible).map((t) => (
@@ -516,7 +525,7 @@ export default function NearbyTablesPage() {
               ].map((row) => (
                 <div key={row.label} className="flex items-center gap-3">
                   <span className="text-primary text-xl font-extrabold leading-none w-10 shrink-0">
-                    {loadingTables ? (
+                    {listsPending ? (
                       <span className="block h-5 w-8 rounded bg-muted animate-pulse" />
                     ) : (
                       row.value

@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { ApiError, type InviteDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import {
+  invalidateTablesClientCache,
+  peekCache,
+  swrGet,
+  tablesCacheKeys,
+} from '@/lib/data-cache';
 import { formatDateTime } from '@/lib/format';
 import { categoryIcon } from '@/lib/category-icon';
 import { Cover } from '@/components/cover-image';
@@ -41,6 +47,7 @@ function InviteCard({
       if (action === 'accept') await api.acceptInvite(invite.id);
       else if (action === 'maybe') await api.maybeInvite(invite.id);
       else await api.declineInvite(invite.id);
+      invalidateTablesClientCache();
       const toastMsg =
         action === 'accept' ? 'Joined ✓' : action === 'maybe' ? 'Marked maybe' : 'Declined';
       onRemove(invite.id, toastMsg);
@@ -133,17 +140,21 @@ function InviteCard({
 
 export default function InvitesPage() {
   const { user, loading } = useAuth();
+  const seedInvites = peekCache<InviteDto[]>(tablesCacheKeys(user?.id).invites);
   const [invites, setInvites] = useState<InviteDto[]>([]);
-  const [fetched, setFetched] = useState(false);
+  const [fetched, setFetched] = useState(() => seedInvites != null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const invitesView = invites.length > 0 ? invites : (seedInvites ?? []);
 
   useEffect(() => {
     if (!user) return;
     let active = true;
     void (async () => {
       try {
-        const data = await api.myInvites();
+        const data = await swrGet(tablesCacheKeys(user.id).invites, () =>
+          api.myInvites(),
+        );
         if (active) {
           setInvites(data);
           setFetched(true);
@@ -168,7 +179,10 @@ export default function InvitesPage() {
   }, [toast]);
 
   function handleRemove(id: string, msg: string) {
-    setInvites((prev) => prev.filter((inv) => inv.id !== id));
+    setInvites((prev) => {
+      const base = prev.length > 0 ? prev : (seedInvites ?? []);
+      return base.filter((inv) => inv.id !== id);
+    });
     setToast(msg);
   }
 
@@ -197,7 +211,7 @@ export default function InvitesPage() {
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
 
       {/* Empty state */}
-      {fetched && invites.length === 0 && !error && (
+      {fetched && invitesView.length === 0 && !error && (
         <div className="rounded-3xl border border-dashed py-20 text-center">
           <i className="fa-regular fa-envelope-open text-muted-foreground mb-3 text-4xl" />
           <p className="font-heading mt-2 font-bold">No invitations right now.</p>
@@ -208,9 +222,9 @@ export default function InvitesPage() {
       )}
 
       {/* Invite cards grid */}
-      {invites.length > 0 && (
+      {invitesView.length > 0 && (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {invites.map((inv) => (
+          {invitesView.map((inv) => (
             <InviteCard key={inv.id} invite={inv} onRemove={handleRemove} />
           ))}
         </div>

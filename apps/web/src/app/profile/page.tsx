@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ApiError, Intent, type TableDto, type UserReputation, type UpdateProfileInput, type NotificationsResponse } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { peekCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { parseList, formatDateTime } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -280,9 +281,14 @@ export default function ProfilePage() {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Stats
+  // Stats (seed from shared tables cache when available)
+  const seedKeys = tablesCacheKeys(user?.id);
+  const seedHosted = peekCache<TableDto[]>(seedKeys.hosted);
+  const seedJoined = peekCache<TableDto[]>(seedKeys.joined);
   const [myHostedTables, setMyHostedTables] = useState<TableDto[]>([]);
   const [myJoinedTables, setMyJoinedTables] = useState<TableDto[]>([]);
+  const hostedView = myHostedTables.length > 0 ? myHostedTables : (seedHosted ?? []);
+  const joinedView = myJoinedTables.length > 0 ? myJoinedTables : (seedJoined ?? []);
   const [myReviewsData, setMyReviewsData] = useState<UserReputation | null>(null);
   const [connectionsCount, setConnectionsCount] = useState<number | null>(null);
 
@@ -322,11 +328,14 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
     let active = true;
+    const keys = tablesCacheKeys(user.id);
     void (async () => {
       try {
         const [hosted, joined, reviews, conns] = await Promise.all([
-          user.canHost ? api.myHostedTables() : Promise.resolve([] as TableDto[]),
-          api.myJoinedTables(),
+          user.canHost
+            ? swrGet(keys.hosted, () => api.myHostedTables())
+            : Promise.resolve([] as TableDto[]),
+          swrGet(keys.joined, () => api.myJoinedTables()),
           api.myReviews() as Promise<UserReputation>,
           api.myConnections().catch(() => [] as import('@jrst/api-client').PublicUser[]),
         ]);
@@ -369,10 +378,10 @@ export default function ProfilePage() {
   const joinDate = formatJoinDate(user.createdAt);
   // eslint-disable-next-line react-hooks/purity -- one-time clock read for filtering upcoming meetups
   const now = Date.now();
-  const activeJoinedCount = myJoinedTables.filter(
+  const activeJoinedCount = joinedView.filter(
     (t) => t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING',
   ).length;
-  const upcomingJoined = myJoinedTables
+  const upcomingJoined = joinedView
     .filter(
       (t) =>
         (t.myRequestStatus === 'APPROVED' || t.myRequestStatus === 'PENDING') &&
@@ -665,7 +674,7 @@ export default function ProfilePage() {
                 {/* Stat tiles */}
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
                   {[
-                    { icon: 'fa-mug-hot', label: 'Meetups Hosted', value: myHostedTables.length, accent: 'text-purple-400' },
+                    { icon: 'fa-mug-hot', label: 'Meetups Hosted', value: hostedView.length, accent: 'text-purple-400' },
                     { icon: 'fa-users', label: 'Meetups Joined', value: activeJoinedCount, accent: 'text-teal-400' },
                     { icon: 'fa-star', label: 'Reliability Score', value: user.reliabilityScore, accent: 'text-amber-400' },
                     { icon: 'fa-heart', label: 'Connections', value: connectionsCount ?? '—', accent: 'text-pink-400' },
@@ -778,8 +787,8 @@ export default function ProfilePage() {
                         icon: 'fa-mug-hot',
                         label: 'Great Host',
                         color: 'text-primary',
-                        earned: myHostedTables.length >= 10,
-                        subtitle: myHostedTables.length >= 10 ? 'Hosted 10+ meetups' : `${myHostedTables.length}/10 meetups hosted`,
+                        earned: hostedView.length >= 10,
+                        subtitle: hostedView.length >= 10 ? 'Hosted 10+ meetups' : `${hostedView.length}/10 meetups hosted`,
                       },
                       {
                         icon: 'fa-link',
@@ -891,7 +900,7 @@ export default function ProfilePage() {
               </section>
 
               {/* My Hosted Meetups */}
-              {myHostedTables.length > 0 && (
+              {hostedView.length > 0 && (
                 <section>
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="font-heading text-lg font-bold tracking-tight">My Hosted Meetups</h2>
@@ -900,7 +909,7 @@ export default function ProfilePage() {
                     </Link>
                   </div>
                   <div className="rounded-3xl border bg-card p-5 shadow-soft">
-                    {myHostedTables.slice(0, 3).map((t) => (
+                    {hostedView.slice(0, 3).map((t) => (
                       <HostedMeetupRow key={t.id} t={t} />
                     ))}
                   </div>
@@ -1273,7 +1282,7 @@ export default function ProfilePage() {
           {(() => {
             const accountAgeDays = (NOW - new Date(user.createdAt).getTime()) / 86_400_000;
             const railBadges = [
-              { icon: 'fa-mug-hot', label: 'Great Host', color: 'text-primary', earned: myHostedTables.length >= 10 },
+              { icon: 'fa-mug-hot', label: 'Great Host', color: 'text-primary', earned: hostedView.length >= 10 },
               { icon: 'fa-link', label: 'Connector', color: 'text-[oklch(0.62_0.21_259)]', earned: (connectionsCount ?? 0) >= 20 },
               { icon: 'fa-seedling', label: 'Early Member', color: 'text-[oklch(0.72_0.15_163)]', earned: accountAgeDays >= 30 },
               { icon: 'fa-medal', label: 'Top Rated', color: 'text-[oklch(0.8_0.14_75)]', earned: user.reliabilityScore >= 95 },

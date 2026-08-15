@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
+import { peekCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
@@ -660,8 +661,10 @@ function SearchInner() {
   const { user } = useAuth();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
+  const seedBrowse = peekCache<TableDto[]>(tablesCacheKeys(user?.id).browse);
   const [tables, setTables] = useState<TableDto[] | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const tablesView = tables ?? seedBrowse ?? null;
 
   // filter state
   const [location, setLocation] = useState('Islamabad, Pakistan');
@@ -699,7 +702,9 @@ function SearchInner() {
     let active = true;
     void (async () => {
       try {
-        const list = await api.browseTables();
+        const list = await swrGet(tablesCacheKeys(user?.id).browse, () =>
+          api.browseTables(),
+        );
         if (active) setTables(list);
       } catch {
         if (active) setTables([]);
@@ -710,7 +715,7 @@ function SearchInner() {
 
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const filtered = (tables ?? []).filter((t) => {
+    const filtered = (tablesView ?? []).filter((t) => {
       if (
         selectedCats.length > 0 &&
         !selectedCats.some((c) =>
@@ -732,7 +737,7 @@ function SearchInner() {
       return true;
     });
     return sortResults(filtered, sortKey);
-  }, [tables, q, selectedCats, priceFilter, dateFilter, timeFilter, sortKey]);
+  }, [tablesView, q, selectedCats, priceFilter, dateFilter, timeFilter, sortKey]);
 
   if (!user) return <PageLoader label="Loading…" />;
 
@@ -835,7 +840,7 @@ function SearchInner() {
           </div>
 
           {/* loading state */}
-          {tables === null && <PageLoader label="Searching…" />}
+          {tablesView === null && <PageLoader label="Searching…" />}
 
           {/* empty state */}
           {tables !== null && results.length === 0 && (

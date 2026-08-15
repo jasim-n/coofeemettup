@@ -4,6 +4,13 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-15 — UI list cache on remaining table pages
+
+- Nearby, Search, Calendar, Saved, Invites, Profile, and the tables map share
+  the same client SWR cache keys as Discover/Meetups (browse / joined / hosted /
+  saved / invites).
+- Map poll writes through `putCache` so other pages pick up fresh browse data.
+
 ### 2026-08-15 — Instant UI cache paint for home / lists
 
 - Home no longer waits on notifications/featured before clearing the spinner.

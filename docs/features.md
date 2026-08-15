@@ -31,7 +31,8 @@ remove/save/invite-accept/admin cancel·delete). Safety TTL still expires keys.
 
 ### UI
 
-Module-level SWR (`apps/web/src/lib/data-cache.ts`) on Discover, Meetups, home.
+Module-level SWR (`apps/web/src/lib/data-cache.ts`) on Discover, Meetups, home,
+Nearby, Search, Calendar, Saved, Invites, Profile, and the tables map.
 `invalidateTablesClientCache()` after list-affecting mutations.
 
 ### Files
