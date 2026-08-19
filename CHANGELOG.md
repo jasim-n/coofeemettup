@@ -4,6 +4,13 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-19 — Interest mix radar graph (Future labs)
+
+- Own-profile interest mix now includes a radar graph plus reliability /
+  peer-rating tiles (from tables, stated interests, and reviews).
+- Still gated by `NEXT_PUBLIC_FUTURE_TASKS` (`false` to show).
+- Playwright: `e2e/future-labs-check.mjs` seeds history and asserts the graph.
+
 ### 2026-08-19 — Future features pack (flag-gated)
 
 - Plan: `tasks/future-features-plan.md`.

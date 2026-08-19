@@ -84,7 +84,7 @@ Do not use `NODE_ENV` for this. Existing Tables flows must keep working regardle
 | Item | Code | UI (when flag false) |
 |------|------|----------------------|
 | Flag helper | done | — |
-| Interest mix API | done | Profile panel |
+| Interest mix API | done | Profile radar + bars + review tiles |
 | Surprise Me preference | done | Profile toggle |
 | Remind-before preference | done | Profile toggle |
 | Host template / waitlist / no-show | stubs | Profile “Coming soon” cards |

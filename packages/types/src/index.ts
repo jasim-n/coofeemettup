@@ -578,16 +578,38 @@ export interface NotificationsResponse {
   unread: number;
 }
 
-/** Own-profile interest mix from joined/hosted table categories. */
+/** Own-profile interest mix — categories + vibe axes (self only). */
 export interface InterestMixSegment {
   label: string;
   count: number;
   percent: number;
+  /** activity = from tables; declared = from profile interests */
+  source?: 'activity' | 'declared';
+}
+
+export interface InterestMixAxis {
+  key: string;
+  label: string;
+  /** 0–100 for radar / bars */
+  value: number;
 }
 
 export interface InterestMixDto {
   totalTables: number;
+  hostedCount: number;
+  joinedCount: number;
   segments: InterestMixSegment[];
+  /** Radar axes: reliability, peer rating, hosting, category vibes */
+  axes: InterestMixAxis[];
+  reviews: {
+    overallAvg: number | null;
+    overallCount: number;
+    asHostAvg: number | null;
+    asHostCount: number;
+    asGuestAvg: number | null;
+    asGuestCount: number;
+  };
+  reliabilityScore: number;
 }
 
 export type GoNoGoVerdict = 'GO' | 'NO_GO' | 'INSUFFICIENT_DATA';

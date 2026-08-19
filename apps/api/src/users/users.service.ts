@@ -157,22 +157,49 @@ export class UsersService {
   }
 
   /**
-   * Category mix from approved joins + hosted tables (self only).
-   * Comma-separated multi-categories are split and counted separately.
+   * Private “how you show up” mix for Future labs (self only).
+   * Combines table categories, declared interests, reliability, and peer ratings.
    */
   async getInterestMix(userId: string) {
-    const [joins, hosted] = await Promise.all([
-      this.prisma.tableJoinRequest.findMany({
-        where: { userId, status: 'APPROVED' },
-        select: { table: { select: { id: true, category: true } } },
-      }),
-      this.prisma.table.findMany({
-        where: { hostId: userId },
-        select: { id: true, category: true },
-      }),
-    ]);
+    const [user, joins, hosted, reviewAggHost, reviewAggGuest, reviewRows] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            interests: true,
+            reliabilityScore: true,
+            intents: true,
+            socialEnergy: true,
+          },
+        }),
+        this.prisma.tableJoinRequest.findMany({
+          where: { userId, status: 'APPROVED' },
+          select: { table: { select: { id: true, category: true } } },
+        }),
+        this.prisma.table.findMany({
+          where: { hostId: userId },
+          select: { id: true, category: true },
+        }),
+        this.prisma.review.aggregate({
+          where: { subjectId: userId, role: 'HOST' },
+          _avg: { rating: true },
+          _count: { _all: true },
+        }),
+        this.prisma.review.aggregate({
+          where: { subjectId: userId, role: 'GUEST' },
+          _avg: { rating: true },
+          _count: { _all: true },
+        }),
+        this.prisma.review.findMany({
+          where: { subjectId: userId },
+          select: { rating: true },
+        }),
+      ]);
+
+    if (!user) throw new NotFoundException('User not found');
 
     const seen = new Set<string>();
+    const hostedIds = new Set(hosted.map((t) => t.id));
     const counts = new Map<string, number>();
 
     const add = (tableId: string, category: string) => {
@@ -190,16 +217,141 @@ export class UsersService {
     for (const t of hosted) add(t.id, t.category);
 
     const totalTables = seen.size;
+    const hostedCount = [...seen].filter((id) => hostedIds.has(id)).length;
+    const joinedCount = totalTables - hostedCount;
     const totalHits = [...counts.values()].reduce((a, b) => a + b, 0);
-    const segments = [...counts.entries()]
+
+    const activitySegments = [...counts.entries()]
       .map(([label, count]) => ({
         label,
         count,
         percent: totalHits === 0 ? 0 : Math.round((count / totalHits) * 100),
+        source: 'activity' as const,
       }))
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 
-    return { totalTables, segments };
+    // Declared interests fill gaps when activity is thin.
+    const declaredSegments = user.interests
+      .map((label) => label.trim())
+      .filter(Boolean)
+      .filter((label) => !counts.has(label))
+      .map((label) => ({
+        label,
+        count: 0,
+        percent: 0,
+        source: 'declared' as const,
+      }));
+
+    const segments =
+      activitySegments.length > 0
+        ? [...activitySegments, ...declaredSegments.slice(0, 4)]
+        : declaredSegments.map((s, i, arr) => ({
+            ...s,
+            count: 1,
+            percent: arr.length === 0 ? 0 : Math.round(100 / arr.length),
+          }));
+
+    const vibeBuckets: Record<string, number> = {
+      casual: 0,
+      deep: 0,
+      social: 0,
+      focus: 0,
+    };
+    const bumpVibe = (label: string, weight: number) => {
+      const l = label.toLowerCase();
+      if (/coffee|casual|chai|hang/.test(l)) vibeBuckets.casual += weight;
+      else if (/deep|book|mindful|writ/.test(l)) vibeBuckets.deep += weight;
+      else if (/network|language|startup|business|social/.test(l))
+        vibeBuckets.social += weight;
+      else if (/focus|work|study|productivity/.test(l)) vibeBuckets.focus += weight;
+      else vibeBuckets.casual += weight * 0.5;
+    };
+    for (const [label, count] of counts) bumpVibe(label, count);
+    for (const label of user.interests) bumpVibe(label, totalTables === 0 ? 2 : 0.5);
+
+    const vibeTotal =
+      vibeBuckets.casual +
+      vibeBuckets.deep +
+      vibeBuckets.social +
+      vibeBuckets.focus || 1;
+    const vibePct = (n: number) => Math.round((n / vibeTotal) * 100);
+
+    const overallCount = reviewRows.length;
+    const overallAvg =
+      overallCount === 0
+        ? null
+        : Math.round(
+            (reviewRows.reduce((a, r) => a + r.rating, 0) / overallCount) * 10,
+          ) / 10;
+    const asHostAvg =
+      reviewAggHost._count._all === 0
+        ? null
+        : Math.round((reviewAggHost._avg.rating ?? 0) * 10) / 10;
+    const asGuestAvg =
+      reviewAggGuest._count._all === 0
+        ? null
+        : Math.round((reviewAggGuest._avg.rating ?? 0) * 10) / 10;
+
+    const ratingAxis =
+      overallAvg == null ? 0 : Math.round((overallAvg / 5) * 100);
+    const hostShare =
+      totalTables === 0 ? 0 : Math.round((hostedCount / totalTables) * 100);
+
+    // Soft boost from profile energy / intents when little history.
+    let socialBoost = 0;
+    if (user.socialEnergy === 'INITIATOR' || user.socialEnergy === 'MIX')
+      socialBoost += 8;
+    if (user.intents.includes('MAKE_FRIENDS')) socialBoost += 6;
+
+    const axes = [
+      {
+        key: 'reliability',
+        label: 'Reliability',
+        value: Math.min(100, user.reliabilityScore),
+      },
+      {
+        key: 'rated',
+        label: 'Peer rating',
+        value: ratingAxis,
+      },
+      {
+        key: 'hosting',
+        label: 'Hosting',
+        value: hostShare,
+      },
+      {
+        key: 'casual',
+        label: 'Casual coffee',
+        value: Math.min(100, vibePct(vibeBuckets.casual) + (totalTables === 0 ? 5 : 0)),
+      },
+      {
+        key: 'deep',
+        label: 'Deep talks',
+        value: vibePct(vibeBuckets.deep),
+      },
+      {
+        key: 'social',
+        label: 'Social / network',
+        value: Math.min(100, vibePct(vibeBuckets.social) + socialBoost),
+      },
+    ];
+
+    return {
+      totalTables,
+      hostedCount,
+      joinedCount,
+      segments,
+      axes,
+      reviews: {
+        overallAvg,
+        overallCount,
+        asHostAvg,
+        asHostCount: reviewAggHost._count._all,
+        asGuestAvg,
+        asGuestCount: reviewAggGuest._count._all,
+      },
+      reliabilityScore: user.reliabilityScore,
+    };
   }
 
   async getPublicProfile(
