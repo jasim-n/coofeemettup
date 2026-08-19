@@ -16,6 +16,7 @@ import MyReviews from '@/components/my-reviews';
 import { PageLoader } from '@/components/spinner';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
+import { FutureProfilePanel } from '@/components/future-profile-panel';
 
 /* ─── constants ─────────────────────────────────────────────────── */
 
@@ -915,6 +916,8 @@ export default function ProfilePage() {
                   </div>
                 </section>
               )}
+
+              <FutureProfilePanel user={user} onSaved={refresh} />
             </>
           )}
 

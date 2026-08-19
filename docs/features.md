@@ -45,6 +45,17 @@ Nearby, Search, Calendar, Saved, Invites, Profile, and the tables map.
 
 ---
 
+## Future features (flag-gated)
+
+Unfinished product experiments live behind `NEXT_PUBLIC_FUTURE_TASKS`
+(`true`/unset = **hide** UI; `false` = show). Plan: `tasks/future-features-plan.md`.
+
+Shipped behind the flag: own-profile interest mix, Surprise Me + remind prefs,
+stub cards for templates / waitlist / no-show. No join/payment/chat behavior
+changes.
+
+---
+
 ## Member profiles (admin-only)
 
 Other members' public profiles (`/u/[id]`, `GET /users/:id/profile`) are

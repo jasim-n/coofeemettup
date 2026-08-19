@@ -35,4 +35,6 @@ export class UpdateProfileDto {
   @IsOptional() @IsString() occupation?: string;
   @IsOptional() @IsBoolean() photoConsent?: boolean;
   @IsOptional() @IsBoolean() agreeCodeOfConduct?: boolean;
+  @IsOptional() @IsBoolean() surpriseMeOptIn?: boolean;
+  @IsOptional() @IsBoolean() remindBeforeMeetup?: boolean;
 }

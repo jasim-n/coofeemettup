@@ -4,6 +4,14 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-19 — Future features pack (flag-gated)
+
+- Plan: `tasks/future-features-plan.md`.
+- Flag: `NEXT_PUBLIC_FUTURE_TASKS` — `true`/unset hides UI; `false` shows it.
+- Self prefs: `surpriseMeOptIn`, `remindBeforeMeetup` (migration).
+- Interest mix API `GET /users/me/interest-mix` + Profile “Future labs” panel
+  (mix bars, Surprise Me, reminders, stubs for templates/waitlist/no-show).
+
 ### 2026-08-15 — Member profiles admin-only
 
 - Other members' `/u/[id]` pages are visible to admins (and organizers) only;

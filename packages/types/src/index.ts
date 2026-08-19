@@ -140,6 +140,10 @@ export interface PublicUser {
   codeOfConductAt: string | null;
   /** Presence — true if the user was active in the last 5 minutes. */
   online?: boolean;
+  /** Self only — future Surprise Me opt-in. */
+  surpriseMeOptIn?: boolean;
+  /** Self only — future day-before reminder preference. */
+  remindBeforeMeetup?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -511,6 +515,10 @@ export interface UpdateProfileInput {
   occupation?: string;
   photoConsent?: boolean;
   agreeCodeOfConduct?: boolean;
+  /** Future: opt into curated surprise tables (self only). */
+  surpriseMeOptIn?: boolean;
+  /** Future: day-before meetup reminder preference (self only). */
+  remindBeforeMeetup?: boolean;
 }
 
 export const MeetAgain = { ALL: 'ALL', SOME: 'SOME', NO: 'NO' } as const;
@@ -568,6 +576,18 @@ export interface NotificationDto {
 export interface NotificationsResponse {
   items: NotificationDto[];
   unread: number;
+}
+
+/** Own-profile interest mix from joined/hosted table categories. */
+export interface InterestMixSegment {
+  label: string;
+  count: number;
+  percent: number;
+}
+
+export interface InterestMixDto {
+  totalTables: number;
+  segments: InterestMixSegment[];
 }
 
 export type GoNoGoVerdict = 'GO' | 'NO_GO' | 'INSUFFICIENT_DATA';

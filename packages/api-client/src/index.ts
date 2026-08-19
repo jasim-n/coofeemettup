@@ -34,6 +34,7 @@ import type {
   MyGroup,
   TestMailResult,
   NotificationsResponse,
+  InterestMixDto,
   PendingVerification,
   CreateReviewInput,
   PublicProfileDto,
@@ -248,6 +249,10 @@ export class ApiClient {
 
   myReferral(): Promise<ReferralInfo> {
     return this.request('GET', '/users/me/referral');
+  }
+
+  myInterestMix(): Promise<InterestMixDto> {
+    return this.request('GET', '/users/me/interest-mix');
   }
 
   // ---- events ----

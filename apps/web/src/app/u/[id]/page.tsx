@@ -108,15 +108,10 @@ export default function PublicProfilePage() {
   const [profile, setProfile] = useState<PublicProfileDto | null>(null);
   const [rep, setRep] = useState<UserReputation | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const forbidden = !authLoading && !isAdmin && !isOwnId;
 
   useEffect(() => {
-    if (authLoading) return;
-    // Only admins may view other members' public profiles.
-    if (!isAdmin && !isOwnId) {
-      setError('unavailable');
-      setProfile(null);
-      return;
-    }
+    if (authLoading || forbidden) return;
     let active = true;
     void (async () => {
       try {
@@ -136,11 +131,11 @@ export default function PublicProfilePage() {
     return () => {
       active = false;
     };
-  }, [id, authLoading, isAdmin, isOwnId]);
+  }, [id, authLoading, forbidden]);
 
   if (authLoading) return <PageLoader />;
 
-  if (error && !profile) {
+  if (forbidden || (error && !profile)) {
     return (
       <main className="p-6 text-sm text-muted-foreground">
         This member&apos;s profile isn&apos;t available.

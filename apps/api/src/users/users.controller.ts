@@ -73,6 +73,11 @@ export class UsersController {
     return this.users.getReferral(user.id);
   }
 
+  @Get('me/interest-mix')
+  interestMix(@CurrentUser() user: AuthUser) {
+    return this.users.getInterestMix(user.id);
+  }
+
   @Get('search')
   search(
     @CurrentUser() me: AuthUser,

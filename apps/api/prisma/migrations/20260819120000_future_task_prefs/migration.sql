@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "surpriseMeOptIn" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "remindBeforeMeetup" BOOLEAN NOT NULL DEFAULT false;

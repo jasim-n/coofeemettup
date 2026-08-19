@@ -156,6 +156,52 @@ export class UsersService {
     return { code: user.referralCode!, count };
   }
 
+  /**
+   * Category mix from approved joins + hosted tables (self only).
+   * Comma-separated multi-categories are split and counted separately.
+   */
+  async getInterestMix(userId: string) {
+    const [joins, hosted] = await Promise.all([
+      this.prisma.tableJoinRequest.findMany({
+        where: { userId, status: 'APPROVED' },
+        select: { table: { select: { id: true, category: true } } },
+      }),
+      this.prisma.table.findMany({
+        where: { hostId: userId },
+        select: { id: true, category: true },
+      }),
+    ]);
+
+    const seen = new Set<string>();
+    const counts = new Map<string, number>();
+
+    const add = (tableId: string, category: string) => {
+      if (seen.has(tableId)) return;
+      seen.add(tableId);
+      for (const part of category
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)) {
+        counts.set(part, (counts.get(part) ?? 0) + 1);
+      }
+    };
+
+    for (const j of joins) add(j.table.id, j.table.category);
+    for (const t of hosted) add(t.id, t.category);
+
+    const totalTables = seen.size;
+    const totalHits = [...counts.values()].reduce((a, b) => a + b, 0);
+    const segments = [...counts.entries()]
+      .map(([label, count]) => ({
+        label,
+        count,
+        percent: totalHits === 0 ? 0 : Math.round((count / totalHits) * 100),
+      }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+    return { totalTables, segments };
+  }
+
   async getPublicProfile(
     viewer: { id: string; role: Role },
     targetId: string,

@@ -55,6 +55,8 @@ export function toSelfUser(u: User) {
     firstName: u.firstName,
     lastName: u.lastName,
     lastInitial: u.lastInitial,
+    surpriseMeOptIn: u.surpriseMeOptIn,
+    remindBeforeMeetup: u.remindBeforeMeetup,
   };
 }
 
