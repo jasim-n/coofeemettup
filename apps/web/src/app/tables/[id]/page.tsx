@@ -68,6 +68,7 @@ export default function TableDetailPage() {
   }>(null);
 
   const isHost = !!table && !!user && table.hostId === user.id;
+  const isStaff = !!user && (user.role === 'ADMIN' || user.role === 'ORGANIZER');
 
   // Ask for the viewer's location once so we can show distance to the table.
   useEffect(() => {
@@ -153,13 +154,16 @@ export default function TableDetailPage() {
     };
   }, [inviteQuery]);
 
-  // Load event photos — only for members (host or approved); endpoint 403s for others.
+  // Load event photos — host, approved guests, or admin/organizer.
   useEffect(() => {
     if (!table?.id || !user) return;
-    const isMember = isHost || table.myRequestStatus === 'APPROVED';
-    if (!isMember) return;
+    const canView =
+      isHost ||
+      isStaff ||
+      table.myRequestStatus === 'APPROVED';
+    if (!canView) return;
     api.tableImages(table.id).then(setImages).catch(() => setImages([]));
-  }, [table?.id, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [table?.id, user, isHost, isStaff, table?.myRequestStatus]);
 
   async function run(action: () => Promise<unknown>) {
     setError(null);
@@ -256,6 +260,8 @@ export default function TableDetailPage() {
   if (!table) return <PageLoader />;
 
   const status = table.myRequestStatus;
+  const canViewMoments = isHost || isStaff || status === 'APPROVED';
+  const canManageMoments = isHost || isStaff;
   const full = table.seatsLeft <= 0 || table.status !== 'OPEN';
   const filled = table.seats - table.seatsLeft;
   const price = table.pricePKR == null ? 'Free' : formatPKR(table.pricePKR);
@@ -385,15 +391,15 @@ export default function TableDetailPage() {
             </section>
           )}
 
-          {/* event photos — members only */}
-          {(isHost || status === 'APPROVED') && (
+          {/* event photos — host, approved guests, or admin */}
+          {canViewMoments && (
             <section className="bg-card shadow-soft rounded-3xl border p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="font-heading text-lg font-bold tracking-tight">
                   <i className="fa-solid fa-images text-primary mr-2" />
                   Moments
                 </h2>
-                {isHost && (
+                {canManageMoments && (
                   <div className="flex flex-wrap gap-2">
                   <label
                     className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent ${
@@ -434,7 +440,7 @@ export default function TableDetailPage() {
               )}
               {images.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
-                  {isHost
+                  {canManageMoments
                     ? 'No moments yet — add photos or a short reel.'
                     : "The host hasn't shared any moments yet."}
                 </p>
@@ -488,7 +494,7 @@ export default function TableDetailPage() {
                           {kind === 'VIDEO' ? 'Reel' : 'Collage'}
                         </span>
                       )}
-                      {isHost && (
+                      {canManageMoments && (
                         <button
                           type="button"
                           onClick={() =>

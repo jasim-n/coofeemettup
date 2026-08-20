@@ -61,6 +61,7 @@ presets like `masonry-9` / `hero-left` / `quad-70-30` / `split-70-30`) from
 `/admin/featured` → Layout. API: `PATCH /admin/images/:id/layout`.
 
 Hosts: `POST /tables/:id/videos`, `POST /tables/:id/collages`.
+Admins/organizers may view and manage Moments on any table (same as host).
 
 Demo seed (local `/showcase` minglers assets):
 `npx tsx apps/api/scripts/seed-featured-showcase.ts`.

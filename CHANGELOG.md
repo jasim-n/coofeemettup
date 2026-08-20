@@ -4,7 +4,10 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
-### 2026-08-20 — Featured reels + collage showcase
+### 2026-08-20 — Admin Moments access on tables
+
+- Admins/organizers can view, upload, and delete Moments on any table page
+  (same controls as the host), not only as approved guests.
 
 - Featured home section supports **photos, muted autoplay reels, and collages**
   (Instagram-style story progress; collage cells can be videos).

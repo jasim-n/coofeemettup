@@ -94,8 +94,8 @@ export class TablesService {
       where: { id: tableId },
     });
     if (!table) throw new NotFoundException('Table not found');
-    if (table.hostId !== userId) {
-      throw new ForbiddenException('Only the host can add event photos');
+    if (!(await this.canManageMedia(userId, table))) {
+      throw new ForbiddenException('Only the host or an admin can add event photos');
     }
     const url = await this.media.uploadImage(buffer, 'table-photos');
     return this.prisma.tableImage.create({
@@ -114,8 +114,8 @@ export class TablesService {
       where: { id: tableId },
     });
     if (!table) throw new NotFoundException('Table not found');
-    if (table.hostId !== userId) {
-      throw new ForbiddenException('Only the host can add reels');
+    if (!(await this.canManageMedia(userId, table))) {
+      throw new ForbiddenException('Only the host or an admin can add reels');
     }
     const uploaded = await this.media.uploadVideo(buffer, 'table-reels');
     return this.prisma.tableImage.create({
@@ -148,8 +148,8 @@ export class TablesService {
       where: { id: tableId },
     });
     if (!table) throw new NotFoundException('Table not found');
-    if (table.hostId !== userId) {
-      throw new ForbiddenException('Only the host can create collages');
+    if (!(await this.canManageMedia(userId, table))) {
+      throw new ForbiddenException('Only the host or an admin can create collages');
     }
     const imgs = await this.prisma.tableImage.findMany({
       where: {
@@ -184,11 +184,11 @@ export class TablesService {
     });
   }
 
-  /** Any joined member (host + approved) can view the event media. */
+  /** Host, approved guests, and admins can view event media. */
   async listImages(userId: string, tableId: string) {
-    if (!(await this.isMember(userId, tableId))) {
+    if (!(await this.canViewMedia(userId, tableId))) {
       throw new ForbiddenException(
-        'Only the host and approved members can view photos',
+        'Only the host, approved members, or an admin can view photos',
       );
     }
     return this.prisma.tableImage.findMany({
@@ -197,14 +197,14 @@ export class TablesService {
     });
   }
 
-  /** Only the host can remove an event photo. */
+  /** Host or admin can remove an event photo. */
   async deleteImage(userId: string, tableId: string, imageId: string) {
     const table = await this.prisma.table.findUnique({
       where: { id: tableId },
     });
     if (!table) throw new NotFoundException('Table not found');
-    if (table.hostId !== userId) {
-      throw new ForbiddenException('Only the host can remove event photos');
+    if (!(await this.canManageMedia(userId, table))) {
+      throw new ForbiddenException('Only the host or an admin can remove event photos');
     }
     await this.prisma.tableImage.deleteMany({
       where: { id: imageId, tableId },
@@ -831,6 +831,28 @@ export class TablesService {
       where: { tableId_userId: { tableId, userId } },
     });
     return req?.status === 'APPROVED';
+  }
+
+  /** Platform staff (admin / organizer) — above host for Moments moderation. */
+  private async isStaff(userId: string): Promise<boolean> {
+    const u = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    return u?.role === 'ADMIN' || u?.role === 'ORGANIZER';
+  }
+
+  private async canViewMedia(userId: string, tableId: string): Promise<boolean> {
+    if (await this.isMember(userId, tableId)) return true;
+    return this.isStaff(userId);
+  }
+
+  private async canManageMedia(
+    userId: string,
+    table: { hostId: string },
+  ): Promise<boolean> {
+    if (table.hostId === userId) return true;
+    return this.isStaff(userId);
   }
 
   /** Effective chat close time: manual `chatClosedAt`, else completedAt + 24h. */
