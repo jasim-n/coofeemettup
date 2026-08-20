@@ -7,12 +7,14 @@ All notable UI/product changes are logged here.
 ### 2026-08-20 — Featured reels + collage showcase
 
 - Featured home section supports **photos, muted autoplay reels, and collages**
-  (Instagram-style story progress; no Instagram scraping — stock cafe media for demo).
+  (Instagram-style story progress; collage cells can be videos).
 - `TableImage` gains `kind` (`IMAGE`/`VIDEO`/`COLLAGE`), poster, duration,
   collage URLs, caption, sort order.
 - Hosts can upload reels (`POST /tables/:id/videos`) and build collages
   (`POST /tables/:id/collages`); admin Featured picker shows Reel/Collage badges.
-- Seed: `apps/api/scripts/seed-featured-showcase.ts`.
+- Local demo seed uses minglers Instagram reel + highlights under
+  `apps/web/public/showcase/` (gitignored binaries):
+  `apps/api/scripts/seed-featured-showcase.ts`.
 
 ### 2026-08-19 — Interest mix radar graph (Future labs)
 
