@@ -734,6 +734,64 @@ export class AdminService {
     return { ok: true as const };
   }
 
+  /** Update fit/scale/collage grid for a TableImage (Featured Moments display). */
+  async setImageLayout(
+    actorId: string,
+    imageId: string,
+    layout: {
+      fit?: 'cover' | 'contain';
+      scale?: number;
+      position?: string;
+      collage?: {
+        preset?: string;
+        columns?: string[];
+        rows?: string[];
+        cells?: Array<{
+          col: number;
+          row: number;
+          colSpan?: number;
+          rowSpan?: number;
+        }>;
+      };
+    },
+  ) {
+    const img = await this.prisma.tableImage.findUnique({
+      where: { id: imageId },
+    });
+    if (!img) throw new NotFoundException('Image not found');
+
+    const prev =
+      img.layout && typeof img.layout === 'object' && !Array.isArray(img.layout)
+        ? (img.layout as Record<string, unknown>)
+        : {};
+    const next = {
+      ...prev,
+      ...(layout.fit !== undefined ? { fit: layout.fit } : {}),
+      ...(layout.scale !== undefined ? { scale: layout.scale } : {}),
+      ...(layout.position !== undefined ? { position: layout.position } : {}),
+      ...(layout.collage !== undefined
+        ? {
+            collage: {
+              ...((prev.collage as Record<string, unknown> | undefined) ?? {}),
+              ...layout.collage,
+            },
+          }
+        : {}),
+    };
+
+    const updated = await this.prisma.tableImage.update({
+      where: { id: imageId },
+      data: { layout: next },
+    });
+    void this.audit.log({
+      actorId,
+      action: 'image.layout',
+      targetType: 'tableImage',
+      targetId: imageId,
+    });
+    return updated;
+  }
+
   /**
    * Operational dashboard + the §7 Go/No-Go gate:
    * ≥40% of first-timers book a second event, plus a referral signal,

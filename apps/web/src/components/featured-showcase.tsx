@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
-import type { FeaturedImageDto } from '@jrst/api-client';
+import type { FeaturedImageDto, MediaLayout } from '@jrst/api-client';
 import { CategoryPills } from '@/components/category-pills';
+import { mediaFrameStyle, resolveCollageGrid } from '@/lib/media-layout';
 
 function formatDuration(ms: number | null | undefined): string | null {
   if (ms == null || ms <= 0) return null;
@@ -17,18 +18,35 @@ function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm|mov)(\?|$)/i.test(url);
 }
 
+function centeredFrameStyle(layout: MediaLayout | null | undefined): CSSProperties {
+  const frame = mediaFrameStyle(layout);
+  return {
+    objectFit: frame.objectFit,
+    objectPosition: frame.objectPosition,
+    width: '100%',
+    height: '100%',
+    transformOrigin: 'center center',
+    transform:
+      frame.scale === 1
+        ? 'translate(-50%, -50%)'
+        : `translate(-50%, -50%) scale(${frame.scale})`,
+  };
+}
+
 function CollageCell({
   url,
   alt,
-  className,
   active,
+  layout,
 }: {
   url: string;
   alt: string;
-  className?: string;
   active: boolean;
+  layout: MediaLayout | null | undefined;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
+  const style = centeredFrameStyle(layout);
+
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
@@ -39,56 +57,63 @@ function CollageCell({
     }
   }, [active]);
 
-  if (isVideoUrl(url)) {
-    return (
-      <video
-        ref={ref}
-        src={url}
-        className={className ?? 'h-full w-full object-cover'}
-        muted
-        playsInline
-        loop
-        preload="metadata"
-      />
-    );
-  }
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt={alt} className={className ?? 'h-full w-full object-cover'} />;
+  return (
+    <div className="relative h-full min-h-0 min-w-0 overflow-hidden bg-black">
+      {isVideoUrl(url) ? (
+        <video
+          ref={ref}
+          src={url}
+          className="absolute left-1/2 top-1/2 max-w-none"
+          style={style}
+          muted
+          playsInline
+          loop
+          preload="metadata"
+        />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={alt} className="absolute left-1/2 top-1/2 max-w-none" style={style} />
+      )}
+    </div>
+  );
 }
 
 function CollageGrid({
   urls,
   alt,
   active,
+  layout,
 }: {
   urls: string[];
   alt: string;
   active: boolean;
+  layout: MediaLayout | null | undefined;
 }) {
-  const cells = urls.slice(0, 4);
-  if (cells.length === 2) {
-    return (
-      <div className="grid h-full grid-cols-2 gap-0.5">
-        {cells.map((u, i) => (
-          <CollageCell key={i} url={u} alt={`${alt} ${i + 1}`} active={active} />
-        ))}
-      </div>
-    );
-  }
-  if (cells.length === 3) {
-    return (
-      <div className="grid h-full grid-cols-2 grid-rows-2 gap-0.5">
-        <CollageCell url={cells[0]!} alt={alt} className="row-span-2 h-full w-full object-cover" active={active} />
-        <CollageCell url={cells[1]!} alt={`${alt} 2`} active={active} />
-        <CollageCell url={cells[2]!} alt={`${alt} 3`} active={active} />
-      </div>
-    );
-  }
+  const grid = resolveCollageGrid(layout, urls.length);
+
   return (
-    <div className="grid h-full grid-cols-2 grid-rows-2 gap-0.5">
-      {cells.map((u, i) => (
-        <CollageCell key={i} url={u} alt={`${alt} ${i + 1}`} active={active} />
-      ))}
+    <div
+      className="grid h-full w-full gap-0.5"
+      style={{
+        gridTemplateColumns: grid.columns,
+        gridTemplateRows: grid.rows,
+      }}
+    >
+      {urls.slice(0, grid.cells.length).map((u, i) => {
+        const cell = grid.cells[i]!;
+        return (
+          <div
+            key={i}
+            className="min-h-0 min-w-0 overflow-hidden"
+            style={{
+              gridColumn: `${cell.col} / span ${cell.colSpan ?? 1}`,
+              gridRow: `${cell.row} / span ${cell.rowSpan ?? 1}`,
+            }}
+          >
+            <CollageCell url={u} alt={`${alt} ${i + 1}`} active={active} layout={layout} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -102,6 +127,7 @@ function SlideMedia({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const heading = slide.tableTitle ?? slide.category;
+  const style = centeredFrameStyle(slide.layout);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -117,16 +143,19 @@ function SlideMedia({
   if (slide.kind === 'VIDEO') {
     return (
       <>
-        <video
-          ref={videoRef}
-          className="h-full w-full object-cover"
-          src={slide.url}
-          poster={slide.posterUrl ?? undefined}
-          muted
-          playsInline
-          loop
-          preload="metadata"
-        />
+        <div className="absolute inset-0 overflow-hidden bg-black">
+          <video
+            ref={videoRef}
+            className="absolute left-1/2 top-1/2 max-w-none"
+            style={style}
+            src={slide.url}
+            poster={slide.posterUrl ?? undefined}
+            muted
+            playsInline
+            loop
+            preload="metadata"
+          />
+        </div>
         <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
           <span className="rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
             Reel
@@ -145,7 +174,7 @@ function SlideMedia({
     const urls = [slide.url, ...slide.collageUrls].filter(Boolean);
     return (
       <>
-        <CollageGrid urls={urls} alt={heading} active={active} />
+        <CollageGrid urls={urls} alt={heading} active={active} layout={slide.layout} />
         <div className="absolute left-4 top-4 z-10">
           <span className="rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
             Collage
@@ -156,8 +185,15 @@ function SlideMedia({
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={slide.url} alt={heading} className="h-full w-full object-cover" />
+    <div className="absolute inset-0 overflow-hidden bg-black">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={slide.url}
+        alt={heading}
+        className="absolute left-1/2 top-1/2 max-w-none"
+        style={style}
+      />
+    </div>
   );
 }
 
@@ -238,7 +274,6 @@ export function FeaturedShowcase({ slides }: { slides: FeaturedImageDto[] }) {
           >
             <i className="fa-solid fa-chevron-right text-sm" />
           </button>
-          {/* Story-style segment progress */}
           <div className="absolute inset-x-3 top-3 z-10 flex gap-1">
             {slides.map((_, i) => (
               <button

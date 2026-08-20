@@ -245,6 +245,47 @@ export const TableMediaKind = {
 } as const;
 export type TableMediaKind = (typeof TableMediaKind)[keyof typeof TableMediaKind];
 
+/** How media fills its frame — contain shows more, cover fills (may crop). */
+export type MediaFit = 'cover' | 'contain';
+
+export const CollageLayoutPreset = {
+  EQUAL: 'equal',
+  /** Two columns ~70% / 30%, full height each (2 cells). */
+  SPLIT_70_30: 'split-70-30',
+  SPLIT_30_70: 'split-30-70',
+  /** Large left column; right column stacked (3–4 cells). */
+  HERO_LEFT: 'hero-left',
+  HERO_RIGHT: 'hero-right',
+  /** 2×2 with 70% / 30% columns. */
+  QUAD_70_30: 'quad-70-30',
+  CUSTOM: 'custom',
+} as const;
+export type CollageLayoutPreset =
+  (typeof CollageLayoutPreset)[keyof typeof CollageLayoutPreset];
+
+export interface MediaCellPlacement {
+  col: number;
+  row: number;
+  colSpan?: number;
+  rowSpan?: number;
+}
+
+/** Admin/host display settings for a featured photo, reel, or collage. */
+export interface MediaLayout {
+  fit?: MediaFit;
+  /** Zoom factor 0.5–2 (1 = 100%). Use with fit to reduce harsh cropping. */
+  scale?: number;
+  /** CSS object-position, e.g. "center", "50% 20%". */
+  position?: string;
+  collage?: {
+    preset?: CollageLayoutPreset;
+    /** CSS track sizes, e.g. ["7fr","3fr"] or ["70%","30%"]. */
+    columns?: string[];
+    rows?: string[];
+    cells?: MediaCellPlacement[];
+  };
+}
+
 export interface TableImageDto {
   id: string;
   tableId: string;
@@ -253,6 +294,7 @@ export interface TableImageDto {
   posterUrl: string | null;
   durationMs: number | null;
   collageUrls: string[];
+  layout: MediaLayout | null;
   caption: string | null;
   uploadedById: string;
   featured: boolean;
@@ -268,6 +310,7 @@ export interface FeaturedImageDto {
   posterUrl: string | null;
   durationMs: number | null;
   collageUrls: string[];
+  layout: MediaLayout | null;
   caption: string | null;
   tableId: string;
   tableTitle: string | null;

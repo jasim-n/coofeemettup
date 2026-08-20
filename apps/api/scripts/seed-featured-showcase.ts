@@ -115,6 +115,11 @@ async function main() {
         caption: `[ig] ${reel.caption}`,
         featured: true,
         sortOrder: sort++,
+        layout: {
+          fit: 'contain',
+          scale: 0.92,
+          position: 'center center',
+        },
       },
     });
     console.log('reel →', table.title ?? table.id, reel.file);
@@ -133,6 +138,12 @@ async function main() {
       caption: `[ig] ${COLLAGE.caption}`,
       featured: true,
       sortOrder: sort++,
+      layout: {
+        fit: 'cover',
+        scale: 1,
+        position: 'center center',
+        collage: { preset: 'hero-left' },
+      },
     },
   });
   console.log('video collage →', collageTable.title ?? collageTable.id);

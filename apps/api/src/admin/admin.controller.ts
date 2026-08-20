@@ -20,6 +20,7 @@ import { ResolveReportDto } from './dto/resolve-report.dto';
 import { SetMailProviderDto } from './dto/set-mail-provider.dto';
 import { TestMailDto } from './dto/test-mail.dto';
 import { SetFeaturedDto } from './dto/set-featured.dto';
+import { SetMediaLayoutDto } from './dto/set-media-layout.dto';
 import { InvalidateCacheDto } from './dto/invalidate-cache.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -273,6 +274,15 @@ export class AdminController {
     @Body() dto: SetFeaturedDto,
   ) {
     return this.admin.setImageFeatured(user.id, imageId, dto.featured);
+  }
+
+  @Patch('admin/images/:imageId/layout')
+  setImageLayout(
+    @CurrentUser() user: AuthUser,
+    @Param('imageId') imageId: string,
+    @Body() dto: SetMediaLayoutDto,
+  ) {
+    return this.admin.setImageLayout(user.id, imageId, dto);
   }
 
   // ── Mail provider (OTP sender) ─────────────────────────────────────────────

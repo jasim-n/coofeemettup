@@ -8,8 +8,10 @@ All notable UI/product changes are logged here.
 
 - Featured home section supports **photos, muted autoplay reels, and collages**
   (Instagram-style story progress; collage cells can be videos).
-- `TableImage` gains `kind` (`IMAGE`/`VIDEO`/`COLLAGE`), poster, duration,
-  collage URLs, caption, sort order.
+- Admins can set per-slide **layout**: fit (cover/contain), scale, focus position,
+  and asymmetric collage grids (70/30, hero-left, etc.) via `/admin/featured`.
+- `TableImage` gains `kind` (`IMAGE`/`VIDEO`/`COLLAGE`), `layout` JSON, poster,
+  duration, collage URLs, caption, sort order.
 - Hosts can upload reels (`POST /tables/:id/videos`) and build collages
   (`POST /tables/:id/collages`); admin Featured picker shows Reel/Collage badges.
 - Local demo seed uses minglers Instagram reel + highlights under

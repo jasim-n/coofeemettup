@@ -54,10 +54,16 @@ Home “Featured from the tables” showcase (`FeaturedShowcase`) plays admin-cu
 |------|-----|
 | `IMAGE` | Full-bleed photo |
 | `VIDEO` | Muted looping reel + poster + duration chip |
-| `COLLAGE` | 2–4 cell photo grid |
+| `COLLAGE` | Multi-cell grid (photos and/or videos; asymmetric presets) |
 
-Host APIs: `POST /tables/:id/videos`, `POST /tables/:id/collages`.
-Demo seed (stock cafe media, not scraped IG): `npx tsx apps/api/scripts/seed-featured-showcase.ts`.
+Admins set per-media **layout** (`fit` cover/contain, `scale`, `position`, collage
+presets like `hero-left` / `quad-70-30` / `split-70-30`) from `/admin/featured` →
+Layout. API: `PATCH /admin/images/:id/layout`.
+
+Hosts: `POST /tables/:id/videos`, `POST /tables/:id/collages`.
+
+Demo seed (local `/showcase` minglers assets):
+`npx tsx apps/api/scripts/seed-featured-showcase.ts`.
 
 ---
 

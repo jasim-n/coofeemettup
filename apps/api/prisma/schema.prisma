@@ -298,6 +298,8 @@ model TableImage {
   posterUrl    String? // VIDEO poster / collage cover thumb
   durationMs   Int? // VIDEO length hint for UI
   collageUrls  String[]       @default([]) // COLLAGE extra cells (url is cell 0)
+  /// Display knobs: fit/scale/position + collage grid (presets or custom fr/% tracks).
+  layout       Json?
   caption      String?
   uploadedById String
   featured     Boolean        @default(false) // admin-curated for home Featured

@@ -54,6 +54,7 @@ import type {
   FeaturedImageDto,
   TableDto,
   TableImageDto,
+  MediaLayout,
   TableJoinRequestDto,
   UserReputation,
   UpdateCafeInput,
@@ -825,6 +826,10 @@ export class ApiClient {
 
   adminSetImageFeatured(imageId: string, featured: boolean): Promise<{ ok: true }> {
     return this.request('POST', `/admin/images/${imageId}/feature`, { featured });
+  }
+
+  adminSetImageLayout(imageId: string, layout: MediaLayout): Promise<TableImageDto> {
+    return this.request('PATCH', `/admin/images/${imageId}/layout`, layout);
   }
 
   markGroupRead(tableId: string): Promise<{ ok: true }> {

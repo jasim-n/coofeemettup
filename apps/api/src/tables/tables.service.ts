@@ -221,6 +221,7 @@ export class TablesService {
       posterUrl: i.posterUrl,
       durationMs: i.durationMs,
       collageUrls: i.collageUrls,
+      layout: (i.layout as Record<string, unknown> | null) ?? null,
       caption: i.caption,
       tableId: i.tableId,
       tableTitle: i.table.title,
