@@ -14,10 +14,9 @@ All notable UI/product changes are logged here.
   duration, collage URLs, caption, sort order.
 - Hosts can upload reels (`POST /tables/:id/videos`) and build collages
   (`POST /tables/:id/collages`); admin Featured picker shows Reel/Collage badges.
-- Local demo seed uses minglers Instagram reel + highlights under
-  `apps/web/public/showcase/` (gitignored binaries): reel = public post only;
-  masonry collage = highlight clips only (no shared media across slides).
-  `apps/api/scripts/seed-featured-showcase.ts`.
+- Local demo seed **amends** Featured Moments (does not delete existing `[ig]`
+  rows): memories reel + masonry collage kept; EVENT P3 reel restored; extra
+  reels added. `apps/api/scripts/seed-featured-showcase.ts`.
 
 ### 2026-08-19 — Interest mix radar graph (Future labs)
 

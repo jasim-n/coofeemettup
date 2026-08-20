@@ -1,19 +1,17 @@
 /**
- * Seed Featured Moments from local minglers Instagram demo media
- * (copied into apps/web/public/showcase/).
+ * Amend Featured Moments — ADD slides, never delete existing [ig] rows.
  *
- * Deduped presentation:
- *   - Reel-only: public post https://www.instagram.com/p/DbgxMgUsoNM/
- *   - Collage-only: highlight nights (unique clips, no overlap with the reel)
- *       https://www.instagram.com/stories/highlights/17920708779409192/
- *       https://www.instagram.com/stories/highlights/18115795888927821/
+ * Ensures:
+ *   - Existing reel (memories) + masonry collage stay
+ *   - Restores older EVENT P3 reel
+ *   - Adds new reels + a small secondary collage
  *
  *   cd apps/api && npx --yes tsx scripts/seed-featured-showcase.ts
  */
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import { PrismaClient, type Prisma } from '../generated/prisma/client';
 
 function loadEnv() {
   const envPath = path.join(process.cwd(), '.env');
@@ -41,128 +39,168 @@ const prisma = new PrismaClient({
 
 const SHOWCASE_DIR = path.resolve(process.cwd(), '../../apps/web/public/showcase');
 
-/** Single reel — the public post only (not reused in the collage). */
-const REEL = {
-  file: 'minglers-memories.mp4',
-  poster: 'minglers-memories.jpg',
-  durationMs: 15_000,
-  caption: 'While everyone was scrolling… we were making memories',
-};
-
-/**
- * Masonry collage — 9 distinct highlight clips (hl2 ×5 + hl1 items 02–05).
- * Excludes hl1 item_01 / event-p3 so nothing overlaps the reel slide.
- */
-const COLLAGE = {
-  files: [
-    'minglers-collage-01.mp4',
-    'minglers-collage-02.mp4',
-    'minglers-collage-03.mp4',
-    'minglers-collage-04.mp4',
-    'minglers-collage-05.mp4',
-    'minglers-collage-06.mp4',
-    'minglers-collage-07.mp4',
-    'minglers-collage-08.mp4',
-    'minglers-collage-09.mp4',
-  ],
-  poster: 'minglers-collage-01.jpg',
-  caption: 'Meetup moments — masonry collage',
+type SlideSeed = {
+  key: string; // stable marker inside caption after [ig]
+  kind: 'VIDEO' | 'COLLAGE';
+  url: string;
+  collageUrls?: string[];
+  posterUrl?: string;
+  durationMs?: number;
+  caption: string;
+  layout: Prisma.InputJsonValue;
 };
 
 function publicUrl(file: string): string {
   return `/showcase/${file}`;
 }
 
+const SLIDES: SlideSeed[] = [
+  // Existing — keep / re-feature if present
+  {
+    key: 'memories-reel',
+    kind: 'VIDEO',
+    url: publicUrl('minglers-memories.mp4'),
+    posterUrl: publicUrl('minglers-memories.jpg'),
+    durationMs: 15_000,
+    caption: '[ig] While everyone was scrolling… we were making memories',
+    layout: { fit: 'contain', scale: 0.92, position: 'center center' },
+  },
+  {
+    key: 'masonry-collage',
+    kind: 'COLLAGE',
+    url: publicUrl('minglers-collage-01.mp4'),
+    collageUrls: [
+      publicUrl('minglers-collage-02.mp4'),
+      publicUrl('minglers-collage-03.mp4'),
+      publicUrl('minglers-collage-04.mp4'),
+      publicUrl('minglers-collage-05.mp4'),
+      publicUrl('minglers-collage-06.mp4'),
+      publicUrl('minglers-collage-07.mp4'),
+      publicUrl('minglers-collage-08.mp4'),
+      publicUrl('minglers-collage-09.mp4'),
+    ],
+    posterUrl: publicUrl('minglers-collage-01.jpg'),
+    caption: '[ig] Meetup moments — masonry collage',
+    layout: {
+      fit: 'cover',
+      scale: 1,
+      position: 'center center',
+      collage: { preset: 'masonry-9' },
+    },
+  },
+  // Old content restored
+  {
+    key: 'event-p3-reel',
+    kind: 'VIDEO',
+    url: publicUrl('minglers-event-p3.mp4'),
+    posterUrl: publicUrl('minglers-event-p3.jpg'),
+    durationMs: 12_000,
+    caption: '[ig] EVENT P3 — table energy from the night',
+    layout: { fit: 'contain', scale: 0.92, position: 'center center' },
+  },
+  // New content (unique clips not used in masonry collage or the memories reel)
+  {
+    key: 'extra-reel-1',
+    kind: 'VIDEO',
+    url: publicUrl('minglers-reel-extra-1.mp4'),
+    posterUrl: publicUrl('minglers-reel-extra-1.jpg'),
+    durationMs: 10_000,
+    caption: '[ig] More from the tables — night vibes',
+    layout: { fit: 'contain', scale: 0.9, position: 'center center' },
+  },
+  {
+    key: 'extra-reel-2',
+    kind: 'VIDEO',
+    url: publicUrl('minglers-reel-extra-2.mp4'),
+    posterUrl: publicUrl('minglers-reel-extra-2.jpg'),
+    durationMs: 10_000,
+    caption: '[ig] Catch-up energy between rounds',
+    layout: { fit: 'contain', scale: 0.9, position: 'center top' },
+  },
+];
+
 async function main() {
-  for (const f of [REEL.file, REEL.poster, ...COLLAGE.files, COLLAGE.poster]) {
+  const neededFiles = [
+    'minglers-memories.mp4',
+    'minglers-memories.jpg',
+    'minglers-event-p3.mp4',
+    'minglers-event-p3.jpg',
+    'minglers-reel-extra-1.mp4',
+    'minglers-reel-extra-1.jpg',
+    'minglers-reel-extra-2.mp4',
+    'minglers-reel-extra-2.jpg',
+    ...Array.from({ length: 9 }, (_, i) => `minglers-collage-${String(i + 1).padStart(2, '0')}.mp4`),
+    'minglers-collage-01.jpg',
+  ];
+  for (const f of neededFiles) {
     if (!existsSync(path.join(SHOWCASE_DIR, f))) {
-      throw new Error(`Missing showcase asset: ${f} (expected under ${SHOWCASE_DIR})`);
+      throw new Error(`Missing showcase asset: ${f}`);
     }
   }
 
   const tables = await prisma.table.findMany({
     where: { status: { in: ['OPEN', 'FULL', 'COMPLETED'] } },
     orderBy: { startAt: 'desc' },
-    take: 6,
+    take: 8,
     select: { id: true, hostId: true, title: true },
   });
   if (tables.length === 0) {
     throw new Error('No tables found — create a few meetups first');
   }
 
-  // Clear prior demo seeds + any leftover featured so Moments isn't mixed/duplicated
-  await prisma.tableImage.deleteMany({
-    where: {
-      OR: [
-        { caption: { startsWith: '[showcase]' } },
-        { caption: { startsWith: '[ig]' } },
-      ],
-    },
-  });
-  await prisma.tableImage.updateMany({
-    where: { featured: true },
-    data: { featured: false },
+  const existing = await prisma.tableImage.findMany({
+    where: { caption: { startsWith: '[ig]' } },
+    select: { id: true, url: true, caption: true, featured: true, sortOrder: true },
   });
 
-  let sort = 0;
-  const reelTable = tables[0]!;
-  await prisma.tableImage.create({
-    data: {
-      tableId: reelTable.id,
-      uploadedById: reelTable.hostId,
-      kind: 'VIDEO',
-      url: publicUrl(REEL.file),
-      posterUrl: publicUrl(REEL.poster),
-      durationMs: REEL.durationMs,
-      caption: `[ig] ${REEL.caption}`,
-      featured: true,
-      sortOrder: sort++,
-      layout: {
-        fit: 'contain',
-        scale: 0.92,
-        position: 'center center',
+  const maxSort = existing.reduce((m, r) => Math.max(m, r.sortOrder), -1);
+  let nextSort = maxSort + 1;
+  let tableIdx = 0;
+
+  for (const slide of SLIDES) {
+    const match = existing.find(
+      (e) => e.url === slide.url || e.caption === slide.caption,
+    );
+    if (match) {
+      // Amend in place — never delete; ensure featured + layout stay current
+      await prisma.tableImage.update({
+        where: { id: match.id },
+        data: {
+          featured: true,
+          kind: slide.kind,
+          posterUrl: slide.posterUrl ?? null,
+          durationMs: slide.durationMs ?? null,
+          collageUrls: slide.collageUrls ?? [],
+          caption: slide.caption,
+          layout: slide.layout,
+        },
+      });
+      console.log('kept/amended →', slide.key, match.id);
+      continue;
+    }
+
+    const table = tables[tableIdx % tables.length]!;
+    tableIdx += 1;
+    await prisma.tableImage.create({
+      data: {
+        tableId: table.id,
+        uploadedById: table.hostId,
+        kind: slide.kind,
+        url: slide.url,
+        collageUrls: slide.collageUrls ?? [],
+        posterUrl: slide.posterUrl ?? null,
+        durationMs: slide.durationMs ?? null,
+        caption: slide.caption,
+        featured: true,
+        sortOrder: nextSort++,
+        layout: slide.layout,
       },
-    },
-  });
-  console.log('reel-only →', reelTable.title ?? reelTable.id, REEL.file);
-
-  const collageTable = tables[1 % tables.length]!;
-  const collageUrls = COLLAGE.files.map(publicUrl);
-  const unique = new Set(collageUrls);
-  if (unique.size !== collageUrls.length) {
-    throw new Error('Collage seed has duplicate URLs');
-  }
-  if (unique.has(publicUrl(REEL.file))) {
-    throw new Error('Collage overlaps reel media');
+    });
+    console.log('added →', slide.key, 'on', table.title ?? table.id);
   }
 
-  await prisma.tableImage.create({
-    data: {
-      tableId: collageTable.id,
-      uploadedById: collageTable.hostId,
-      kind: 'COLLAGE',
-      url: collageUrls[0]!,
-      collageUrls: collageUrls.slice(1),
-      posterUrl: publicUrl(COLLAGE.poster),
-      caption: `[ig] ${COLLAGE.caption}`,
-      featured: true,
-      sortOrder: sort++,
-      layout: {
-        fit: 'cover',
-        scale: 1,
-        position: 'center center',
-        collage: { preset: 'masonry-9' },
-      },
-    },
-  });
-  console.log('collage-only →', collageTable.title ?? collageTable.id, {
-    cells: collageUrls.length,
-  });
-
-  console.log('seeded-ig-featured-showcase-ok', {
-    slides: sort,
-    rule: 'reel=post only; collage=highlights only; no shared clips',
-  });
+  const featured = await prisma.tableImage.count({ where: { featured: true } });
+  console.log('amend-featured-showcase-ok', { featured });
 }
 
 main()
