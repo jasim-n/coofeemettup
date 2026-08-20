@@ -214,6 +214,30 @@ export default function TableDetailPage() {
     if (errors.length) setImageError(`Some photos weren't added — ${errors.join(' · ')}`);
   }
 
+  async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImageError(null);
+    setUploading(true);
+    try {
+      if (!file.type.startsWith('video/')) {
+        setImageError('Please choose an MP4 or WebM reel');
+        return;
+      }
+      if (file.size > 40 * 1024 * 1024) {
+        setImageError('Reel must be under 40 MB');
+        return;
+      }
+      const uploaded = await api.uploadTableVideo(id, file);
+      setImages((prev) => [uploaded, ...prev]);
+    } catch (err) {
+      setImageError(err instanceof ApiError ? err.message : 'Reel upload failed');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleImageDelete(imageId: string) {
     try {
       await api.deleteTableImage(id, imageId);
@@ -366,9 +390,11 @@ export default function TableDetailPage() {
             <section className="bg-card shadow-soft rounded-3xl border p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="font-heading text-lg font-bold tracking-tight">
-                  <i className="fa-solid fa-images text-primary mr-2" />Event photos
+                  <i className="fa-solid fa-images text-primary mr-2" />
+                  Moments
                 </h2>
                 {isHost && (
+                  <div className="flex flex-wrap gap-2">
                   <label
                     className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent ${
                       uploading ? 'pointer-events-none opacity-60' : ''
@@ -385,6 +411,22 @@ export default function TableDetailPage() {
                     <i className={`fa-solid ${uploading ? 'fa-spinner animate-spin' : 'fa-plus'} mr-1`} />
                     {uploading ? 'Uploading…' : 'Add photos'}
                   </label>
+                  <label
+                    className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent ${
+                      uploading ? 'pointer-events-none opacity-60' : ''
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      disabled={uploading}
+                      className="sr-only"
+                      onChange={(e) => void handleVideoUpload(e)}
+                    />
+                    <i className="fa-solid fa-clapperboard mr-1" />
+                    Add reel
+                  </label>
+                  </div>
                 )}
               </div>
               {imageError && (
@@ -393,38 +435,68 @@ export default function TableDetailPage() {
               {images.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
                   {isHost
-                    ? 'No photos yet — add some from the event.'
-                    : "The host hasn't shared any photos yet."}
+                    ? 'No moments yet — add photos or a short reel.'
+                    : "The host hasn't shared any moments yet."}
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {images.map((img) => (
-                    <div key={img.id} className="relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={img.url}
-                        alt=""
-                        className="h-32 w-full rounded-2xl object-cover"
-                      />
+                  {images.map((img) => {
+                    const kind = img.kind ?? 'IMAGE';
+                    const cells =
+                      kind === 'COLLAGE'
+                        ? [img.url, ...(img.collageUrls ?? [])].slice(0, 4)
+                        : null;
+                    return (
+                    <div key={img.id} className="relative overflow-hidden rounded-2xl">
+                      {kind === 'VIDEO' ? (
+                        <video
+                          src={img.url}
+                          poster={img.posterUrl ?? undefined}
+                          className="h-32 w-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : cells ? (
+                        <div className="grid h-32 grid-cols-2 gap-0.5">
+                          {cells.map((u, i) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img key={i} src={u} alt="" className="h-full w-full object-cover" />
+                          ))}
+                        </div>
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={img.url}
+                          alt=""
+                          className="h-32 w-full object-cover"
+                        />
+                      )}
+                      {kind !== 'IMAGE' && (
+                        <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
+                          {kind === 'VIDEO' ? 'Reel' : 'Collage'}
+                        </span>
+                      )}
                       {isHost && (
                         <button
                           type="button"
                           onClick={() =>
                             setConfirm({
-                              title: 'Delete this photo?',
+                              title: 'Delete this moment?',
                               confirmLabel: 'Delete',
                               destructive: true,
                               onConfirm: () => void handleImageDelete(img.id),
                             })
                           }
                           className="bg-black/60 text-white hover:bg-black/80 absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full text-xs transition-colors"
-                          aria-label="Delete photo"
+                          aria-label="Delete"
                         >
                           <i className="fa-solid fa-xmark" />
                         </button>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>

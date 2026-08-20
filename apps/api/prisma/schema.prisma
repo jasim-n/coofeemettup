@@ -282,18 +282,30 @@ model Table {
   @@index([hostId])
 }
 
-/// Event photos shared by the host. Joined members can view; only the host adds.
+/// Event photos / reels shared by the host. Joined members can view; only the host adds.
+enum TableMediaKind {
+  IMAGE
+  VIDEO
+  COLLAGE
+}
+
 model TableImage {
-  id           String   @id @default(cuid())
-  table        Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  id           String         @id @default(cuid())
+  table        Table          @relation(fields: [tableId], references: [id], onDelete: Cascade)
   tableId      String
-  url          String
+  url          String // primary asset (image, video, or first collage cell)
+  kind         TableMediaKind @default(IMAGE)
+  posterUrl    String? // VIDEO poster / collage cover thumb
+  durationMs   Int? // VIDEO length hint for UI
+  collageUrls  String[]       @default([]) // COLLAGE extra cells (url is cell 0)
+  caption      String?
   uploadedById String
-  featured     Boolean  @default(false) // admin-curated for the home "Featured" section
-  createdAt    DateTime @default(now())
+  featured     Boolean        @default(false) // admin-curated for home Featured
+  sortOrder    Int            @default(0)
+  createdAt    DateTime       @default(now())
 
   @@index([tableId])
-  @@index([featured])
+  @@index([featured, sortOrder])
 }
 
 /// Per-user read marker for a table's group chat (unread = messages after this).

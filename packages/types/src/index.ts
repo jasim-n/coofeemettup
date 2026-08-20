@@ -238,19 +238,37 @@ export interface GeocodeResult {
   lng: number;
 }
 
+export const TableMediaKind = {
+  IMAGE: 'IMAGE',
+  VIDEO: 'VIDEO',
+  COLLAGE: 'COLLAGE',
+} as const;
+export type TableMediaKind = (typeof TableMediaKind)[keyof typeof TableMediaKind];
+
 export interface TableImageDto {
   id: string;
   tableId: string;
   url: string;
+  kind: TableMediaKind;
+  posterUrl: string | null;
+  durationMs: number | null;
+  collageUrls: string[];
+  caption: string | null;
   uploadedById: string;
   featured: boolean;
+  sortOrder: number;
   createdAt: string;
 }
 
-/** Admin-curated event photo shown in the home "Featured" section. */
+/** Admin-curated media shown in the home Featured showcase. */
 export interface FeaturedImageDto {
   id: string;
   url: string;
+  kind: TableMediaKind;
+  posterUrl: string | null;
+  durationMs: number | null;
+  collageUrls: string[];
+  caption: string | null;
   tableId: string;
   tableTitle: string | null;
   category: string;

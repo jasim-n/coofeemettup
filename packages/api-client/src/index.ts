@@ -614,6 +614,44 @@ export class ApiClient {
     return data as TableImageDto;
   }
 
+  async uploadTableVideo(
+    id: string,
+    file: File,
+    caption?: string,
+  ): Promise<TableImageDto> {
+    const form = new FormData();
+    form.append('file', file);
+    if (caption) form.append('caption', caption);
+    const headers: Record<string, string> = {};
+    if (this.clientType === 'mobile') {
+      headers['x-client'] = 'mobile';
+      if (this.authToken) headers['Authorization'] = `Bearer ${this.authToken}`;
+    } else if (this.csrfToken) {
+      headers['x-csrf-token'] = this.csrfToken;
+    }
+    const res = await this.fetchImpl(`${this.baseUrl}/api/tables/${id}/videos`, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: form,
+    });
+    const text = await res.text();
+    const data: unknown = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+      const record = (data ?? {}) as { message?: unknown };
+      throw new ApiError(res.status, String(record.message ?? res.statusText), data);
+    }
+    return data as TableImageDto;
+  }
+
+  createTableCollage(
+    id: string,
+    imageIds: string[],
+    caption?: string,
+  ): Promise<TableImageDto> {
+    return this.request('POST', `/tables/${id}/collages`, { imageIds, caption });
+  }
+
   tableChat(id: string): Promise<TableChatResponse> {
     return this.request('GET', `/tables/${id}/chat`);
   }

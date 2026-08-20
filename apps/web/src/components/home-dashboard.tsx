@@ -16,6 +16,7 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { CategoryPills } from '@/components/category-pills';
+import { FeaturedShowcase } from '@/components/featured-showcase';
 import { tableCta } from '@/lib/table-cta';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
@@ -172,17 +173,27 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
           </div>
         </section>
 
-        {/* featured event photos (admin-curated) */}
+        {/* featured moments — photos, reels, collages */}
         {featured.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="bg-gradient-ember grid size-7 place-items-center rounded-xl text-white">
-                <i className="fa-solid fa-star text-xs" />
-              </span>
-              <h2 className="font-heading text-xl font-bold tracking-tight">Featured</h2>
+          <section className="space-y-3">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="bg-gradient-ember grid size-7 place-items-center rounded-xl text-white">
+                    <i className="fa-solid fa-clapperboard text-xs" />
+                  </span>
+                  <p className="eyebrow text-primary mb-0">Moments</p>
+                </div>
+                <h2 className="font-heading text-xl font-bold tracking-tight">
+                  Featured from the tables
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  Photos, reels, and collages curated from real meetups.
+                </p>
+              </div>
             </div>
-            <FeaturedCarousel images={featured} />
-          </div>
+            <FeaturedShowcase slides={featured} />
+          </section>
         )}
 
         {/* popular vibes */}
@@ -377,105 +388,6 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         )}
       </aside>
       </div>
-    </div>
-  );
-}
-
-/** One full-width carousel over ALL featured photos; autoplays; each slide's
- *  heading is the event name (or category when there's no name). */
-function FeaturedCarousel({ images }: { images: FeaturedImageDto[] }) {
-  const [idx, setIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const n = images.length;
-
-  // Autoplay — advance every 4s, paused on hover.
-  useEffect(() => {
-    if (n <= 1 || paused) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % n), 4000);
-    return () => clearInterval(t);
-  }, [n, paused]);
-
-  const safeIdx = idx % n;
-
-  return (
-    <div
-      className="group relative h-72 w-full overflow-hidden rounded-3xl shadow-soft sm:h-80"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      {/* sliding track — translate by the active index for a slide effect */}
-      <div
-        className="flex h-full transition-transform duration-500 ease-out"
-        style={{ transform: `translateX(-${safeIdx * 100}%)` }}
-      >
-        {images.map((img) => {
-          const heading = img.tableTitle ?? img.category;
-          return (
-            <Link
-              key={img.id}
-              href={`/tables/${img.tableId}`}
-              className="relative block h-full w-full shrink-0"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt={heading} className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5">
-                <p className="font-heading truncate text-lg font-bold text-white">{heading}</p>
-                <CategoryPills
-                  category={img.category}
-                  variant="glass"
-                  max={3}
-                  pillClassName="text-white ring-white/20"
-                  className="mt-1"
-                />
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {n > 1 && (
-        <>
-          <button
-            type="button"
-            aria-label="Previous photo"
-            onClick={() => setIdx((i) => (i - 1 + n) % n)}
-            className="absolute left-3 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/60 group-hover:opacity-100"
-          >
-            <i className="fa-solid fa-chevron-left text-sm" />
-          </button>
-          <button
-            type="button"
-            aria-label="Next photo"
-            onClick={() => setIdx((i) => (i + 1) % n)}
-            className="absolute right-3 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/60 group-hover:opacity-100"
-          >
-            <i className="fa-solid fa-chevron-right text-sm" />
-          </button>
-          <div className="absolute inset-x-0 bottom-3 z-10 flex justify-center gap-1.5">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                aria-label={`Go to photo ${i + 1}`}
-                onClick={() => setIdx(i)}
-                className={`size-2 rounded-full transition-colors ${i === idx % n ? 'bg-white' : 'bg-white/50'}`}
-              />
-            ))}
-          </div>
-          {/* autoplay progress bar — refills each slide, pauses on hover */}
-          <div className="absolute inset-x-0 bottom-0 z-10 h-1 bg-white/20">
-            <div
-              key={idx % n}
-              className="h-full bg-white"
-              style={{
-                animation: 'carousel-progress 4s linear forwards',
-                animationPlayState: paused ? 'paused' : 'running',
-              }}
-            />
-          </div>
-        </>
-      )}
     </div>
   );
 }

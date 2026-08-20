@@ -260,7 +260,13 @@ export default function AdminFeaturedPage() {
                   </p>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {images.map((img) => (
+                    {images.map((img) => {
+                      const kind = img.kind ?? 'IMAGE';
+                      const thumb =
+                        kind === 'VIDEO'
+                          ? (img.posterUrl ?? img.url)
+                          : img.url;
+                      return (
                       <button
                         key={img.id}
                         type="button"
@@ -271,7 +277,12 @@ export default function AdminFeaturedPage() {
                         }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element -- remote Cloudinary URL */}
-                        <img src={img.url} alt="" className="h-32 w-full object-cover" />
+                        <img src={thumb} alt="" className="h-32 w-full object-cover" />
+                        {kind !== 'IMAGE' && (
+                          <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                            {kind === 'VIDEO' ? 'Reel' : 'Collage'}
+                          </span>
+                        )}
                         <span
                           className={`absolute right-2 top-2 grid size-6 place-items-center rounded-full text-xs font-bold ${
                             img.featured
@@ -282,7 +293,8 @@ export default function AdminFeaturedPage() {
                           {img.featured ? '★' : '+'}
                         </span>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

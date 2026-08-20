@@ -99,11 +99,86 @@ export class TablesService {
     }
     const url = await this.media.uploadImage(buffer, 'table-photos');
     return this.prisma.tableImage.create({
-      data: { tableId, url, uploadedById: userId },
+      data: { tableId, url, uploadedById: userId, kind: 'IMAGE' },
     });
   }
 
-  /** Any joined member (host + approved) can view the event photos. */
+  /** Host uploads a short reel / video for the table gallery. */
+  async addVideo(
+    userId: string,
+    tableId: string,
+    buffer: Buffer,
+    caption?: string,
+  ) {
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
+    if (!table) throw new NotFoundException('Table not found');
+    if (table.hostId !== userId) {
+      throw new ForbiddenException('Only the host can add reels');
+    }
+    const uploaded = await this.media.uploadVideo(buffer, 'table-reels');
+    return this.prisma.tableImage.create({
+      data: {
+        tableId,
+        url: uploaded.url,
+        kind: 'VIDEO',
+        posterUrl: uploaded.posterUrl,
+        durationMs: uploaded.durationMs,
+        caption: caption?.trim() || null,
+        uploadedById: userId,
+      },
+    });
+  }
+
+  /**
+   * Host builds a collage slide from existing IMAGE gallery rows (2–4 photos).
+   * Creates one COLLAGE media row; originals stay in the gallery.
+   */
+  async createCollage(
+    userId: string,
+    tableId: string,
+    imageIds: string[],
+    caption?: string,
+  ) {
+    if (imageIds.length < 2 || imageIds.length > 4) {
+      throw new BadRequestException('Collage needs 2–4 photos');
+    }
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
+    if (!table) throw new NotFoundException('Table not found');
+    if (table.hostId !== userId) {
+      throw new ForbiddenException('Only the host can create collages');
+    }
+    const imgs = await this.prisma.tableImage.findMany({
+      where: {
+        tableId,
+        id: { in: imageIds },
+        kind: 'IMAGE',
+      },
+    });
+    if (imgs.length !== imageIds.length) {
+      throw new BadRequestException('All collage photos must belong to this table');
+    }
+    const ordered = imageIds
+      .map((id) => imgs.find((i) => i.id === id)!)
+      .filter(Boolean);
+    const [primary, ...rest] = ordered;
+    return this.prisma.tableImage.create({
+      data: {
+        tableId,
+        url: primary!.url,
+        kind: 'COLLAGE',
+        collageUrls: rest.map((i) => i.url),
+        posterUrl: primary!.url,
+        caption: caption?.trim() || null,
+        uploadedById: userId,
+      },
+    });
+  }
+
+  /** Any joined member (host + approved) can view the event media. */
   async listImages(userId: string, tableId: string) {
     if (!(await this.isMember(userId, tableId))) {
       throw new ForbiddenException(
@@ -112,7 +187,7 @@ export class TablesService {
     }
     return this.prisma.tableImage.findMany({
       where: { tableId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -131,17 +206,22 @@ export class TablesService {
     return { ok: true as const };
   }
 
-  /** Admin-curated featured event photos for the home "Featured" section. */
+  /** Admin-curated featured media for the home showcase (photos, reels, collages). */
   async featuredImages() {
     const imgs = await this.prisma.tableImage.findMany({
       where: { featured: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
       take: 24,
       include: { table: { select: { id: true, title: true, category: true } } },
     });
     return imgs.map((i) => ({
       id: i.id,
       url: i.url,
+      kind: i.kind,
+      posterUrl: i.posterUrl,
+      durationMs: i.durationMs,
+      collageUrls: i.collageUrls,
+      caption: i.caption,
       tableId: i.tableId,
       tableTitle: i.table.title,
       category: i.table.category,

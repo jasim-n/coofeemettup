@@ -26,6 +26,13 @@ const imageUpload = FileInterceptor('file', {
   fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('image/')),
 });
 
+const videoUpload = FileInterceptor('file', {
+  storage: memoryStorage(),
+  limits: { fileSize: 40 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) =>
+    cb(null, file.mimetype.startsWith('video/')),
+});
+
 @Controller('tables')
 export class TablesController {
   constructor(private readonly tables: TablesService) {}
@@ -161,6 +168,34 @@ export class TablesController {
   ) {
     if (!file) throw new BadRequestException('No file');
     return this.tables.addImage(user.id, id, file.buffer);
+  }
+
+  @Post(':id/videos')
+  @HttpCode(201)
+  @UseInterceptors(videoUpload)
+  addVideo(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @UploadedFile() file?: Express.Multer.File,
+    @Body('caption') caption?: string,
+  ) {
+    if (!file) throw new BadRequestException('No file');
+    return this.tables.addVideo(user.id, id, file.buffer, caption);
+  }
+
+  @Post(':id/collages')
+  @HttpCode(201)
+  createCollage(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() body: { imageIds?: string[]; caption?: string },
+  ) {
+    return this.tables.createCollage(
+      user.id,
+      id,
+      body.imageIds ?? [],
+      body.caption,
+    );
   }
 
   @Delete(':id/images/:imageId')

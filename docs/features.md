@@ -45,6 +45,22 @@ Nearby, Search, Calendar, Saved, Invites, Profile, and the tables map.
 
 ---
 
+## Featured moments (photos · reels · collages)
+
+Home “Featured from the tables” showcase (`FeaturedShowcase`) plays admin-curated
+`TableImage` rows with `featured=true`:
+
+| Kind | UI |
+|------|-----|
+| `IMAGE` | Full-bleed photo |
+| `VIDEO` | Muted looping reel + poster + duration chip |
+| `COLLAGE` | 2–4 cell photo grid |
+
+Host APIs: `POST /tables/:id/videos`, `POST /tables/:id/collages`.
+Demo seed (stock cafe media, not scraped IG): `npx tsx apps/api/scripts/seed-featured-showcase.ts`.
+
+---
+
 ## Future features (flag-gated)
 
 Unfinished product experiments live behind `NEXT_PUBLIC_FUTURE_TASKS`
