@@ -258,6 +258,11 @@ export const CollageLayoutPreset = {
   HERO_RIGHT: 'hero-right',
   /** 2×2 with 70% / 30% columns. */
   QUAD_70_30: 'quad-70-30',
+  /**
+   * 9-cell staggered masonry (3 equal columns):
+   * sides 2/1/2, center 1/3/1 — gutters do not align across columns.
+   */
+  MASONRY_9: 'masonry-9',
   CUSTOM: 'custom',
 } as const;
 export type CollageLayoutPreset =

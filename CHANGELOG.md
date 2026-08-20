@@ -9,7 +9,7 @@ All notable UI/product changes are logged here.
 - Featured home section supports **photos, muted autoplay reels, and collages**
   (Instagram-style story progress; collage cells can be videos).
 - Admins can set per-slide **layout**: fit (cover/contain), scale, focus position,
-  and asymmetric collage grids (70/30, hero-left, etc.) via `/admin/featured`.
+  and asymmetric collage grids including the **masonry-9** staggered template.
 - `TableImage` gains `kind` (`IMAGE`/`VIDEO`/`COLLAGE`), `layout` JSON, poster,
   duration, collage URLs, caption, sort order.
 - Hosts can upload reels (`POST /tables/:id/videos`) and build collages

@@ -5,20 +5,47 @@ import type {
   MediaLayout,
 } from '@jrst/types';
 
+/** Flex weights for one vertical stack in a masonry-columns collage. */
+export type MasonryColumnWeights = number[];
+
 export interface ResolvedCollageGrid {
+  mode: 'grid' | 'masonry-columns';
   columns: string;
   rows: string;
   cells: MediaCellPlacement[];
+  /**
+   * Column-major stacks for `masonry-columns` mode.
+   * Each inner array is top→bottom flex weights for that column.
+   */
+  masonryColumns?: MasonryColumnWeights[];
 }
 
-/** Resolve collage CSS grid from layout + cell count. */
+/** Resolve collage CSS grid / masonry from layout + cell count. */
 export function resolveCollageGrid(
   layout: MediaLayout | null | undefined,
   cellCount: number,
 ): ResolvedCollageGrid {
-  const n = Math.max(1, Math.min(cellCount, 6));
+  const n = Math.max(1, Math.min(cellCount, 9));
   const collage = layout?.collage;
   const preset = (collage?.preset ?? 'equal') as CollageLayoutPreset;
+
+  if (preset === 'masonry-9') {
+    // Template: 3 equal-width columns, staggered heights (sides 2/1/2, center 1/3/1).
+    return {
+      mode: 'masonry-columns',
+      columns: '1fr 1fr 1fr',
+      rows: '1fr',
+      cells: Array.from({ length: Math.min(n, 9) }, (_, i) => ({
+        col: Math.floor(i / 3) + 1,
+        row: (i % 3) + 1,
+      })),
+      masonryColumns: [
+        [2, 1, 2],
+        [1, 3, 1],
+        [2, 1, 2],
+      ],
+    };
+  }
 
   if (
     preset === 'custom' &&
@@ -26,6 +53,7 @@ export function resolveCollageGrid(
     collage?.cells?.length
   ) {
     return {
+      mode: 'grid',
       columns: collage.columns.join(' '),
       rows: (collage.rows ?? ['1fr']).join(' '),
       cells: collage.cells.slice(0, n),
@@ -35,6 +63,7 @@ export function resolveCollageGrid(
   switch (preset) {
     case 'split-70-30':
       return {
+        mode: 'grid',
         columns: '7fr 3fr',
         rows: '1fr',
         cells: [
@@ -44,6 +73,7 @@ export function resolveCollageGrid(
       };
     case 'split-30-70':
       return {
+        mode: 'grid',
         columns: '3fr 7fr',
         rows: '1fr',
         cells: [
@@ -54,6 +84,7 @@ export function resolveCollageGrid(
     case 'hero-left': {
       const right = Math.max(1, n - 1);
       return {
+        mode: 'grid',
         columns: '7fr 3fr',
         rows: Array.from({ length: right }, () => '1fr').join(' '),
         cells: [
@@ -68,6 +99,7 @@ export function resolveCollageGrid(
     case 'hero-right': {
       const left = Math.max(1, n - 1);
       return {
+        mode: 'grid',
         columns: '3fr 7fr',
         rows: Array.from({ length: left }, () => '1fr').join(' '),
         cells: [
@@ -81,6 +113,7 @@ export function resolveCollageGrid(
     }
     case 'quad-70-30':
       return {
+        mode: 'grid',
         columns: '7fr 3fr',
         rows: '1fr 1fr',
         cells: [
@@ -93,10 +126,16 @@ export function resolveCollageGrid(
     case 'equal':
     default: {
       if (n === 1) {
-        return { columns: '1fr', rows: '1fr', cells: [{ col: 1, row: 1 }] };
+        return {
+          mode: 'grid',
+          columns: '1fr',
+          rows: '1fr',
+          cells: [{ col: 1, row: 1 }],
+        };
       }
       if (n === 2) {
         return {
+          mode: 'grid',
           columns: '1fr 1fr',
           rows: '1fr',
           cells: [
@@ -107,6 +146,7 @@ export function resolveCollageGrid(
       }
       if (n === 3) {
         return {
+          mode: 'grid',
           columns: '1fr 1fr',
           rows: '1fr 1fr',
           cells: [
@@ -117,6 +157,7 @@ export function resolveCollageGrid(
         };
       }
       return {
+        mode: 'grid',
         columns: '1fr 1fr',
         rows: '1fr 1fr',
         cells: [
@@ -152,6 +193,7 @@ export const COLLAGE_PRESET_OPTIONS: Array<{
   label: string;
   hint: string;
 }> = [
+  { value: 'masonry-9', label: 'Masonry 9', hint: 'Staggered 3×3 template' },
   { value: 'equal', label: 'Equal', hint: 'Even tiles' },
   { value: 'split-70-30', label: '70 / 30', hint: 'Wide + narrow (2)' },
   { value: 'split-30-70', label: '30 / 70', hint: 'Narrow + wide (2)' },

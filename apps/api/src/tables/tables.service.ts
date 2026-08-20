@@ -132,7 +132,7 @@ export class TablesService {
   }
 
   /**
-   * Host builds a collage slide from existing IMAGE gallery rows (2–4 photos).
+   * Host builds a collage slide from existing IMAGE gallery rows (2–9 photos).
    * Creates one COLLAGE media row; originals stay in the gallery.
    */
   async createCollage(
@@ -141,8 +141,8 @@ export class TablesService {
     imageIds: string[],
     caption?: string,
   ) {
-    if (imageIds.length < 2 || imageIds.length > 4) {
-      throw new BadRequestException('Collage needs 2–4 photos');
+    if (imageIds.length < 2 || imageIds.length > 9) {
+      throw new BadRequestException('Collage needs 2–9 photos');
     }
     const table = await this.prisma.table.findUnique({
       where: { id: tableId },
@@ -174,6 +174,12 @@ export class TablesService {
         posterUrl: primary!.url,
         caption: caption?.trim() || null,
         uploadedById: userId,
+        layout:
+          ordered.length === 9
+            ? { fit: 'cover', collage: { preset: 'masonry-9' } }
+            : ordered.length >= 3
+              ? { fit: 'cover', collage: { preset: 'hero-left' } }
+              : { fit: 'cover', collage: { preset: 'split-70-30' } },
       },
     });
   }

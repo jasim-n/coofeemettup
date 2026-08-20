@@ -91,6 +91,45 @@ function CollageGrid({
 }) {
   const grid = resolveCollageGrid(layout, urls.length);
 
+  if (grid.mode === 'masonry-columns' && grid.masonryColumns) {
+    // Column-major fill: L top→bot, C top→bot, R top→bot
+    let cursor = 0;
+    return (
+      <div className="flex h-full w-full gap-0.5">
+        {grid.masonryColumns.map((weights, colIdx) => (
+          <div key={colIdx} className="flex min-h-0 min-w-0 flex-1 flex-col gap-0.5">
+            {weights.map((flex, rowIdx) => {
+              const url = urls[cursor++];
+              if (!url) {
+                return (
+                  <div
+                    key={`${colIdx}-${rowIdx}`}
+                    className="min-h-0 bg-black/40"
+                    style={{ flex }}
+                  />
+                );
+              }
+              return (
+                <div
+                  key={`${colIdx}-${rowIdx}`}
+                  className="min-h-0 min-w-0 overflow-hidden"
+                  style={{ flex }}
+                >
+                  <CollageCell
+                    url={url}
+                    alt={`${alt} ${cursor}`}
+                    active={active}
+                    layout={layout}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div
       className="grid h-full w-full gap-0.5"

@@ -57,8 +57,8 @@ Home “Featured from the tables” showcase (`FeaturedShowcase`) plays admin-cu
 | `COLLAGE` | Multi-cell grid (photos and/or videos; asymmetric presets) |
 
 Admins set per-media **layout** (`fit` cover/contain, `scale`, `position`, collage
-presets like `hero-left` / `quad-70-30` / `split-70-30`) from `/admin/featured` →
-Layout. API: `PATCH /admin/images/:id/layout`.
+presets like `masonry-9` / `hero-left` / `quad-70-30` / `split-70-30`) from
+`/admin/featured` → Layout. API: `PATCH /admin/images/:id/layout`.
 
 Hosts: `POST /tables/:id/videos`, `POST /tables/:id/collages`.
 

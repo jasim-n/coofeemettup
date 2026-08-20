@@ -61,9 +61,14 @@ const COLLAGE = {
     'minglers-collage-02.mp4',
     'minglers-collage-03.mp4',
     'minglers-collage-04.mp4',
+    'minglers-collage-05.mp4',
+    'minglers-collage-06.mp4',
+    'minglers-collage-07.mp4',
+    'minglers-collage-08.mp4',
+    'minglers-collage-09.mp4',
   ],
   poster: 'minglers-collage-01.jpg',
-  caption: 'Meetup moments — video collage',
+  caption: 'Meetup moments — masonry collage',
 };
 
 function publicUrl(file: string): string {
@@ -142,7 +147,7 @@ async function main() {
         fit: 'cover',
         scale: 1,
         position: 'center center',
-        collage: { preset: 'hero-left' },
+        collage: { preset: 'masonry-9' },
       },
     },
   });
