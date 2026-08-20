@@ -2,10 +2,11 @@
  * Seed Featured Moments from local minglers Instagram demo media
  * (copied into apps/web/public/showcase/).
  *
- * Sources (downloaded with the user's Chrome Default Instagram session):
- *   - https://www.instagram.com/p/DbgxMgUsoNM/
- *   - https://www.instagram.com/stories/highlights/17920708779409192/
- *   - https://www.instagram.com/stories/highlights/18115795888927821/ (video collage)
+ * Deduped presentation:
+ *   - Reel-only: public post https://www.instagram.com/p/DbgxMgUsoNM/
+ *   - Collage-only: highlight nights (unique clips, no overlap with the reel)
+ *       https://www.instagram.com/stories/highlights/17920708779409192/
+ *       https://www.instagram.com/stories/highlights/18115795888927821/
  *
  *   cd apps/api && npx --yes tsx scripts/seed-featured-showcase.ts
  */
@@ -40,21 +41,18 @@ const prisma = new PrismaClient({
 
 const SHOWCASE_DIR = path.resolve(process.cwd(), '../../apps/web/public/showcase');
 
-const REELS = [
-  {
-    file: 'minglers-memories.mp4',
-    poster: 'minglers-memories.jpg',
-    durationMs: 15_000,
-    caption: 'While everyone was scrolling… we were making memories',
-  },
-  {
-    file: 'minglers-event-p3.mp4',
-    poster: 'minglers-event-p3.jpg',
-    durationMs: 12_000,
-    caption: 'EVENT P3 — table energy from the night',
-  },
-];
+/** Single reel — the public post only (not reused in the collage). */
+const REEL = {
+  file: 'minglers-memories.mp4',
+  poster: 'minglers-memories.jpg',
+  durationMs: 15_000,
+  caption: 'While everyone was scrolling… we were making memories',
+};
 
+/**
+ * Masonry collage — 9 distinct highlight clips (hl2 ×5 + hl1 items 02–05).
+ * Excludes hl1 item_01 / event-p3 so nothing overlaps the reel slide.
+ */
 const COLLAGE = {
   files: [
     'minglers-collage-01.mp4',
@@ -76,11 +74,7 @@ function publicUrl(file: string): string {
 }
 
 async function main() {
-  for (const f of [
-    ...REELS.flatMap((r) => [r.file, r.poster]),
-    ...COLLAGE.files,
-    COLLAGE.poster,
-  ]) {
+  for (const f of [REEL.file, REEL.poster, ...COLLAGE.files, COLLAGE.poster]) {
     if (!existsSync(path.join(SHOWCASE_DIR, f))) {
       throw new Error(`Missing showcase asset: ${f} (expected under ${SHOWCASE_DIR})`);
     }
@@ -96,6 +90,7 @@ async function main() {
     throw new Error('No tables found — create a few meetups first');
   }
 
+  // Clear prior demo seeds + any leftover featured so Moments isn't mixed/duplicated
   await prisma.tableImage.deleteMany({
     where: {
       OR: [
@@ -104,34 +99,43 @@ async function main() {
       ],
     },
   });
+  await prisma.tableImage.updateMany({
+    where: { featured: true },
+    data: { featured: false },
+  });
 
   let sort = 0;
-  for (let i = 0; i < REELS.length; i++) {
-    const table = tables[i % tables.length]!;
-    const reel = REELS[i]!;
-    await prisma.tableImage.create({
-      data: {
-        tableId: table.id,
-        uploadedById: table.hostId,
-        kind: 'VIDEO',
-        url: publicUrl(reel.file),
-        posterUrl: publicUrl(reel.poster),
-        durationMs: reel.durationMs,
-        caption: `[ig] ${reel.caption}`,
-        featured: true,
-        sortOrder: sort++,
-        layout: {
-          fit: 'contain',
-          scale: 0.92,
-          position: 'center center',
-        },
+  const reelTable = tables[0]!;
+  await prisma.tableImage.create({
+    data: {
+      tableId: reelTable.id,
+      uploadedById: reelTable.hostId,
+      kind: 'VIDEO',
+      url: publicUrl(REEL.file),
+      posterUrl: publicUrl(REEL.poster),
+      durationMs: REEL.durationMs,
+      caption: `[ig] ${REEL.caption}`,
+      featured: true,
+      sortOrder: sort++,
+      layout: {
+        fit: 'contain',
+        scale: 0.92,
+        position: 'center center',
       },
-    });
-    console.log('reel →', table.title ?? table.id, reel.file);
+    },
+  });
+  console.log('reel-only →', reelTable.title ?? reelTable.id, REEL.file);
+
+  const collageTable = tables[1 % tables.length]!;
+  const collageUrls = COLLAGE.files.map(publicUrl);
+  const unique = new Set(collageUrls);
+  if (unique.size !== collageUrls.length) {
+    throw new Error('Collage seed has duplicate URLs');
+  }
+  if (unique.has(publicUrl(REEL.file))) {
+    throw new Error('Collage overlaps reel media');
   }
 
-  const collageTable = tables[2 % tables.length]!;
-  const collageUrls = COLLAGE.files.map(publicUrl);
   await prisma.tableImage.create({
     data: {
       tableId: collageTable.id,
@@ -151,9 +155,14 @@ async function main() {
       },
     },
   });
-  console.log('video collage →', collageTable.title ?? collageTable.id);
+  console.log('collage-only →', collageTable.title ?? collageTable.id, {
+    cells: collageUrls.length,
+  });
 
-  console.log('seeded-ig-featured-showcase-ok', { slides: sort });
+  console.log('seeded-ig-featured-showcase-ok', {
+    slides: sort,
+    rule: 'reel=post only; collage=highlights only; no shared clips',
+  });
 }
 
 main()
