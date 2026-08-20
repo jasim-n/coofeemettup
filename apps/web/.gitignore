@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local Instagram/demo showcase media (large binaries)
+/public/showcase/*
+!/public/showcase/.gitkeep

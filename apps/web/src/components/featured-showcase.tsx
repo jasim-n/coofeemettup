@@ -13,20 +13,64 @@ function formatDuration(ms: number | null | undefined): string | null {
   return m > 0 ? `${m}:${String(r).padStart(2, '0')}` : `0:${String(r).padStart(2, '0')}`;
 }
 
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|mov)(\?|$)/i.test(url);
+}
+
+function CollageCell({
+  url,
+  alt,
+  className,
+  active,
+}: {
+  url: string;
+  alt: string;
+  className?: string;
+  active: boolean;
+}) {
+  const ref = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    if (active) void v.play().catch(() => undefined);
+    else {
+      v.pause();
+      v.currentTime = 0;
+    }
+  }, [active]);
+
+  if (isVideoUrl(url)) {
+    return (
+      <video
+        ref={ref}
+        src={url}
+        className={className ?? 'h-full w-full object-cover'}
+        muted
+        playsInline
+        loop
+        preload="metadata"
+      />
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt={alt} className={className ?? 'h-full w-full object-cover'} />;
+}
+
 function CollageGrid({
   urls,
   alt,
+  active,
 }: {
   urls: string[];
   alt: string;
+  active: boolean;
 }) {
   const cells = urls.slice(0, 4);
   if (cells.length === 2) {
     return (
       <div className="grid h-full grid-cols-2 gap-0.5">
         {cells.map((u, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={i} src={u} alt={`${alt} ${i + 1}`} className="h-full w-full object-cover" />
+          <CollageCell key={i} url={u} alt={`${alt} ${i + 1}`} active={active} />
         ))}
       </div>
     );
@@ -34,20 +78,16 @@ function CollageGrid({
   if (cells.length === 3) {
     return (
       <div className="grid h-full grid-cols-2 grid-rows-2 gap-0.5">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={cells[0]} alt={alt} className="row-span-2 h-full w-full object-cover" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={cells[1]} alt={`${alt} 2`} className="h-full w-full object-cover" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={cells[2]} alt={`${alt} 3`} className="h-full w-full object-cover" />
+        <CollageCell url={cells[0]!} alt={alt} className="row-span-2 h-full w-full object-cover" active={active} />
+        <CollageCell url={cells[1]!} alt={`${alt} 2`} active={active} />
+        <CollageCell url={cells[2]!} alt={`${alt} 3`} active={active} />
       </div>
     );
   }
   return (
     <div className="grid h-full grid-cols-2 grid-rows-2 gap-0.5">
       {cells.map((u, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img key={i} src={u} alt={`${alt} ${i + 1}`} className="h-full w-full object-cover" />
+        <CollageCell key={i} url={u} alt={`${alt} ${i + 1}`} active={active} />
       ))}
     </div>
   );
@@ -105,7 +145,7 @@ function SlideMedia({
     const urls = [slide.url, ...slide.collageUrls].filter(Boolean);
     return (
       <>
-        <CollageGrid urls={urls} alt={heading} />
+        <CollageGrid urls={urls} alt={heading} active={active} />
         <div className="absolute left-4 top-4 z-10">
           <span className="rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
             Collage

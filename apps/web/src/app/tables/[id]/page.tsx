@@ -459,10 +459,21 @@ export default function TableDetailPage() {
                         />
                       ) : cells ? (
                         <div className="grid h-32 grid-cols-2 gap-0.5">
-                          {cells.map((u, i) => (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img key={i} src={u} alt="" className="h-full w-full object-cover" />
-                          ))}
+                          {cells.map((u, i) =>
+                            /\.(mp4|webm|mov)(\?|$)/i.test(u) ? (
+                              <video
+                                key={i}
+                                src={u}
+                                className="h-full w-full object-cover"
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img key={i} src={u} alt="" className="h-full w-full object-cover" />
+                            ),
+                          )}
                         </div>
                       ) : (
                         // eslint-disable-next-line @next/next/no-img-element
