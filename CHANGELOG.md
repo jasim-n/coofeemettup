@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-21 — Lahore Instagram launch plan
+
+- Added `tasks/2026-08-21-lahore-instagram-launch-plan.md`: Lahore 20–28,
+  Instagram-only funnel, company + community hosting, WhatsApp payment Phase 1,
+  4-week calendar, sample copy, and ~$350–550 month-1 ad budget.
+
 ### 2026-08-20 — Admin Moments access on tables
 
 - Admins/organizers can view, upload, and delete Moments on any table page
