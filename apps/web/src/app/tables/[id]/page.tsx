@@ -295,7 +295,7 @@ export default function TableDetailPage() {
         {/* ---------- main ---------- */}
         <div className="space-y-6 lg:col-span-2">
           {/* cover */}
-          <div className="shadow-soft relative h-64 overflow-hidden rounded-3xl">
+          <div className="shadow-soft relative h-48 overflow-hidden rounded-3xl sm:h-64">
             <Cover src={table.imageUrl ?? undefined} category={table.category} className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
             <span className="glass ring-border/40 absolute left-4 top-4 rounded-full px-3 py-1.5 text-xs font-bold ring-1">
@@ -307,7 +307,7 @@ export default function TableDetailPage() {
           {/* title block */}
           <div>
             <CategoryPills category={table.category} variant="badge" />
-            <h1 className="display mt-2 text-3xl">{table.title ?? table.category}</h1>
+            <h1 className="display mt-2 text-2xl sm:text-3xl">{table.title ?? table.category}</h1>
             <div className="text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
               {mapsUrl ? (
                 <a
@@ -568,9 +568,9 @@ export default function TableDetailPage() {
                 {requests.map((r) => (
                   <div
                     key={r.id}
-                    className="flex items-center justify-between gap-2 rounded-2xl border p-3"
+                    className="flex min-w-0 flex-col gap-2 rounded-2xl border p-3 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <span className="flex items-center gap-2 text-sm font-medium">
+                    <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
                       {(r.user?.id ?? r.userId) ? (
                         <UserLink userId={(r.user?.id ?? r.userId)!} className="flex items-center gap-2">
                           <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full text-xs font-bold">

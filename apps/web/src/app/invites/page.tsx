@@ -205,7 +205,7 @@ export default function InvitesPage() {
       {/* Header */}
       <div className="mb-8">
         <p className="eyebrow text-primary">Invitations</p>
-        <h1 className="display text-3xl">Your invitations</h1>
+        <h1 className="display text-2xl sm:text-3xl">Your invitations</h1>
       </div>
 
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}

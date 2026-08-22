@@ -360,7 +360,7 @@ export default function DiscoverPage() {
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-6 sm:px-6">
       <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
         {/* ── LEFT RAIL ─────────────────────────────────────────────── */}
-        <aside className="bg-card shadow-soft rounded-3xl border p-5 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <aside className="bg-card shadow-soft order-2 rounded-3xl border p-5 lg:order-1 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
           {/* heading + clear */}
           <div className="mb-5 flex items-center justify-between">
             <p className="font-heading font-bold tracking-tight">Filters</p>
@@ -515,24 +515,24 @@ export default function DiscoverPage() {
         </aside>
 
         {/* ── MAIN ──────────────────────────────────────────────────── */}
-        <div className="min-w-0 space-y-8">
+        <div className="order-1 min-w-0 space-y-8 lg:order-2">
           {/* HERO */}
-          <section className="bg-ink relative overflow-hidden rounded-3xl p-8 text-white shadow-glow">
+          <section className="bg-ink relative overflow-hidden rounded-3xl p-5 text-white shadow-glow sm:p-8">
             {/* café-conversation photo from the design, full-bleed on the right */}
             <div aria-hidden className="pointer-events-none absolute inset-0">
               {/* eslint-disable-next-line @next/next/no-img-element -- static bundled hero photo */}
               <img
                 src="/hero-explore.jpg"
                 alt=""
-                className="ml-auto h-full w-3/5 object-cover sm:w-1/2"
+                className="ml-auto hidden h-full w-3/5 object-cover sm:block sm:w-1/2"
               />
-              <div className="from-ink via-ink/85 to-ink/10 absolute inset-0 bg-gradient-to-r via-45%" />
+              <div className="from-ink via-ink/85 to-ink/10 absolute inset-0 bg-gradient-to-r via-45% max-sm:via-ink/95" />
             </div>
             <div className="relative">
               <p className="eyebrow flex items-center gap-1.5 text-white/60">
                 <i className="fa-solid fa-wand-magic-sparkles" /> Explore &amp; Connect
               </p>
-              <h2 className="display font-heading mt-2 text-3xl font-extrabold tracking-tight">
+              <h2 className="display font-heading mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
                 Discover conversations{' '}
                 <span className="text-primary">that matter</span>
               </h2>
@@ -651,7 +651,7 @@ export default function DiscoverPage() {
         </div>
 
         {/* ── RIGHT RAIL ────────────────────────────────────────────── */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+        <aside className="order-3 space-y-4 max-lg:hidden lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
           {/* TRENDING NOW */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
             <div className="mb-3">

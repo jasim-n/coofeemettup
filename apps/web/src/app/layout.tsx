@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { AuthGate } from "@/components/auth-gate";
 import { RequestsBadgeProvider } from "@/components/requests-badge";
 import { DesktopNav } from "@/components/desktop-nav";
+import { AppShell } from "@/components/app-shell";
 
 // Design System v2.0 — Poppins across the whole product (headings + body).
 const heading = Poppins({
@@ -42,7 +43,7 @@ export default function RootLayout({
           <AuthGate>
             <RequestsBadgeProvider>
               <DesktopNav />
-              {children}
+              <AppShell>{children}</AppShell>
             </RequestsBadgeProvider>
           </AuthGate>
         </AuthProvider>

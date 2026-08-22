@@ -206,7 +206,7 @@ export default function AdminUsersPage() {
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <p className="eyebrow text-primary">Console</p>
-          <h1 className="display mt-1 text-3xl">Users</h1>
+          <h1 className="display mt-1 text-2xl sm:text-3xl">Users</h1>
         </div>
         <nav className="flex flex-wrap gap-3 text-sm font-semibold">
           <Link href="/admin/dashboard" className="text-primary hover:underline">

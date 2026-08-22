@@ -85,7 +85,7 @@ export default function AdminSettingsPage() {
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-10">
       <div className="mb-8">
         <p className="eyebrow text-primary">Admin console</p>
-        <h1 className="display mt-1 text-4xl uppercase">Settings</h1>
+        <h1 className="display mt-1 text-2xl uppercase sm:text-4xl">Settings</h1>
         <div className="mt-2 flex flex-wrap gap-3 text-sm font-semibold">
           <Link href="/admin" className="text-muted-foreground hover:underline">
             ← Admin

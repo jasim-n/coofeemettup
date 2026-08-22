@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth-provider';
-import { api } from '@/lib/api';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
 import { HomeDashboard } from '@/components/home-dashboard';
@@ -11,23 +9,6 @@ import { PageLoader } from '@/components/spinner';
 
 export default function Home() {
   const { user, loading, logout } = useAuth();
-  const [unread, setUnread] = useState(0);
-
-  useEffect(() => {
-    if (!user) return;
-    let active = true;
-    void (async () => {
-      try {
-        const res = await api.notifications();
-        if (active) setUnread(res.unread);
-      } catch {
-        /* non-fatal */
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [user]);
 
   // ---- signed-out: bold gradient hero ----
   if (!user && !loading) {
@@ -130,7 +111,7 @@ export default function Home() {
         </Button>
       </div>
 
-      <HomeDashboard user={user!} unread={unread} />
+      <HomeDashboard user={user!} />
     </main>
   );
 }

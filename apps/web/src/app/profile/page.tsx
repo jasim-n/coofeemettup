@@ -527,9 +527,9 @@ export default function ProfilePage() {
         {/* ══════════════════════════════════════════════════════════
             LEFT — Section nav
         ══════════════════════════════════════════════════════════ */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="order-2 space-y-4 lg:order-1 lg:sticky lg:top-24 lg:self-start">
           {/* Mini profile card */}
-          <div className="rounded-3xl border bg-card p-5 shadow-soft flex flex-col items-center gap-3 text-center">
+          <div className="rounded-3xl border bg-card p-5 shadow-soft flex flex-col items-center gap-3 text-center max-lg:hidden">
             <Avatar name={displayName} src={user.photoUrl} size={64} online />
             <div>
               <p className="font-heading font-bold text-sm leading-tight flex items-center justify-center gap-1">
@@ -545,11 +545,11 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Vertical nav */}
-          <nav className="rounded-3xl border bg-card p-2 shadow-soft">
+          {/* Vertical nav — horizontal scroll on mobile */}
+          <nav className="rounded-3xl border bg-card p-2 shadow-soft max-lg:flex max-lg:gap-1 max-lg:overflow-x-auto lg:block">
             {NAV_ITEMS.map(({ id, href, icon, label, tab }) => {
               const isActive = id !== undefined && section === id && !href;
-              const cls = `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+              const cls = `flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors max-lg:w-auto lg:w-full ${
                 isActive
                   ? 'bg-secondary text-primary font-semibold'
                   : 'text-foreground hover:bg-muted'
@@ -577,7 +577,7 @@ export default function ProfilePage() {
           </nav>
 
           {/* Invite friends card */}
-          <div className="rounded-3xl bg-secondary p-5 text-center">
+          <div className="rounded-3xl bg-secondary p-5 text-center max-lg:hidden">
             <p className="text-2xl mb-2"><i className="fa-solid fa-mug-hot text-primary" /></p>
             <p className="font-heading font-bold text-secondary-foreground text-sm">Invite friends</p>
             <p className="text-secondary-foreground/80 text-xs mt-1">
@@ -595,7 +595,7 @@ export default function ProfilePage() {
         {/* ══════════════════════════════════════════════════════════
             MAIN — section-dependent content
         ══════════════════════════════════════════════════════════ */}
-        <div className="min-w-0 space-y-6">
+        <div className="order-1 min-w-0 space-y-6 lg:order-2">
 
           {/* ── OVERVIEW ─────────────────────────────────────────── */}
           {section === 'overview' && (
@@ -705,7 +705,7 @@ export default function ProfilePage() {
 
               {/* Tabs: About / Achievements / Reviews / Activity */}
               <div>
-                <div className="flex border-b border-border/60">
+                <div className="-mx-1 flex overflow-x-auto border-b border-border/60 px-1">
                   {(
                     [
                       { id: 'about', label: 'About' },
@@ -718,7 +718,7 @@ export default function ProfilePage() {
                       key={id}
                       type="button"
                       onClick={() => setOverviewTab(id)}
-                      className={`-mb-px px-4 py-2.5 text-sm font-semibold transition-colors ${
+                      className={`-mb-px shrink-0 px-4 py-2.5 text-sm font-semibold transition-colors ${
                         overviewTab === id
                           ? 'border-b-2 border-primary text-primary'
                           : 'text-muted-foreground hover:text-foreground'
@@ -926,7 +926,7 @@ export default function ProfilePage() {
             <>
               <div>
                 <p className="eyebrow text-primary">Account</p>
-                <h1 className="display mt-1 text-3xl">Account Settings</h1>
+                <h1 className="display mt-1 text-2xl sm:text-3xl">Account Settings</h1>
               </div>
 
               <form onSubmit={submit} className="grid gap-6 lg:grid-cols-2">
@@ -1171,7 +1171,7 @@ export default function ProfilePage() {
             <>
               <div>
                 <p className="eyebrow text-primary">Profile</p>
-                <h1 className="display mt-1 text-3xl">Reviews &amp; Ratings</h1>
+                <h1 className="display mt-1 text-2xl sm:text-3xl">Reviews &amp; Ratings</h1>
               </div>
               <MyReviews />
             </>
@@ -1182,7 +1182,7 @@ export default function ProfilePage() {
             <>
               <div>
                 <p className="eyebrow text-primary">Profile</p>
-                <h1 className="display mt-1 text-3xl">Identity Verification</h1>
+                <h1 className="display mt-1 text-2xl sm:text-3xl">Identity Verification</h1>
               </div>
               <IdentityCard
                 verificationStatus={user.verificationStatus}
@@ -1195,9 +1195,9 @@ export default function ProfilePage() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════
-            RIGHT RAIL — always visible
+            RIGHT RAIL — desktop only
         ══════════════════════════════════════════════════════════ */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="order-3 max-lg:hidden space-y-4 lg:sticky lg:top-24 lg:self-start">
 
           {/* Reliability Score card */}
           <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-4">

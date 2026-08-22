@@ -86,10 +86,10 @@ export default function RequestsPage() {
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-10">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="eyebrow text-primary">Host inbox</p>
-          <h1 className="display mt-1 text-3xl">Requests</h1>
+          <h1 className="display mt-1 text-2xl sm:text-3xl">Requests</h1>
         </div>
         <Link href="/meetups" className="text-primary text-sm font-semibold hover:underline">
           Your Tables →

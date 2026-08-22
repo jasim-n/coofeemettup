@@ -299,7 +299,11 @@ export default function MessagesPage() {
       <div className="grid gap-4 lg:h-[calc(100dvh-6rem)] lg:grid-cols-[330px_1fr_300px]">
 
         {/* ========== LEFT — conversations panel ========== */}
-        <aside className="bg-card shadow-soft flex flex-col overflow-hidden rounded-3xl border">
+        <aside
+          className={`bg-card shadow-soft flex flex-col overflow-hidden rounded-3xl border ${
+            selected ? 'max-lg:hidden' : 'max-lg:min-h-[70dvh]'
+          }`}
+        >
           {/* header */}
           <div className="flex items-center justify-between border-b px-4 py-3">
             <h1 className="font-heading text-lg font-bold tracking-tight">Messages</h1>
@@ -464,11 +468,19 @@ export default function MessagesPage() {
         {/* ========== CENTER — thread ========== */}
         {selected ? (
           <section
-            className="bg-card shadow-soft flex flex-col overflow-hidden rounded-3xl border"
+            className="bg-card shadow-soft flex min-h-[70dvh] flex-col overflow-hidden rounded-3xl border lg:min-h-0"
             onClick={() => setPickerOpen(false)}
           >
             {/* thread header */}
             <div className="flex items-center gap-3 border-b px-4 py-3">
+              <button
+                type="button"
+                className="text-muted-foreground hover:bg-muted grid size-9 shrink-0 place-items-center rounded-full transition-colors lg:hidden"
+                aria-label="Back to conversations"
+                onClick={() => setSelectedKey(null)}
+              >
+                <i className="fa-solid fa-arrow-left" />
+              </button>
               {selected.kind === 'dm' ? (
                 <>
                   <UserLink userId={(selected as DmConvo).userId} className="flex items-center gap-3 flex-1 min-w-0">
@@ -825,7 +837,7 @@ export default function MessagesPage() {
           </section>
         ) : (
           <section
-            className="bg-card shadow-soft grid place-items-center rounded-3xl border"
+            className="bg-card shadow-soft hidden place-items-center rounded-3xl border lg:grid"
             onClick={() => setPickerOpen(false)}
           >
             <div className="text-muted-foreground text-center">
@@ -839,7 +851,7 @@ export default function MessagesPage() {
         {/* ========== RIGHT RAIL ========== */}
         <aside
           ref={rightScrollRef}
-          className="scrollbar-fade space-y-4 overflow-y-auto"
+          className="scrollbar-fade hidden space-y-4 overflow-y-auto lg:block"
           onClick={() => setPickerOpen(false)}
         >
           {/* active now (presence stub) */}

@@ -124,7 +124,7 @@ export default function AdminReviewsPage() {
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <p className="eyebrow text-primary">Console</p>
-          <h1 className="display mt-1 text-3xl">Reviews</h1>
+          <h1 className="display mt-1 text-2xl sm:text-3xl">Reviews</h1>
           {!fetching && (
             <p className="text-muted-foreground mt-1 text-sm">
               {total} {total === 1 ? 'review' : 'reviews'}

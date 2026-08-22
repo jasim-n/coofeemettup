@@ -11,7 +11,7 @@ export default function TermsPage() {
       <div className="mb-8">
         <Wordmark className="text-base" />
         <p className="eyebrow text-primary mt-6">Legal</p>
-        <h1 className="display mt-1 text-4xl">Terms of Service</h1>
+        <h1 className="display mt-1 text-2xl sm:text-4xl">Terms of Service</h1>
         <p className="text-muted-foreground mt-2 text-sm">Last updated: 20 July 2026</p>
       </div>
 

@@ -45,8 +45,8 @@ function PersonCard({
 function RequestRow({ req }: { req: ConnectionRequestDto }) {
   const name = displayName(req.user);
   return (
-    <div className="bg-card shadow-soft ring-border/60 flex items-center gap-4 rounded-2xl p-4 ring-1">
-      <UserLink userId={req.user.id} className="flex items-center gap-4 min-w-0 flex-1">
+    <div className="bg-card shadow-soft ring-border/60 flex flex-col gap-3 rounded-2xl p-4 ring-1 sm:flex-row sm:items-center sm:gap-4">
+      <UserLink userId={req.user.id} className="flex min-w-0 flex-1 items-center gap-4">
         <Avatar name={name} src={req.user.photoUrl} size={44} />
         <div className="min-w-0 flex-1">
           <p className="font-heading text-sm font-bold">{name}</p>
@@ -147,13 +147,13 @@ export default function ConnectionsPage() {
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
 
       {/* ── tabs ───────────────────────────────────────────────── */}
-      <div className="mb-6 flex border-b border-border/60">
+      <div className="mb-6 -mx-1 flex overflow-x-auto border-b border-border/60 px-1">
         {TAB_LIST.map(({ id, label }) => (
           <button
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`-mb-px flex items-center px-4 py-2.5 text-sm font-semibold transition-colors ${
+            className={`-mb-px flex shrink-0 items-center px-4 py-2.5 text-sm font-semibold transition-colors ${
               tab === id
                 ? 'border-b-2 border-primary text-primary'
                 : 'text-muted-foreground hover:text-foreground'

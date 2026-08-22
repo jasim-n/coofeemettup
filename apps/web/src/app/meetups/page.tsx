@@ -612,7 +612,7 @@ export default function MeetupsPage() {
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr_320px]">
         {/* ── LEFT RAIL ──────────────────────────────────────────── */}
-        <aside className="bg-card shadow-soft rounded-3xl border p-5 lg:sticky lg:top-24 lg:self-start">
+        <aside className="bg-card shadow-soft order-2 rounded-3xl border p-5 lg:order-1 lg:sticky lg:top-24 lg:self-start">
           {/* Filters heading */}
           <div className="mb-4 flex items-center justify-between">
             <p className="font-heading font-bold tracking-tight">Filters</p>
@@ -781,11 +781,11 @@ export default function MeetupsPage() {
         </aside>
 
         {/* ── MAIN COLUMN ────────────────────────────────────────── */}
-        <div className="min-w-0 space-y-6 lg:pt-5">
+        <div className="order-1 min-w-0 space-y-6 lg:order-2 lg:pt-5">
           {/* header */}
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div>
-              <h1 className="display text-3xl font-extrabold tracking-tight">Meetups</h1>
+              <h1 className="display text-2xl font-extrabold tracking-tight sm:text-3xl">Meetups</h1>
               <p className="text-muted-foreground mt-1 text-sm">
                 Discover, join and manage your coffee conversations.
               </p>
@@ -793,7 +793,7 @@ export default function MeetupsPage() {
             {user?.canHost === true && (
               <Link
                 href="/tables/new"
-                className="bg-primary text-primary-foreground hover:brightness-110 hover:shadow-glow hover:-translate-y-0.5 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold shadow-soft transition-all"
+                className="bg-primary text-primary-foreground hover:brightness-110 hover:shadow-glow hover:-translate-y-0.5 w-full shrink-0 rounded-full px-5 py-2.5 text-center text-sm font-semibold shadow-soft transition-all sm:w-auto"
               >
                 + Create Meetup
               </Link>
@@ -801,13 +801,13 @@ export default function MeetupsPage() {
           </div>
 
           {/* tabs */}
-          <div className="border-border/60 flex border-b">
+          <div className="border-border/60 -mx-1 flex overflow-x-auto border-b px-1">
             {TABS.map(({ id, label, badge }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setTab(id)}
-                className={`-mb-px flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
+                className={`-mb-px flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
                   tab === id
                     ? 'text-primary border-primary border-b-2'
                     : 'text-muted-foreground hover:text-foreground'
@@ -1005,7 +1005,7 @@ export default function MeetupsPage() {
         </div>
 
         {/* ── RIGHT RAIL ─────────────────────────────────────────── */}
-        <aside className="space-y-4">
+        <aside className="order-3 max-lg:hidden space-y-4">
           {/* Calendar */}
           <CalendarCard joined={joinedView} />
 

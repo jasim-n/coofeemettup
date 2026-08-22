@@ -153,7 +153,7 @@ function TableListRow({ t }: { t: TableDto }) {
       className="bg-card shadow-soft ring-border/60 group flex gap-4 overflow-hidden rounded-3xl border p-3 ring-1 transition-all hover:-translate-y-0.5 hover:shadow-glow"
     >
       {/* thumbnail */}
-      <div className="relative h-28 w-40 shrink-0 overflow-hidden rounded-2xl">
+      <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-2xl sm:h-28 sm:w-40">
         <Cover
           src={t.imageUrl ?? undefined}
           category={t.category}
@@ -475,7 +475,7 @@ function FilterPanel({
     'border-input bg-card/60 focus-visible:border-ring focus-visible:ring-ring/25 w-full rounded-2xl border px-3 py-2 text-sm outline-none focus-visible:ring-4';
 
   return (
-    <aside className="bg-card shadow-soft rounded-3xl border p-5 lg:sticky lg:top-24 lg:self-start">
+    <aside className="bg-card shadow-soft order-2 rounded-3xl border p-5 lg:order-1 lg:sticky lg:top-24 lg:self-start">
       {/* header */}
       <div className="mb-5 flex items-center justify-between">
         <p className="font-heading font-bold tracking-tight">Filters</p>
@@ -759,7 +759,7 @@ function SearchInner() {
         />
 
         {/* ── CENTER ───────────────────────────────────────────────── */}
-        <div className="min-w-0 space-y-5">
+        <div className="order-1 min-w-0 space-y-5 lg:order-2">
           {/* search bar row */}
           <div className="relative">
             <i className="fa-solid fa-magnifying-glass text-muted-foreground pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm" />
@@ -877,7 +877,7 @@ function SearchInner() {
         </div>
 
         {/* ── RIGHT RAIL ───────────────────────────────────────────── */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="order-3 max-lg:hidden space-y-4 lg:sticky lg:top-24 lg:self-start">
           <MapPreview results={results} />
           <MightLike tables={tables ?? []} />
         </aside>

@@ -56,7 +56,7 @@ export default function SavedPage() {
       <p className="eyebrow text-muted-foreground text-xs font-semibold uppercase tracking-widest">
         Bookmarks
       </p>
-      <h1 className="display text-3xl font-extrabold tracking-tight mt-1">Saved tables</h1>
+      <h1 className="display text-2xl font-extrabold tracking-tight mt-1 sm:text-3xl">Saved tables</h1>
 
       <div className="mt-8">
         {/* loading */}

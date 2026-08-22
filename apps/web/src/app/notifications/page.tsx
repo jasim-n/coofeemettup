@@ -55,10 +55,10 @@ export default function NotificationsPage() {
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-10">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="eyebrow text-primary">Inbox</p>
-          <h1 className="display mt-1 text-3xl">Notifications</h1>
+          <h1 className="display mt-1 text-2xl sm:text-3xl">Notifications</h1>
         </div>
         <Link href="/" className="text-muted-foreground font-semibold text-sm hover:underline">
           Home

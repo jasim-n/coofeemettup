@@ -70,7 +70,7 @@ export default function AdminVerificationsPage() {
       </div>
       <div className="mt-3 mb-8">
         <p className="eyebrow text-primary">Identity checks</p>
-        <h1 className="display mt-1 text-4xl uppercase">Verifications</h1>
+        <h1 className="display mt-1 text-2xl uppercase sm:text-4xl">Verifications</h1>
       </div>
 
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}

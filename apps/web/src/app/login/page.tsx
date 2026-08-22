@@ -230,7 +230,7 @@ export default function LoginPage() {
       </div>
 
       {/* card */}
-      <div className="mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-16">
+      <div className="mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-24 md:pb-16">
         <div className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6">
           <div className="space-y-1 text-center">
             <p className="eyebrow text-primary">

@@ -146,46 +146,48 @@ function TableRow({
   return (
     <Link
       href={`/tables/${t.id}`}
-      className="bg-card flex gap-4 rounded-2xl border p-3 transition-shadow hover:shadow-glow"
+      className="bg-card flex flex-col gap-3 rounded-2xl border p-3 transition-shadow hover:shadow-glow sm:flex-row sm:gap-4"
     >
-      {/* thumbnail */}
-      <div className="size-16 shrink-0 overflow-hidden rounded-xl">
-        <Cover
-          src={t.imageUrl ?? undefined}
-          category={t.category}
-          className="h-full w-full object-cover"
-        />
-      </div>
+      <div className="flex min-w-0 flex-1 gap-3 sm:gap-4">
+        {/* thumbnail */}
+        <div className="size-16 shrink-0 overflow-hidden rounded-xl">
+          <Cover
+            src={t.imageUrl ?? undefined}
+            category={t.category}
+            className="h-full w-full object-cover"
+          />
+        </div>
 
-      {/* middle */}
-      <div className="min-w-0 flex-1">
-        <StatusBadge status={status} />
-        <p className="mt-0.5 truncate font-bold leading-snug">{t.title ?? t.category}</p>
-        <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
-          <i className="fa-solid fa-location-dot" /> {venue}
-        </p>
-        <CategoryPills category={t.category} variant="chip" max={3} className="mt-1" />
-        {/* meta row */}
-        <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
-          {dist != null && (
+        {/* middle */}
+        <div className="min-w-0 flex-1">
+          <StatusBadge status={status} />
+          <p className="mt-0.5 truncate font-bold leading-snug">{t.title ?? t.category}</p>
+          <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
+            <i className="fa-solid fa-location-dot" /> {venue}
+          </p>
+          <CategoryPills category={t.category} variant="chip" max={3} className="mt-1" />
+          {/* meta row */}
+          <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+            {dist != null && (
+              <span>
+                <i className="fa-solid fa-route mr-0.5" />
+                {formatDistance(dist)}
+              </span>
+            )}
             <span>
-              <i className="fa-solid fa-route mr-0.5" />
-              {formatDistance(dist)}
+              <i className="fa-solid fa-chair mr-0.5" />
+              {t.seats - t.seatsLeft}/{t.seats} seats
             </span>
-          )}
-          <span>
-            <i className="fa-solid fa-chair mr-0.5" />
-            {t.seats - t.seatsLeft}/{t.seats} seats
-          </span>
-          <span>
-            <i className="fa-solid fa-calendar-day mr-0.5" />
-            {formatDateTime(t.startAt)}
-          </span>
+            <span>
+              <i className="fa-solid fa-calendar-day mr-0.5" />
+              {formatDateTime(t.startAt)}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* right */}
-      <div className="flex shrink-0 flex-col items-end justify-between">
+      <div className="flex shrink-0 flex-row items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-between">
         <span className="font-extrabold text-primary">
           {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)}
         </span>
@@ -315,7 +317,7 @@ export default function NearbyTablesPage() {
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-8 sm:px-6 lg:px-12">
       <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)_300px]">
         {/* ── LEFT: filters ───────────────────────────────────────────── */}
-        <aside className="bg-card rounded-3xl border p-5 shadow-soft lg:sticky lg:top-24 lg:self-start">
+        <aside className="bg-card order-2 rounded-3xl border p-5 shadow-soft lg:order-1 lg:sticky lg:top-24 lg:self-start">
           <h2 className="font-bold tracking-tight">Find tables nearby</h2>
           <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
             Discover conversations happening around you.
@@ -426,7 +428,7 @@ export default function NearbyTablesPage() {
         </aside>
 
         {/* ── CENTER: map + list ──────────────────────────────────────── */}
-        <div className="min-w-0 space-y-4">
+        <div className="order-1 min-w-0 space-y-4 lg:order-2">
           {/* map */}
           <TablesMap mapOnly />
 
@@ -512,7 +514,7 @@ export default function NearbyTablesPage() {
         </div>
 
         {/* ── RIGHT: sidebar ──────────────────────────────────────────── */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="order-3 max-lg:hidden space-y-4 lg:sticky lg:top-24 lg:self-start">
           {/* nearby summary */}
           <div className="bg-card rounded-3xl border p-5 shadow-soft">
             <p className="mb-4 font-bold tracking-tight">Nearby summary</p>

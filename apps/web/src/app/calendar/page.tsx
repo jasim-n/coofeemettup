@@ -151,9 +151,9 @@ export default function CalendarPage() {
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-6 sm:px-6">
       {/* header */}
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
-          <h1 className="display text-3xl font-extrabold tracking-tight">My Calendar</h1>
+          <h1 className="display text-2xl font-extrabold tracking-tight sm:text-3xl">My Calendar</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Your joined and hosted meetups at a glance.
           </p>
@@ -171,7 +171,7 @@ export default function CalendarPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         {/* ── CALENDAR GRID ─────────────────────────────────────────── */}
-        <div className="bg-card shadow-soft rounded-3xl border p-6">
+        <div className="bg-card shadow-soft rounded-3xl border p-4 sm:p-6">
           {/* month nav */}
           <div className="mb-5 flex items-center justify-between">
             <button
@@ -256,7 +256,7 @@ export default function CalendarPage() {
         {/* ── DAY DETAIL / SUMMARY ──────────────────────────────────── */}
         <div className="space-y-4">
           {selectedDay !== null ? (
-            <div className="bg-card shadow-soft rounded-3xl border p-6">
+            <div className="bg-card shadow-soft rounded-3xl border p-4 sm:p-6">
               <h2 className="font-heading mb-4 text-lg font-bold tracking-tight">
                 {new Date(viewYear, viewMonth, selectedDay).toLocaleDateString('en-PK', {
                   weekday: 'long',
@@ -325,7 +325,7 @@ export default function CalendarPage() {
             </div>
           ) : (
             /* default: upcoming meetups summary */
-            <div className="bg-card shadow-soft rounded-3xl border p-6">
+            <div className="bg-card shadow-soft rounded-3xl border p-4 sm:p-6">
               <h2 className="font-heading mb-4 text-lg font-bold tracking-tight">
                 Upcoming Meetups
               </h2>

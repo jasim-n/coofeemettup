@@ -52,7 +52,7 @@ export default function AdminActivityPage() {
       </div>
       <div className="mt-3 mb-8">
         <p className="eyebrow text-primary">Admin console</p>
-        <h1 className="display mt-1 text-4xl uppercase">Activity log</h1>
+        <h1 className="display mt-1 text-2xl uppercase sm:text-4xl">Activity log</h1>
       </div>
 
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}

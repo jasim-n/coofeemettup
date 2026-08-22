@@ -4,6 +4,16 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-22 — Site-wide mobile responsiveness
+
+- Sticky bottom MobileNav on signed-in pages (`md:hidden`); no bottom pad on
+  table chat; DesktopNav unchanged at `md+`.
+- Discover, Nearby, Meetups, Search, Profile: main content first on small
+  screens; filter/right rails reorder or hide; scrollable tabs where needed.
+- Messages: list/thread swap on small screens. Nearby rows stack CTA under meta.
+- Compact titles/headers across Requests, Notifications, Calendar, Invites,
+  Saved, Invite, Create/Edit table, admin console, Terms/Privacy.
+
 ### 2026-08-22 — Home mobile responsiveness
 
 - Signed-in home uses the same dashboard on mobile (Moments, tables, rail)

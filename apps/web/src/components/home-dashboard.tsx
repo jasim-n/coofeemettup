@@ -29,13 +29,7 @@ function ago(iso: string, now: number) {
 }
 
 /** Content dashboard — Design System v2.0 home (desktop + mobile). */
-export function HomeDashboard({
-  user,
-  unread = 0,
-}: {
-  user: PublicUser;
-  unread?: number;
-}) {
+export function HomeDashboard({ user }: { user: PublicUser }) {
   const keys = tablesCacheKeys(user.id);
   const [tables, setTables] = useState(
     () => peekCache<TableDto[]>(keys.browse) ?? [],
@@ -116,43 +110,6 @@ export function HomeDashboard({
 
   return (
     <div className="space-y-5 md:space-y-6">
-      {/* Mobile nav — DesktopNav is md+ only */}
-      <nav className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 md:hidden">
-        {[
-          { href: '/tables/nearby', icon: 'fa-location-dot', label: 'Nearby' },
-          { href: '/discover', icon: 'fa-magnifying-glass', label: 'Discover' },
-          { href: '/meetups', icon: 'fa-calendar-day', label: 'Meetups' },
-          { href: '/messages', icon: 'fa-comments', label: 'Messages' },
-          {
-            href: '/notifications',
-            icon: 'fa-bell',
-            label: 'Alerts',
-            badge: unread,
-          },
-          { href: '/profile', icon: 'fa-user', label: 'Profile' },
-          ...(user.canHost
-            ? [{ href: '/tables/new', icon: 'fa-plus', label: 'Host' }]
-            : []),
-          ...(user.role === 'ADMIN' || user.role === 'ORGANIZER'
-            ? [{ href: '/admin', icon: 'fa-gear', label: 'Admin' }]
-            : []),
-        ].map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="bg-card ring-border/60 relative flex shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2.5 text-[11px] font-semibold ring-1"
-          >
-            <i className={`fa-solid ${item.icon} text-sm`} />
-            {item.label}
-            {'badge' in item && typeof item.badge === 'number' && item.badge > 0 && (
-              <span className="bg-primary text-primary-foreground absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-bold">
-                {item.badge}
-              </span>
-            )}
-          </Link>
-        ))}
-      </nav>
-
       {needsName && (
         <Link
           href="/profile?section=edit"

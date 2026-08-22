@@ -192,7 +192,7 @@ export default function EditTablePage() {
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       <div className="mb-6">
         <p className="eyebrow text-primary">Edit event</p>
-        <h1 className="display mt-1 text-3xl">Edit event</h1>
+        <h1 className="display mt-1 text-2xl sm:text-3xl">Edit event</h1>
         <Link
           href={`/tables/${id}`}
           className="text-muted-foreground mt-2 inline-block text-sm font-semibold hover:underline"

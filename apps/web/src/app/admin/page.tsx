@@ -29,10 +29,10 @@ export default function AdminPage() {
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
           <p className="eyebrow text-primary">Console</p>
-          <h1 className="display mt-1 text-3xl">Admin</h1>
+          <h1 className="display mt-1 text-2xl sm:text-3xl">Admin</h1>
         </div>
         <nav className="flex flex-wrap gap-3 text-sm font-semibold">
           <Link href="/admin/dashboard" className="text-primary hover:underline">
