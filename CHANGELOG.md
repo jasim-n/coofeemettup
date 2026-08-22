@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-22 — Home mobile responsiveness
+
+- Signed-in home uses the same dashboard on mobile (Moments, tables, rail)
+  instead of the tile-only launcher; desktop layout unchanged (`md+` nav).
+- Mobile: compact hero, shorter Featured height, horizontal quick nav.
+
 ### 2026-08-21 — Lahore Instagram launch plan
 
 - Added `tasks/2026-08-21-lahore-instagram-launch-plan.md`: Lahore 20–28,
