@@ -28,8 +28,14 @@ function ago(iso: string, now: number) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-/** Desktop content dashboard — Design System v2.0 home. */
-export function HomeDashboard({ user }: { user: PublicUser }) {
+/** Content dashboard — Design System v2.0 home (desktop + mobile). */
+export function HomeDashboard({
+  user,
+  unread = 0,
+}: {
+  user: PublicUser;
+  unread?: number;
+}) {
   const keys = tablesCacheKeys(user.id);
   const [tables, setTables] = useState(
     () => peekCache<TableDto[]>(keys.browse) ?? [],
@@ -109,57 +115,100 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
   const needsName = !user.firstName || !user.lastName;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 md:space-y-6">
+      {/* Mobile nav — DesktopNav is md+ only */}
+      <nav className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 md:hidden">
+        {[
+          { href: '/tables/nearby', icon: 'fa-location-dot', label: 'Nearby' },
+          { href: '/discover', icon: 'fa-magnifying-glass', label: 'Discover' },
+          { href: '/meetups', icon: 'fa-calendar-day', label: 'Meetups' },
+          { href: '/messages', icon: 'fa-comments', label: 'Messages' },
+          {
+            href: '/notifications',
+            icon: 'fa-bell',
+            label: 'Alerts',
+            badge: unread,
+          },
+          { href: '/profile', icon: 'fa-user', label: 'Profile' },
+          ...(user.canHost
+            ? [{ href: '/tables/new', icon: 'fa-plus', label: 'Host' }]
+            : []),
+          ...(user.role === 'ADMIN' || user.role === 'ORGANIZER'
+            ? [{ href: '/admin', icon: 'fa-gear', label: 'Admin' }]
+            : []),
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="bg-card ring-border/60 relative flex shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2.5 text-[11px] font-semibold ring-1"
+          >
+            <i className={`fa-solid ${item.icon} text-sm`} />
+            {item.label}
+            {'badge' in item && typeof item.badge === 'number' && item.badge > 0 && (
+              <span className="bg-primary text-primary-foreground absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-bold">
+                {item.badge}
+              </span>
+            )}
+          </Link>
+        ))}
+      </nav>
+
       {needsName && (
         <Link
           href="/profile?section=edit"
-          className="border-primary/40 bg-secondary text-secondary-foreground flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium shadow-soft transition-[filter] hover:brightness-[0.98]"
+          className="border-primary/40 bg-secondary text-secondary-foreground flex flex-col gap-2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-soft transition-[filter] hover:brightness-[0.98] sm:flex-row sm:items-center sm:gap-3"
         >
-          <i className="fa-solid fa-id-card text-primary" />
-          <span className="flex-1">
-            Finish your profile — add your name so hosts can prep for your visit. Your name
-            stays private; only your @handle is public.
+          <span className="flex flex-1 items-start gap-3">
+            <i className="fa-solid fa-id-card text-primary mt-0.5" />
+            <span>
+              Finish your profile — add your name so hosts can prep for your visit. Your name
+              stays private; only your @handle is public.
+            </span>
           </span>
-          <span className="text-primary font-semibold whitespace-nowrap">Add name →</span>
+          <span className="text-primary font-semibold whitespace-nowrap sm:ml-0">Add name →</span>
         </Link>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-5 md:gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       {/* ---------- main column ---------- */}
-      <div className="min-w-0 space-y-6">
+      <div className="min-w-0 space-y-5 md:space-y-6">
         {/* hero band — café illustration from the design, full-bleed on the right */}
         <section className="bg-ink relative overflow-hidden rounded-3xl shadow-glow">
           <div aria-hidden className="pointer-events-none absolute inset-0">
             {/* eslint-disable-next-line @next/next/no-img-element -- static bundled hero art */}
-            <img src="/hero-cafe.jpg" alt="" className="ml-auto h-full w-3/5 object-cover sm:w-1/2" />
-            <div className="from-ink via-ink/85 to-ink/10 absolute inset-0 bg-gradient-to-r via-45%" />
+            <img
+              src="/hero-cafe.jpg"
+              alt=""
+              className="ml-auto hidden h-full w-3/5 object-cover sm:block sm:w-1/2"
+            />
+            <div className="from-ink via-ink/85 to-ink/10 absolute inset-0 bg-gradient-to-r via-45% max-sm:via-ink/95" />
           </div>
-          <div className="relative p-8">
+          <div className="relative p-5 sm:p-8">
             <div className="max-w-md">
               <p className="text-sm font-medium text-white/70">{greeting}</p>
-              <h1 className="font-heading mt-1 text-4xl font-extrabold tracking-tight text-white">
+              <h1 className="font-heading mt-1 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
                 {name}
               </h1>
-              <p className="mt-3 max-w-sm leading-relaxed text-white/70">
+              <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70 sm:text-base">
                 Find meaningful conversations, one coffee at a time.
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-5 flex flex-wrap gap-2.5 sm:mt-6 sm:gap-3">
                 <Link
                   href="/tables/nearby"
-                  className="text-ink rounded-full bg-white px-5 py-2.5 text-sm font-bold transition-transform hover:-translate-y-0.5"
+                  className="text-ink rounded-full bg-white px-4 py-2 text-sm font-bold transition-transform hover:-translate-y-0.5 sm:px-5 sm:py-2.5"
                 >
                   Find a Table →
                 </Link>
                 <Link
                   href="/discover"
-                  className="rounded-full px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition-colors hover:bg-white/10"
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition-colors hover:bg-white/10 sm:px-5 sm:py-2.5"
                 >
                   Explore tables
                 </Link>
               </div>
             </div>
             {/* stats row */}
-            <div className="mt-7 flex flex-wrap items-center gap-x-10 gap-y-3 border-t border-white/10 pt-5">
+            <div className="mt-5 flex flex-col gap-3 border-t border-white/10 pt-4 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-10 sm:gap-y-3 sm:pt-5">
               <HeroStat icon="fa-location-dot" value={String(tables.length)} label="Tables nearby" />
               <HeroStat
                 icon="fa-calendar-day"

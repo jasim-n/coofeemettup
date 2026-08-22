@@ -257,7 +257,7 @@ export function FeaturedShowcase({ slides }: { slides: FeaturedImageDto[] }) {
 
   return (
     <div
-      className="group relative h-[22rem] w-full overflow-hidden rounded-3xl shadow-glow sm:h-[26rem]"
+      className="group relative h-[17rem] w-full overflow-hidden rounded-3xl shadow-glow sm:h-[22rem] md:h-[26rem]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -275,11 +275,11 @@ export function FeaturedShowcase({ slides }: { slides: FeaturedImageDto[] }) {
             >
               <SlideMedia slide={slide} active={i === safeIdx} />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-black/25" />
-              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6">
                 {slide.caption && (
-                  <p className="mb-1 line-clamp-2 text-sm text-white/85">{slide.caption}</p>
+                  <p className="mb-1 line-clamp-2 text-xs text-white/85 sm:text-sm">{slide.caption}</p>
                 )}
-                <p className="font-heading truncate text-xl font-bold text-white sm:text-2xl">
+                <p className="font-heading truncate text-lg font-bold text-white sm:text-xl md:text-2xl">
                   {heading}
                 </p>
                 <CategoryPills

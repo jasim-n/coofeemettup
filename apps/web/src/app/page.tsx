@@ -121,97 +121,16 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
-      {/* Desktop: a real content dashboard (nav bar handles navigation) */}
-      <div className="hidden md:block">
-        <HomeDashboard user={user!} />
+    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-6 md:py-8">
+      {/* Mobile-only chrome (DesktopNav is md+) */}
+      <div className="mb-4 flex items-center justify-between md:hidden">
+        <Wordmark className="text-base" />
+        <Button variant="ghost" size="sm" onClick={() => void logout()}>
+          Sign out
+        </Button>
       </div>
 
-      {/* Mobile: the tile launcher (mobile has no top nav) */}
-      <div className="md:hidden">
-        <header className="flex items-center justify-between">
-          <Wordmark className="text-base" />
-          <Button variant="ghost" size="sm" onClick={() => void logout()}>
-            Sign out
-          </Button>
-        </header>
-
-        <section className="bg-ink relative mt-5 overflow-hidden rounded-3xl p-6 shadow-glow">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-10 -right-6 size-40 rounded-full bg-gradient-hero opacity-40 blur-2xl"
-          />
-          <p className="eyebrow text-white/60">Welcome back</p>
-          <p className="font-heading mt-1 text-2xl font-extrabold tracking-tight">
-            {user!.firstName ?? (user!.username ? `@${user!.username}` : 'there')}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-              {user!.role.toLowerCase()}
-            </span>
-            <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-              {user!.verificationStatus === 'VERIFIED' ? '✓ verified' : 'unverified'}
-            </span>
-            <span className="glass-dark rounded-full px-2.5 py-1 text-xs font-semibold">
-              <i className="fa-solid fa-star text-amber-400" /> {user!.reliabilityScore} reliability
-            </span>
-          </div>
-        </section>
-
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <Tile href="/tables/nearby" icon="fa-location-dot" label="Nearby tables" wide accent />
-          <Tile href="/discover" icon="fa-chair" label="All tables" />
-          <Tile href="/discover" icon="fa-magnifying-glass" label="Discover" />
-          {user!.canHost && <Tile href="/tables/new" icon="fa-wand-magic-sparkles" label="Host a table" />}
-          {user!.canHost && <Tile href="/requests" icon="fa-inbox" label="Requests" />}
-          <Tile href="/meetups" icon="fa-calendar-day" label="My meetups" />
-          <Tile href="/notifications" icon="fa-bell" label="Notifications" badge={unread} />
-          <Tile href="/profile" icon="fa-user" label="Edit profile" />
-          <Tile href="/invite" icon="fa-gift" label="Invite friends" />
-          {(user!.role === 'ADMIN' || user!.role === 'ORGANIZER') && (
-            <Tile href="/admin" icon="fa-gear" label="Admin console" />
-          )}
-        </div>
-      </div>
+      <HomeDashboard user={user!} unread={unread} />
     </main>
-  );
-}
-
-function Tile({
-  href,
-  icon,
-  label,
-  badge,
-  wide,
-  accent,
-}: {
-  href: string;
-  icon: string;
-  label: string;
-  badge?: number;
-  wide?: boolean;
-  accent?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl p-4 ring-1 transition-all hover:-translate-y-0.5 ${
-        wide ? 'col-span-2 h-28' : 'h-28'
-      } ${
-        accent
-          ? 'bg-gradient-ember text-white shadow-glow ring-transparent'
-          : 'bg-card ring-border/70 shadow-soft hover:ring-primary/30'
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <i className={`fa-solid ${icon} text-2xl`} />
-        {badge !== undefined && badge > 0 && (
-          <span className="bg-primary text-primary-foreground inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold">
-            {badge}
-          </span>
-        )}
-      </div>
-      <span className="font-heading text-sm font-bold tracking-tight">{label}</span>
-    </Link>
   );
 }
