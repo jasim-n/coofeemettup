@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-23 — Profile mobile overflow
+
+- Profile section chips scroll horizontally with short labels; chips sit
+  above content on small screens. Future labs checkbox copy wraps; bottom
+  MobileNav reduced to five tabs (Nearby under Explore).
+
 ### 2026-08-22 — Site-wide mobile responsiveness
 
 - Sticky bottom MobileNav on signed-in pages (`md:hidden`); no bottom pad on

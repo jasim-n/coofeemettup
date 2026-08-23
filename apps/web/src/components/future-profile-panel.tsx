@@ -41,7 +41,7 @@ function RadarChart({
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
-      className="mx-auto h-52 w-52 shrink-0"
+      className="mx-auto h-44 w-44 max-w-full shrink-0 sm:h-52 sm:w-52"
       role="img"
       aria-label="Interest mix radar"
     >
@@ -181,7 +181,7 @@ export function FutureProfilePanel({
   const hasGraph = Boolean(mix && mix.axes.length >= 3);
 
   return (
-    <section className="bg-card shadow-soft space-y-6 rounded-3xl border p-6">
+    <section className="bg-card shadow-soft min-w-0 space-y-6 overflow-hidden rounded-3xl border p-4 sm:p-6">
       <div>
         <p className="eyebrow text-primary mb-1">Future labs</p>
         <h2 className="font-heading text-lg font-bold tracking-tight">
@@ -295,41 +295,41 @@ export function FutureProfilePanel({
       </div>
 
       {/* Toggles */}
-      <div className="space-y-3 border-t pt-4">
-        <label className="flex cursor-pointer items-start gap-3">
+      <div className="min-w-0 space-y-3 border-t pt-4">
+        <label className="flex min-w-0 cursor-pointer items-start gap-3">
           <input
             type="checkbox"
-            className="mt-1 size-4 accent-[var(--primary)]"
+            className="mt-1 size-4 shrink-0 accent-[var(--primary)]"
             checked={surprise}
             disabled={busy === 'surpriseMeOptIn'}
             onChange={(e) => {
               void savePref('surpriseMeOptIn', e.target.checked);
             }}
           />
-          <span>
+          <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">Surprise me</span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-muted-foreground block text-xs leading-snug break-words">
               Opt in to occasional curated tables matched to how you show up.
               You can always decline an invite.
             </span>
           </span>
         </label>
 
-        <label className="flex cursor-pointer items-start gap-3">
+        <label className="flex min-w-0 cursor-pointer items-start gap-3">
           <input
             type="checkbox"
-            className="mt-1 size-4 accent-[var(--primary)]"
+            className="mt-1 size-4 shrink-0 accent-[var(--primary)]"
             checked={remind}
             disabled={busy === 'remindBeforeMeetup'}
             onChange={(e) => {
               void savePref('remindBeforeMeetup', e.target.checked);
             }}
           />
-          <span>
+          <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">
               Remind me the day before
             </span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-muted-foreground block text-xs leading-snug break-words">
               Preference saved now; reminder emails land in a later pass.
             </span>
           </span>
@@ -338,7 +338,7 @@ export function FutureProfilePanel({
       </div>
 
       {/* Stubs — no behavior */}
-      <div className="grid gap-3 border-t pt-4 sm:grid-cols-3">
+      <div className="grid min-w-0 gap-3 border-t pt-4 sm:grid-cols-3">
         {[
           {
             title: 'Host templates',
@@ -355,10 +355,10 @@ export function FutureProfilePanel({
         ].map((c) => (
           <div
             key={c.title}
-            className="bg-muted/40 rounded-2xl border border-dashed p-3"
+            className="bg-muted/40 min-w-0 rounded-2xl border border-dashed p-3"
           >
             <p className="text-xs font-semibold">{c.title}</p>
-            <p className="text-muted-foreground mt-1 text-[11px] leading-snug">
+            <p className="text-muted-foreground mt-1 text-[11px] leading-snug break-words">
               {c.body}
             </p>
             <p className="text-muted-foreground mt-2 text-[10px] font-medium uppercase tracking-wide">

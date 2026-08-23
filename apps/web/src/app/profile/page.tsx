@@ -503,16 +503,17 @@ export default function ProfilePage() {
     href?: string;
     icon: string;
     label: string;
+    shortLabel: string;
     tab?: typeof overviewTab;
   }[] = [
-    { id: 'overview', icon: 'fa-user', label: 'Overview' },
-    { href: '/meetups', icon: 'fa-calendar-days', label: 'My Meetups' },
-    { id: 'reviews', icon: 'fa-star', label: 'Reviews & Ratings' },
-    { href: '/saved', icon: 'fa-bookmark', label: 'Saved Tables' },
-    { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity', tab: 'activity' },
-    { href: '/invites', icon: 'fa-envelope-open', label: 'Invitations' },
-    { id: 'identity', icon: 'fa-shield-halved', label: 'Identity Verification' },
-    { id: 'settings', icon: 'fa-gear', label: 'Account Settings' },
+    { id: 'overview', icon: 'fa-user', label: 'Overview', shortLabel: 'Overview' },
+    { href: '/meetups', icon: 'fa-calendar-days', label: 'My Meetups', shortLabel: 'Meetups' },
+    { id: 'reviews', icon: 'fa-star', label: 'Reviews & Ratings', shortLabel: 'Reviews' },
+    { href: '/saved', icon: 'fa-bookmark', label: 'Saved Tables', shortLabel: 'Saved' },
+    { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity', shortLabel: 'Activity', tab: 'activity' },
+    { href: '/invites', icon: 'fa-envelope-open', label: 'Invitations', shortLabel: 'Invites' },
+    { id: 'identity', icon: 'fa-shield-halved', label: 'Identity Verification', shortLabel: 'Verify' },
+    { id: 'settings', icon: 'fa-gear', label: 'Account Settings', shortLabel: 'Settings' },
   ];
 
 
@@ -521,13 +522,13 @@ export default function ProfilePage() {
   ───────────────────────────────────────────────────────────────── */
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-6">
-      <div className="grid gap-6 lg:grid-cols-[240px_1fr_320px]">
+    <main className="mx-auto w-full max-w-[1508px] min-w-0 flex-1 overflow-x-hidden px-4 sm:px-6 lg:px-12 py-6">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[240px_1fr_320px]">
 
         {/* ══════════════════════════════════════════════════════════
-            LEFT — Section nav
+            LEFT — Section nav (chips on top on mobile)
         ══════════════════════════════════════════════════════════ */}
-        <aside className="order-2 space-y-4 lg:order-1 lg:sticky lg:top-24 lg:self-start">
+        <aside className="order-1 min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
           {/* Mini profile card */}
           <div className="rounded-3xl border bg-card p-5 shadow-soft flex flex-col items-center gap-3 text-center max-lg:hidden">
             <Avatar name={displayName} src={user.photoUrl} size={64} online />
@@ -545,19 +546,32 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Vertical nav — horizontal scroll on mobile */}
-          <nav className="rounded-3xl border bg-card p-2 shadow-soft max-lg:flex max-lg:gap-1 max-lg:overflow-x-auto lg:block">
-            {NAV_ITEMS.map(({ id, href, icon, label, tab }) => {
-              const isActive = id !== undefined && section === id && !href;
-              const cls = `flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors max-lg:w-auto lg:w-full ${
-                isActive
+          {/* Vertical nav — horizontal scroll chips on mobile */}
+          <nav
+            className="rounded-3xl border bg-card p-2 shadow-soft max-lg:-mx-1 max-lg:flex max-lg:gap-1 max-lg:overflow-x-auto max-lg:overscroll-x-contain max-lg:[scrollbar-width:none] max-lg:[&::-webkit-scrollbar]:hidden lg:block"
+            aria-label="Profile sections"
+          >
+            {NAV_ITEMS.map(({ id, href, icon, label, shortLabel, tab }) => {
+              const active = (() => {
+                if (href) return false;
+                if (id === 'overview' && tab === 'activity') {
+                  return section === 'overview' && overviewTab === 'activity';
+                }
+                if (id === 'overview') {
+                  return section === 'overview' && overviewTab !== 'activity';
+                }
+                return id !== undefined && section === id;
+              })();
+              const cls = `flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors max-lg:gap-1.5 max-lg:px-2.5 max-lg:text-xs lg:w-full lg:gap-3 ${
+                active
                   ? 'bg-secondary text-primary font-semibold'
                   : 'text-foreground hover:bg-muted'
               }`;
               return href ? (
                 <Link key={label} href={href} className={cls}>
                   <i className={`fa-solid ${icon} w-4 text-center text-xs`} />
-                  {label}
+                  <span className="lg:hidden">{shortLabel}</span>
+                  <span className="hidden lg:inline">{label}</span>
                 </Link>
               ) : (
                 <button
@@ -566,11 +580,13 @@ export default function ProfilePage() {
                   onClick={() => {
                     if (id) setSection(id);
                     if (tab) setOverviewTab(tab);
+                    else if (id === 'overview') setOverviewTab('about');
                   }}
                   className={cls}
                 >
                   <i className={`fa-solid ${icon} w-4 text-center text-xs`} />
-                  {label}
+                  <span className="lg:hidden">{shortLabel}</span>
+                  <span className="hidden lg:inline">{label}</span>
                 </button>
               );
             })}
@@ -595,7 +611,7 @@ export default function ProfilePage() {
         {/* ══════════════════════════════════════════════════════════
             MAIN — section-dependent content
         ══════════════════════════════════════════════════════════ */}
-        <div className="order-1 min-w-0 space-y-6 lg:order-2">
+        <div className="order-2 min-w-0 space-y-6">
 
           {/* ── OVERVIEW ─────────────────────────────────────────── */}
           {section === 'overview' && (
@@ -954,7 +970,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label htmlFor="firstName">First name</Label>
                       <Input id="firstName" {...field('firstName')} />
@@ -1052,7 +1068,7 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label>Life stage</Label>
                       <select className={selectClass} {...field('lifeStage')}>
@@ -1122,26 +1138,26 @@ export default function ProfilePage() {
                 {/* Section: Consent */}
                 <section className="rounded-3xl border bg-card/60 p-4 space-y-3">
                   <p className="eyebrow text-primary">Consent</p>
-                  <label className="flex items-center gap-3 text-sm cursor-pointer">
+                  <label className="flex min-w-0 items-start gap-3 text-sm cursor-pointer">
                     <input
                       type="checkbox"
                       checked={photo}
                       onChange={(e) => setPhoto(e.target.checked)}
-                      className="accent-primary"
+                      className="mt-0.5 shrink-0 accent-primary"
                     />
-                    OK to appear in event group photos
+                    <span className="min-w-0 break-words">OK to appear in event group photos</span>
                   </label>
                   <label
                     id="code-of-conduct"
-                    className="flex scroll-mt-24 items-center gap-3 text-sm cursor-pointer"
+                    className="flex min-w-0 scroll-mt-24 items-start gap-3 text-sm cursor-pointer"
                   >
                     <input
                       type="checkbox"
                       checked={consent}
                       onChange={(e) => setConsent(e.target.checked)}
-                      className="accent-primary"
+                      className="mt-0.5 shrink-0 accent-primary"
                     />
-                    I agree to the Community Code of Conduct
+                    <span className="min-w-0 break-words">I agree to the Community Code of Conduct</span>
                   </label>
                 </section>
 
@@ -1197,7 +1213,7 @@ export default function ProfilePage() {
         {/* ══════════════════════════════════════════════════════════
             RIGHT RAIL — desktop only
         ══════════════════════════════════════════════════════════ */}
-        <aside className="order-3 max-lg:hidden space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="order-3 max-lg:hidden min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
 
           {/* Reliability Score card */}
           <div className="rounded-3xl border bg-card p-5 shadow-soft space-y-4">
