@@ -522,7 +522,7 @@ export default function ProfilePage() {
   ───────────────────────────────────────────────────────────────── */
 
   return (
-    <main className="mx-auto w-full max-w-[1508px] min-w-0 flex-1 overflow-x-hidden px-4 sm:px-6 lg:px-12 py-6">
+    <main className="mx-auto w-full max-w-[1508px] min-w-0 flex-1 px-4 sm:px-6 lg:px-12 py-6">
       <div className="grid min-w-0 gap-6 lg:grid-cols-[240px_1fr_320px]">
 
         {/* ══════════════════════════════════════════════════════════
@@ -719,28 +719,35 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Tabs: About / Achievements / Reviews / Activity */}
-              <div>
-                <div className="-mx-1 flex overflow-x-auto border-b border-border/60 px-1">
+              {/* Tabs: About / Achievements / Reviews / Activity — swipe on mobile */}
+              <div className="min-w-0">
+                <div
+                  className="flex touch-pan-x overflow-x-auto overscroll-x-contain border-b border-border/60 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  role="tablist"
+                  aria-label="Profile overview"
+                >
                   {(
                     [
-                      { id: 'about', label: 'About' },
-                      { id: 'achievements', label: 'Achievements' },
-                      { id: 'reviews', label: 'Reviews' },
-                      { id: 'activity', label: 'Activity Feed' },
-                    ] as { id: typeof overviewTab; label: string }[]
-                  ).map(({ id, label }) => (
+                      { id: 'about', label: 'About', short: 'About' },
+                      { id: 'achievements', label: 'Achievements', short: 'Badges' },
+                      { id: 'reviews', label: 'Reviews', short: 'Reviews' },
+                      { id: 'activity', label: 'Activity Feed', short: 'Activity' },
+                    ] as { id: typeof overviewTab; label: string; short: string }[]
+                  ).map(({ id, label, short }) => (
                     <button
                       key={id}
                       type="button"
+                      role="tab"
+                      aria-selected={overviewTab === id}
                       onClick={() => setOverviewTab(id)}
-                      className={`-mb-px shrink-0 px-4 py-2.5 text-sm font-semibold transition-colors ${
+                      className={`-mb-px shrink-0 px-3 py-2.5 text-sm font-semibold transition-colors sm:px-4 ${
                         overviewTab === id
                           ? 'border-b-2 border-primary text-primary'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {label}
+                      <span className="sm:hidden">{short}</span>
+                      <span className="hidden sm:inline">{label}</span>
                     </button>
                   ))}
                 </div>
