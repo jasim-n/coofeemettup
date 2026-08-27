@@ -25,7 +25,7 @@ export default function Home() {
 
         <div className="mx-auto grid w-full max-w-md flex-1 items-center gap-8 px-6 py-14 md:max-w-6xl md:grid-cols-2 md:gap-16 md:py-20">
           <div className="flex flex-col gap-7">
-            <Wordmark className="text-lg" />
+            <Wordmark size="md" />
 
             <div>
               <p className="eyebrow text-primary">Islamabad · Lahore</p>
@@ -105,7 +105,7 @@ export default function Home() {
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-6 md:py-8">
       {/* Mobile-only chrome (DesktopNav is md+) */}
       <div className="mb-4 flex items-center justify-between md:hidden">
-        <Wordmark className="text-base" />
+        <Wordmark size="sm" />
         <Button variant="ghost" size="sm" onClick={() => void logout()}>
           Sign out
         </Button>

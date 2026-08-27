@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-27 — Nine Circles brand assets
+
+- Favicon / apple icon: teal mark (`apps/web/src/app/icon.png`).
+- App logo: full Nine Circles lockup via `Wordmark` → `/brand/logo.png`
+  (desktop nav, login, landing, terms/privacy). Document title updated.
+
 ### 2026-08-23 — Profile mobile overflow
 
 - Profile section chips scroll horizontally with short labels; chips sit

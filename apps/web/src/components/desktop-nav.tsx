@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import { useRequestsBadge } from '@/components/requests-badge';
+import { Wordmark } from '@/components/wordmark';
 import { api } from '@/lib/api';
 import { Avatar } from '@/components/avatar';
 
@@ -72,13 +73,8 @@ export function DesktopNav() {
     <header className="glass ring-border/60 sticky top-0 z-40 hidden border-b ring-1 md:block">
       <nav className="mx-auto flex w-full max-w-[1508px] items-center gap-3 px-4 sm:px-6 lg:px-12 py-3">
         {/* brand */}
-        <Link href="/" className="mr-1 flex shrink-0 items-center gap-2">
-          <span className="bg-gradient-hero grid size-8 place-items-center rounded-xl text-white shadow-soft">
-            <i className="fa-solid fa-mug-hot text-sm" />
-          </span>
-          <span className="font-heading text-lg font-extrabold tracking-tight">
-            Coffee <span className="text-primary">Meetups</span>
-          </span>
+        <Link href="/" className="mr-1 flex shrink-0 items-center" aria-label="Nine Circles home">
+          <Wordmark size="sm" />
         </Link>
 
         {/* nav items */}

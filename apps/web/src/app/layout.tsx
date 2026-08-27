@@ -24,8 +24,12 @@ const body = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Coffee Meetups — meet interesting people over coffee",
+  title: "Nine Circles — meet interesting people over coffee",
   description: "Small groups. Real conversations. Good coffee. Islamabad & Lahore.",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png" }],
+  },
 };
 
 export default function RootLayout({
