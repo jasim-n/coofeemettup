@@ -1,0 +1,218 @@
+{
+  "document": "Coffee Meetups (JRST) AI handoff",
+  "version": "2026-08-27",
+  "purpose": "Enough context for another AI or stakeholder to understand, advise, market, or extend the product.",
+  "authorityOrder": [
+    "live code + apps/api/prisma/schema.prisma",
+    "docs/features.md",
+    "CHANGELOG.md + dated tasks/",
+    "docs/ai-handoff-brief.md / this JSON",
+    "older README / architecture / brand (often Events-era — verify)"
+  ],
+  "companionMarkdown": "docs/ai-handoff-brief.md",
+
+  "product": {
+    "name": "Coffee Meetups",
+    "codename": "JRST",
+    "oneLiner": "Pakistan-first social product for small, host-approved cafe tables — request a seat, get approved, meet IRL.",
+    "tagline": "Find your people over coffee.",
+    "unitOfProduct": "Table (hosted limited-seat meetup at a cafe or coordinates)",
+    "not": "Mass open-RSVP events site, dating app, or generic Meetup clone",
+    "geography": {
+      "launchFocus": "Lahore",
+      "ageBand": "20–28",
+      "alsoMentions": ["Islamabad", "Pakistan broader"]
+    },
+    "vision": {
+      "jobToBeDone": "Help young adults in Pakistan meet interesting people IRL over coffee in a safe, curated, seat-limited way.",
+      "trustModel": "Host approval, code of conduct, report/block, admin suspend/ban",
+      "growthModel": "Instagram + Featured Moments (photos/reels/collages) + company-hosted nights + community hosts",
+      "monetizationNearTerm": "PKR price shown in-app; Phase 1 payment collected off-platform (WhatsApp/bank) after approval",
+      "monetizationNotShipped": "In-app paid Table checkout / Pakistan payment gateway"
+    }
+  },
+
+  "personas": [
+    {
+      "id": "guest",
+      "needs": ["Discover tables", "Request seats", "Chat after approval", "Review after meetup"],
+      "role": "Default user"
+    },
+    {
+      "id": "host",
+      "needs": ["Create/manage tables", "Approve requests", "Invite connections", "Upload Moments"],
+      "role": "User with canHost=true (admin-granted)"
+    },
+    {
+      "id": "ops",
+      "needs": ["Run branded tables", "Approve hosts", "Feature Moments", "Moderate"],
+      "role": "Admin / organizer"
+    },
+    {
+      "id": "growth",
+      "needs": ["Convert IG → signup → request → confirmed seat"],
+      "role": "Uses web + WhatsApp SOP"
+    }
+  ],
+
+  "coreJourney": [
+    "Email signup (OTP once → set password) or email+password login",
+    "Browse Home / Discover / Nearby / Search / Meetups / Calendar / Saved",
+    "Open Table → accept code of conduct → request to join",
+    "Host approves (transactional seat) or declines",
+    "Approved: group chat, invites, Moments",
+    "After start: reviews between eligible participants",
+    "Optional: connections, DMs, notifications, invite friends"
+  ],
+
+  "businessRules": [
+    "Only canHost users create Tables",
+    "Seat capacity 2–50; host cannot join own table",
+    "Join requests start PENDING; approval claims a seat; leave releases a seat",
+    "Edit blocked after start / cancelled / completed",
+    "Chat restricted to host + approved guests",
+    "Reviews only after scheduled start",
+    "CNIC/gender-track not required to join today",
+    "Public identity is @username; name/phone/email private",
+    "SUSPENDED/BANNED accounts cannot authenticate or use APIs",
+    "Never expose OTP devCode in production; passwords are salted scrypt only"
+  ],
+
+  "howToSell": {
+    "consumerValue": [
+      "Safer than open IG DMs / random WhatsApp groups (approval + conduct + report)",
+      "Higher signal than large events (limited seats, vibe, cafe context)",
+      "Social proof via Moments / Featured reels"
+    ],
+    "dualSupply": {
+      "companyHosts": "Branded nights for trust and content",
+      "communityHosts": "Friends/creators run limited tables; platform handles discovery + requests"
+    },
+    "paymentMessaging": {
+      "do": "Show PKR on paid tables; say payment confirms on WhatsApp after approval",
+      "dont": "Advertise in-app card checkout until it exists"
+    },
+    "gtm": {
+      "primaryChannel": "Instagram only (Reels, Stories, Meta ads)",
+      "funnel": "Reel → bio link → signup → Discover/table → request → approve → WhatsApp pay → attend → Moments → next table",
+      "month1AdBudgetUsd": { "low": 350, "high": 550 },
+      "planFile": "tasks/2026-08-21-lahore-instagram-launch-plan.md",
+      "optimizeFor": ["join requests", "confirmed seats"],
+      "notOptimizeFor": ["vanity follower count"]
+    },
+    "investorNarrative": "Trust-gated, seat-limited IRL social for Pakistan cafe culture, with Moments content flywheel and dual company+community host supply. Checkout and automation after unit economics in one city.",
+    "elevator": {
+      "sec15": "Coffee Meetups is small cafe tables in Pakistan — request a seat, hosts approve, then you meet IRL.",
+      "sec30": "Anti-mass-event social layer for Lahore: limited seats, host approval, Instagram-ready Moments. Guests discover on web; company and community hosts fill nights; Phase 1 payments close on WhatsApp after approval."
+    }
+  },
+
+  "launchKpisDirectional": {
+    "window": "First ~4 weeks Lahore IG",
+    "signups": "80–150",
+    "joinRequests": "40–80",
+    "paidConfirmedSeatsWhatsApp": "20–40",
+    "companyTablesThatRun": "4–6",
+    "newExternalHosts": "3–8",
+    "repeatAttenders": "≥15% of attendees"
+  },
+
+  "shippedCapabilities": {
+    "discoveryAndTables": [
+      "Home dashboard",
+      "Discover",
+      "Nearby map",
+      "Search",
+      "Meetups",
+      "Calendar",
+      "Saved",
+      "Create/edit Table (hosts)",
+      "Join requests + host inbox",
+      "Invites",
+      "Featured Moments (IMAGE/VIDEO/COLLAGE + admin layout)"
+    ],
+    "socialAndTrust": [
+      "Connections",
+      "DMs",
+      "Table group chat",
+      "Notifications",
+      "Presence (~5 min lastSeenAt)",
+      "Reviews / reliability score",
+      "Report/block",
+      "Code of conduct before join"
+    ],
+    "identityAndAdmin": [
+      "Email OTP for first password + reset; email/password thereafter",
+      "Web bearer JWT in localStorage (jrst_token)",
+      "Admin users/tables/cafes/featured/verifications/reports/activity",
+      "Public /u/[id] admin-only today"
+    ],
+    "mobileWeb": [
+      "Sticky bottom MobileNav for signed-in users below md",
+      "DesktopNav at md+",
+      "Recent site-wide responsive pass"
+    ]
+  },
+
+  "explicitNonGoalsUnlessAsked": [
+    "apps/mobile work",
+    "Reviving Events/bookings/matching on web",
+    "Nationwide launch before Lahore unit economics",
+    "Faking payment/OTP/WhatsApp provider integrations"
+  ],
+
+  "knownGaps": [
+    "In-app Table checkout / PK payment gateway",
+    "Production OTP delivery config",
+    "Automated identity verification (CNIC is manual)",
+    "WhatsApp Business API / push notifications",
+    "Table-focused e2e suite (Events e2e stale)",
+    "Formal Events domain retirement",
+    "Partial search / mutual-friend / some social UI"
+  ],
+
+  "tech": {
+    "monorepo": "pnpm 11 + Turborepo; Node 24",
+    "api": "NestJS 11, Prisma 7, PostgreSQL, Redis",
+    "web": "Next.js 16 App Router, React 19, Tailwind v4, shadcn/base-ui",
+    "contracts": ["@jrst/types", "@jrst/api-client"],
+    "maps": "MapLibre + OSM/Photon",
+    "chatTransport": "Polling (no WebSockets yet)",
+    "localUrls": {
+      "api": "http://localhost:4000/api",
+      "web": "http://localhost:3000 (or 3001 if busy)"
+    },
+    "deploy": "CI/CD only; no CLI deploy; no Prisma migrate on app startup",
+    "crossLayerChangeOrder": [
+      "schema.prisma",
+      "migration",
+      "API DTOs/services",
+      "@jrst/types",
+      "@jrst/api-client",
+      "web UI",
+      "focused tests"
+    ]
+  },
+
+  "repoMap": {
+    "apps/api": "NestJS + Prisma",
+    "apps/web": "Next.js product + admin",
+    "apps/mobile": "Out of scope by default",
+    "packages/types": "Shared contracts",
+    "packages/api-client": "Typed client",
+    "docs/features.md": "Shipped feature wiring",
+    "docs/ai-handoff-brief.md": "Human-readable twin of this file",
+    "tasks/2026-08-21-lahore-instagram-launch-plan.md": "Lahore IG GTM",
+    "CHANGELOG.md": "Recent product deltas",
+    "CLAUDE.md": "Agent conventions"
+  },
+
+  "instructionsForReceivingAi": [
+    "Treat Tables-first web as the product; do not reintroduce Events UX unless asked",
+    "Use howToSell + launch plan for GTM; use code for what works today",
+    "Ignore mobile app unless user explicitly asks",
+    "Do not invent payment gateways, WhatsApp APIs, or OTP providers — seams + TODOs only",
+    "Preserve unrelated working-tree changes; verify with pnpm --filter @jrst/web|api",
+    "docs/brand.md may still mention coral/Syne/Mapbox — verify against current web (Poppins / current tokens / MapLibre)"
+  ]
+}
