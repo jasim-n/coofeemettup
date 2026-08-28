@@ -240,6 +240,7 @@ export default function DiscoverPage() {
   const [customDate, setCustomDate] = useState('');
   const [distanceKm, setDistanceKm] = useState(50); // 50 = "50+" = no limit (show all)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -362,8 +363,20 @@ export default function DiscoverPage() {
         {/* ── LEFT RAIL ─────────────────────────────────────────────── */}
         <aside className="bg-card shadow-soft order-2 rounded-3xl border p-5 lg:order-1 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
           {/* heading + clear */}
-          <div className="mb-5 flex items-center justify-between">
-            <p className="font-heading font-bold tracking-tight">Filters</p>
+          <div className="mb-5 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              className="font-heading flex items-center gap-2 font-bold tracking-tight lg:pointer-events-none"
+              onClick={() => setFiltersOpen((o) => !o)}
+              aria-expanded={filtersOpen}
+            >
+              Filters
+              <i
+                className={`fa-solid fa-chevron-down text-muted-foreground text-xs transition-transform lg:hidden ${
+                  filtersOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
             <button
               type="button"
               onClick={resetFilters}
@@ -372,6 +385,8 @@ export default function DiscoverPage() {
               Clear all
             </button>
           </div>
+
+          <div className={`${filtersOpen ? 'block' : 'hidden'} lg:block`}>
 
           {/* search */}
           <div className="mb-5">
@@ -511,6 +526,7 @@ export default function DiscoverPage() {
                 </li>
               ))}
             </ul>
+          </div>
           </div>
         </aside>
 

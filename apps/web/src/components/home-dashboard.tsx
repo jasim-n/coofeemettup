@@ -216,12 +216,12 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
           vibes.length > 0 && (
           <div>
             <p className="font-heading mb-2 text-sm font-bold">Popular vibes</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
               {vibes.map((c, i) => (
                 <Link
                   key={c}
                   href="/discover"
-                  className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ring-1 transition-all hover:-translate-y-0.5 ${
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold ring-1 transition-all hover:-translate-y-0.5 ${
                     i === 0
                       ? 'bg-primary text-primary-foreground ring-transparent'
                       : 'bg-card ring-border/60 hover:shadow-soft'

@@ -695,11 +695,11 @@ export default function ProfilePage() {
                     { icon: 'fa-users', label: 'Meetups Joined', value: activeJoinedCount, accent: 'text-teal-400' },
                     { icon: 'fa-star', label: 'Reliability Score', value: user.reliabilityScore, accent: 'text-amber-400' },
                     { icon: 'fa-heart', label: 'Connections', value: connectionsCount ?? '—', accent: 'text-pink-400' },
-                    { icon: 'fa-medal', label: 'Average Rating', value: avgRating, accent: 'text-blue-400' },
-                  ].map(({ icon, label, value, accent }) => (
+                    { icon: 'fa-medal', label: 'Average Rating', value: avgRating, accent: 'text-blue-400', wide: true },
+                  ].map(({ icon, label, value, accent, wide }) => (
                     <div
                       key={label}
-                      className="flex flex-col items-center rounded-2xl p-3 text-center"
+                      className={`flex flex-col items-center rounded-2xl p-3 text-center ${wide ? 'col-span-2 sm:col-span-1' : ''}`}
                       style={{ background: 'oklch(1 0 0 / 0.08)' }}
                     >
                       <span className={`text-lg leading-none ${accent}`}><i className={`fa-solid ${icon}`} /></span>

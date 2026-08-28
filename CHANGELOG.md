@@ -4,6 +4,14 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-28 — Mobile Playwright audit + polish
+
+- Added `e2e/mobile-audit.mjs` (390×844 overflow + screenshots under
+  `e2e/shots/mobile/`). All primary routes pass horizontal overflow.
+- Home: vibe chips scroll horizontally on small screens.
+- Discover / Meetups: filters collapse behind a tap on mobile.
+- Profile: average-rating tile spans full width in the 2-col mobile grid.
+
 ### 2026-08-27 — Nine Circles brand assets
 
 - Favicon / apple icon: teal mark (`apps/web/src/app/icon.png`).

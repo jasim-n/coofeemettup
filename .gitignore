@@ -16,3 +16,4 @@ apps/mobile/ios/
 apps/mobile/android/
 apps/mobile/.expo/
 _claude-history/
+e2e/.mobile-audit-creds.json
