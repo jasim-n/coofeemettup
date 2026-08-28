@@ -861,7 +861,7 @@ export default function MeetupsPage() {
   );
 
   const upcomingCards = useMemo(
-    () => filteredBrowse.filter((t) => new Date(t.startAt).getTime() >= NOW).slice(0, 4),
+    () => filteredBrowse.filter((t) => new Date(t.startAt).getTime() >= NOW).slice(0, 3),
     [filteredBrowse],
   );
 
@@ -1060,8 +1060,8 @@ export default function MeetupsPage() {
                   </Link>
                 </div>
                 {listsPending ? (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {Array.from({ length: 4 }, (_, i) => <SkeletonCard key={i} />)}
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {Array.from({ length: 3 }, (_, i) => <SkeletonCard key={i} />)}
                   </div>
                 ) : upcomingCards.length === 0 ? (
                   <div className="rounded-3xl border border-dashed py-12 text-center">
@@ -1071,7 +1071,7 @@ export default function MeetupsPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {upcomingCards.map((t) => (
                       <MeetupCoverCard key={t.id} t={t} viewerId={user?.id} />
                     ))}
@@ -1079,8 +1079,8 @@ export default function MeetupsPage() {
                 )}
               </section>
 
-              {/* my meetups mini-table */}
-              <section>
+              {/* my meetups mini-table — desktop only; mobile uses My Meetups tab */}
+              <section className="hidden lg:block">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="font-heading text-lg font-bold tracking-tight">My Meetups</h2>
                 </div>
