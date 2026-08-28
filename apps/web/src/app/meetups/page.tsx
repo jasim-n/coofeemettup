@@ -341,19 +341,19 @@ function MeetupMobileRow({ t }: { t: TableDto }) {
     <button
       type="button"
       onClick={openTable}
-      className="hover:bg-muted/60 flex w-full items-center gap-2 border-b border-border/60 px-1 py-3 text-left last:border-0 transition-colors"
+      className="hover:bg-muted/60 flex w-full items-center gap-1 border-b border-border/60 px-1 py-3 text-left last:border-0 transition-colors"
       aria-label={`Open ${t.title ?? t.category}`}
     >
       <div className="ring-border/40 h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1">
         <Cover src={t.imageUrl ?? undefined} category={t.category} className="h-full w-full object-cover" />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 max-w-[58%] flex-1">
         <p className="font-heading truncate text-sm font-bold">{t.title ?? t.category}</p>
         <p className="text-muted-foreground truncate text-xs">
           {t.venueName ?? t.cafe?.name ?? 'See map'}
         </p>
       </div>
-      <div className="text-muted-foreground shrink-0 text-right text-[11px] leading-snug">
+      <div className="text-muted-foreground ml-1 shrink-0 text-right text-[11px] leading-snug">
         <p className="whitespace-nowrap">{date}</p>
         <p className="whitespace-nowrap">{time}</p>
       </div>
