@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ApiError, type InviteDto, type PublicUser, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
@@ -256,6 +257,7 @@ function MeetupTableRow({
   meId?: string;
   coords: { lat: number; lng: number } | null;
 }) {
+  const router = useRouter();
   const hosting = meId != null && t.hostId === meId;
   const approved = t.myRequestStatus === 'APPROVED';
   const tLat = t.lat ?? t.cafe?.lat ?? null;
@@ -264,9 +266,26 @@ function MeetupTableRow({
     coords !== null && tLat !== null && tLng !== null
       ? formatDistance(haversineKm(coords.lat, coords.lng, tLat, tLng))
       : '—';
+
+  function openTable() {
+    router.push(`/tables/${t.id}`);
+  }
+
   return (
-    <tr className="border-border/60 border-b last:border-0">
-      <td className="py-3 pr-4">
+    <tr
+      role="link"
+      tabIndex={0}
+      onClick={openTable}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openTable();
+        }
+      }}
+      className="border-border/60 hover:bg-muted/60 cursor-pointer border-b last:border-0 transition-colors"
+      aria-label={`Open ${t.title ?? t.category}`}
+    >
+      <td className="py-3 pr-3 sm:pr-4">
         <div className="flex items-center gap-3">
           <div className="ring-border/40 h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1">
             <Cover src={t.imageUrl ?? undefined} category={t.category} className="h-full w-full object-cover" />
@@ -281,27 +300,22 @@ function MeetupTableRow({
           </div>
         </div>
       </td>
-      <td className="text-muted-foreground py-3 pr-4 text-xs whitespace-nowrap">
+      <td className="text-muted-foreground py-3 pr-3 text-xs whitespace-nowrap sm:pr-4">
         {formatDateTime(t.startAt)}
       </td>
-      <td className="text-muted-foreground py-3 pr-4 text-xs whitespace-nowrap">
+      <td className="text-muted-foreground hidden py-3 pr-4 text-xs whitespace-nowrap md:table-cell">
         {t.venueName ?? t.cafe?.name ?? '—'}
       </td>
-      <td className="text-muted-foreground py-3 pr-4 text-xs whitespace-nowrap">
+      <td className="text-muted-foreground hidden py-3 pr-4 text-xs whitespace-nowrap md:table-cell">
         {distLabel}
       </td>
-      <td className="py-3 pr-4">
+      <td className="hidden py-3 pr-4 md:table-cell">
         <Badge variant={hosting ? 'secondary' : approved ? 'success' : 'warning'}>
           {hosting ? 'Hosting' : approved ? 'Confirmed' : 'Pending'}
         </Badge>
       </td>
-      <td className="py-3">
-        <Link
-          href={`/tables/${t.id}`}
-          className="border-border text-foreground hover:border-primary/40 hover:bg-muted rounded-full border px-3 py-1 text-xs font-semibold transition-colors"
-        >
-          Manage
-        </Link>
+      <td className="hidden py-3 text-right md:table-cell">
+        <i className="fa-solid fa-chevron-right text-muted-foreground text-xs" aria-hidden />
       </td>
     </tr>
   );
@@ -326,19 +340,27 @@ function MeetupTable({
     );
   }
   return (
-    <div className="bg-card shadow-soft rounded-3xl border p-5">
-      <div className="overflow-x-auto">
+    <div className="bg-card shadow-soft rounded-3xl border p-4 sm:p-5">
+      <div className="md:overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-border/60 border-b">
-              {['Meetup', 'Date & Time', 'Location', 'Distance', 'Status', 'Action'].map((h) => (
-                <th
-                  key={h}
-                  className="text-muted-foreground pb-2 pr-4 text-left text-xs font-semibold last:pr-0"
-                >
-                  {h}
-                </th>
-              ))}
+              <th className="text-muted-foreground pb-2 pr-3 text-left text-xs font-semibold sm:pr-4">
+                Meetup
+              </th>
+              <th className="text-muted-foreground pb-2 pr-3 text-left text-xs font-semibold sm:pr-4">
+                Date &amp; Time
+              </th>
+              <th className="text-muted-foreground hidden pb-2 pr-4 text-left text-xs font-semibold md:table-cell">
+                Location
+              </th>
+              <th className="text-muted-foreground hidden pb-2 pr-4 text-left text-xs font-semibold md:table-cell">
+                Distance
+              </th>
+              <th className="text-muted-foreground hidden pb-2 pr-4 text-left text-xs font-semibold md:table-cell">
+                Status
+              </th>
+              <th className="hidden pb-2 md:table-cell" aria-hidden />
             </tr>
           </thead>
           <tbody>
