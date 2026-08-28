@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/components/auth-provider';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
 import { HomeDashboard } from '@/components/home-dashboard';
 import { PageLoader } from '@/components/spinner';
 
 export default function Home() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
 
   // ---- signed-out: bold gradient hero ----
   if (!user && !loading) {
@@ -103,14 +103,6 @@ export default function Home() {
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-6 md:py-8">
-      {/* Mobile-only chrome (DesktopNav is md+) */}
-      <div className="mb-4 flex items-center justify-between md:hidden">
-        <Wordmark size="sm" />
-        <Button variant="ghost" size="sm" onClick={() => void logout()}>
-          Sign out
-        </Button>
-      </div>
-
       <HomeDashboard user={user!} />
     </main>
   );

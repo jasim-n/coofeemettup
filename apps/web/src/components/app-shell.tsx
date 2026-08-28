@@ -2,14 +2,16 @@
 
 import { usePathname } from 'next/navigation';
 import { MobileNav } from '@/components/mobile-nav';
+import { MobileTopBar } from '@/components/mobile-top-bar';
 
-/** Pads for sticky MobileNav except on full-screen chat routes. */
+/** Top + bottom mobile chrome; desktop uses DesktopNav only. */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isChat = pathname.includes('/chat');
 
   return (
     <>
+      {!isChat && <MobileTopBar />}
       <div
         className={
           isChat

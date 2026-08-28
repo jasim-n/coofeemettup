@@ -4,6 +4,14 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-28 — Mobile top bar + Meetups drawers (A1)
+
+- Sticky **MobileTopBar** on small screens (logo, search, notifications,
+  avatar) alongside bottom tabs — DesktopNav unchanged at `md+`.
+- **Meetups:** filters and calendar/rail open in left/right drawers on
+  mobile; main list stays primary. Desktop keeps the 3-column layout.
+- Shared `SideDrawer` helper for future pages (Discover, Nearby, etc.).
+
 ### 2026-08-28 — Mobile Playwright audit + polish
 
 - Added `e2e/mobile-audit.mjs` (390×844 overflow + screenshots under

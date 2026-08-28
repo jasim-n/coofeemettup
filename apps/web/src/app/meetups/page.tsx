@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
-import { ApiError, type InviteDto, type TableDto } from '@jrst/api-client';
+import { ApiError, type InviteDto, type PublicUser, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import {
@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { CategoryPills } from '@/components/category-pills';
+import { SideDrawer } from '@/components/side-drawer';
 import { haversineKm, formatDistance } from '@/lib/geo';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
@@ -411,6 +412,341 @@ function SkeletonTableRow() {
   );
 }
 
+/* ─── filters panel (desktop aside + mobile drawer) ─────────────── */
+
+type MeetupsFiltersPanelProps = {
+  when: WhenFilter;
+  setWhen: Dispatch<SetStateAction<WhenFilter>>;
+  fromDate: string;
+  setFromDate: Dispatch<SetStateAction<string>>;
+  toDate: string;
+  setToDate: Dispatch<SetStateAction<string>>;
+  category: string;
+  setCategory: Dispatch<SetStateAction<string>>;
+  categories: string[];
+  showAllCats: boolean;
+  setShowAllCats: Dispatch<SetStateAction<boolean>>;
+  radiusKm: number;
+  setRadiusKm: Dispatch<SetStateAction<number>>;
+  clearFilters: () => void;
+};
+
+function MeetupsFiltersPanel({
+  when,
+  setWhen,
+  fromDate,
+  setFromDate,
+  toDate,
+  setToDate,
+  category,
+  setCategory,
+  categories,
+  showAllCats,
+  setShowAllCats,
+  radiusKm,
+  setRadiusKm,
+  clearFilters,
+}: MeetupsFiltersPanelProps) {
+  return (
+    <>
+      <div className="mb-4 flex justify-end lg:hidden">
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="text-primary text-xs font-semibold hover:underline"
+        >
+          Clear all
+        </button>
+      </div>
+
+      {/* WHEN */}
+      <div className="mb-5">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
+          When
+        </p>
+        <ul className="space-y-1">
+          {(
+            [
+              { id: 'all', label: 'All Meetups' },
+              { id: 'upcoming', label: 'Upcoming' },
+              { id: 'week', label: 'This Week' },
+              { id: 'weekend', label: 'This Weekend' },
+              { id: 'past', label: 'Past' },
+            ] as { id: WhenFilter; label: string }[]
+          ).map((opt) => (
+            <li key={opt.id}>
+              <button
+                type="button"
+                onClick={() => setWhen(opt.id)}
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
+                  when === opt.id
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'hover:bg-muted text-foreground'
+                }`}
+              >
+                <span
+                  className={`inline-block size-3.5 rounded-full border-2 ${
+                    when === opt.id
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground/40'
+                  }`}
+                />
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* DATE RANGE */}
+      <div className="mb-5">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
+          Date Range
+        </p>
+        <div className="space-y-2">
+          <div>
+            <label className="text-muted-foreground block text-xs font-medium">From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="border-border focus:ring-primary mt-1 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
+            />
+          </div>
+          <div>
+            <label className="text-muted-foreground block text-xs font-medium">To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="border-border focus:ring-primary mt-1 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* CATEGORY */}
+      <div className="mb-5">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
+          Category
+        </p>
+        <ul className="space-y-1">
+          <li>
+            <button
+              type="button"
+              onClick={() => setCategory('')}
+              className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
+                category === ''
+                  ? 'bg-secondary text-primary font-semibold'
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              <i className="fa-solid fa-table-cells-large w-4 text-center" />
+              All Categories
+            </button>
+          </li>
+          {(showAllCats ? categories : categories.slice(0, 6)).map((cat) => (
+            <li key={cat}>
+              <button
+                type="button"
+                onClick={() => setCategory(cat)}
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
+                  category === cat
+                    ? 'bg-secondary text-primary font-semibold'
+                    : 'hover:bg-muted text-foreground'
+                }`}
+              >
+                <i className={`fa-solid ${categoryIcon(cat)} w-4 text-center`} />
+                {cat}
+              </button>
+            </li>
+          ))}
+        </ul>
+        {categories.length > 6 && (
+          <button
+            type="button"
+            onClick={() => setShowAllCats((s) => !s)}
+            className="text-primary mt-2 pl-3 text-xs font-semibold hover:underline"
+          >
+            {showAllCats ? 'View less' : `View more (${categories.length - 6})`}
+          </button>
+        )}
+      </div>
+
+      {/* LOCATION */}
+      <div className="mb-5">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
+          Location
+        </p>
+        <input
+          type="text"
+          placeholder="Search area…"
+          className="border-border focus:ring-primary w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
+        />
+        <div className="mt-3">
+          <div className="mb-1 flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Distance</span>
+            <span className="font-semibold">
+              {radiusKm >= 50 ? '50+ km' : `${radiusKm} km`}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={50}
+            value={radiusKm}
+            onChange={(e) => setRadiusKm(Number(e.target.value))}
+            className="accent-primary w-full"
+          />
+          <div className="text-muted-foreground mt-0.5 flex justify-between text-[10px]">
+            <span>0 km</span>
+            <span>50+ km</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Apply button (live filter → decorative) */}
+      <button
+        type="button"
+        className="bg-primary text-primary-foreground hover:brightness-110 w-full rounded-full py-2.5 text-sm font-semibold transition-[filter]"
+      >
+        Apply Filters
+      </button>
+    </>
+  );
+}
+
+/* ─── right rail (desktop aside + mobile drawer) ────────────────── */
+
+type MeetupsRailPanelProps = {
+  joinedView: TableDto[];
+  browseView: TableDto[];
+  invitesView: InviteDto[];
+  inviteBusy: string | null;
+  handleInviteAction: (id: string, action: 'accept' | 'maybe') => void;
+  user: PublicUser | null;
+};
+
+function MeetupsRailPanel({
+  joinedView,
+  browseView,
+  invitesView,
+  inviteBusy,
+  handleInviteAction,
+  user,
+}: MeetupsRailPanelProps) {
+  return (
+    <div className="space-y-4">
+      <CalendarCard joined={joinedView} />
+
+      <div className="bg-card shadow-soft rounded-3xl border p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="font-heading font-bold tracking-tight">Suggested for you</p>
+          <Link href="/discover" className="text-primary text-xs font-semibold hover:underline">
+            See all
+          </Link>
+        </div>
+        {browseView.slice(0, 3).length === 0 ? (
+          <p className="text-muted-foreground text-sm">No suggestions right now.</p>
+        ) : (
+          <div className="space-y-1">
+            {browseView.slice(0, 3).map((t) => (
+              <SuggestedRow key={t.id} t={t} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-card shadow-soft rounded-3xl border p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="font-heading font-bold tracking-tight">Your invitations</p>
+          <Link href="/invites" className="text-primary text-xs font-semibold hover:underline">
+            View all
+          </Link>
+        </div>
+        {invitesView.length === 0 ? (
+          <div className="rounded-2xl border border-dashed py-6 text-center">
+            <p className="text-muted-foreground text-sm">No invitations yet</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {invitesView.slice(0, 2).map((inv) => (
+              <div key={inv.id} className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="ring-border/40 h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-1">
+                    <Cover category={inv.table.category} className="h-full w-full object-cover" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/tables/${inv.table.id}`}
+                      className="font-heading block truncate text-xs font-bold hover:underline"
+                    >
+                      {inv.table.title ?? inv.table.category}
+                    </Link>
+                    <div className="flex items-center gap-1">
+                      <Avatar name={personName(inv.inviter)} size={14} />
+                      <span className="text-muted-foreground truncate text-[11px]">
+                        {personName(inv.inviter)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-1.5">
+                  <Button
+                    size="xs"
+                    disabled={inviteBusy === inv.id}
+                    onClick={() => void handleInviteAction(inv.id, 'accept')}
+                    className="flex-1 text-[11px]"
+                  >
+                    {inviteBusy === inv.id ? '…' : 'Accept'}
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    disabled={inviteBusy === inv.id}
+                    onClick={() => void handleInviteAction(inv.id, 'maybe')}
+                    className="text-[11px]"
+                  >
+                    Maybe
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {invitesView.length > 2 && (
+              <Link
+                href="/invites"
+                className="text-primary block pt-1 text-center text-xs font-semibold hover:underline"
+              >
+                +{invitesView.length - 2} more →
+              </Link>
+            )}
+          </div>
+        )}
+      </div>
+
+      {user?.canHost === true && (
+        <div className="bg-secondary rounded-3xl p-5">
+          <div className="mb-3 text-center text-4xl">
+            <i className="fa-solid fa-mug-hot text-primary" />
+          </div>
+          <p className="font-heading text-secondary-foreground text-center font-bold tracking-tight">
+            Host your own meetup
+          </p>
+          <p className="text-secondary-foreground/80 mt-2 text-center text-sm">
+            Bring people together over coffee &amp; good conversations.
+          </p>
+          <Link
+            href="/tables/new"
+            className="bg-primary text-primary-foreground hover:brightness-110 mt-4 block rounded-full py-2.5 text-center text-sm font-semibold transition-[filter]"
+          >
+            Create Meetup
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── tabs ──────────────────────────────────────────────────────── */
 
 // TABS is derived inside the component to get the live invite count.
@@ -454,7 +790,8 @@ export default function MeetupsPage() {
 
   // tabs
   const [tab, setTab] = useState<TabId>('upcoming');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [railDrawerOpen, setRailDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -612,23 +949,10 @@ export default function MeetupsPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr_320px]">
-        {/* ── LEFT RAIL ──────────────────────────────────────────── */}
-        <aside className="bg-card shadow-soft order-2 rounded-3xl border p-5 lg:order-1 lg:sticky lg:top-24 lg:self-start">
-          {/* Filters heading */}
+        {/* ── LEFT RAIL (desktop) ────────────────────────────────── */}
+        <aside className="bg-card shadow-soft hidden rounded-3xl border p-5 lg:sticky lg:top-24 lg:block lg:self-start">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              className="font-heading flex items-center gap-2 font-bold tracking-tight lg:pointer-events-none"
-              onClick={() => setFiltersOpen((o) => !o)}
-              aria-expanded={filtersOpen}
-            >
-              Filters
-              <i
-                className={`fa-solid fa-chevron-down text-muted-foreground text-xs transition-transform lg:hidden ${
-                  filtersOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
+            <p className="font-heading font-bold tracking-tight">Filters</p>
             <button
               type="button"
               onClick={clearFilters}
@@ -637,166 +961,50 @@ export default function MeetupsPage() {
               Clear all
             </button>
           </div>
-
-          <div className={`${filtersOpen ? 'block' : 'hidden'} lg:block`}>
-          {/* WHEN */}
-          <div className="mb-5">
-            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
-              When
-            </p>
-            <ul className="space-y-1">
-              {(
-                [
-                  { id: 'all', label: 'All Meetups' },
-                  { id: 'upcoming', label: 'Upcoming' },
-                  { id: 'week', label: 'This Week' },
-                  { id: 'weekend', label: 'This Weekend' },
-                  { id: 'past', label: 'Past' },
-                ] as { id: WhenFilter; label: string }[]
-              ).map((opt) => (
-                <li key={opt.id}>
-                  <button
-                    type="button"
-                    onClick={() => setWhen(opt.id)}
-                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
-                      when === opt.id
-                        ? 'bg-primary/10 text-primary font-semibold'
-                        : 'hover:bg-muted text-foreground'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block size-3.5 rounded-full border-2 ${
-                        when === opt.id
-                          ? 'border-primary bg-primary'
-                          : 'border-muted-foreground/40'
-                      }`}
-                    />
-                    {opt.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* DATE RANGE */}
-          <div className="mb-5">
-            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
-              Date Range
-            </p>
-            <div className="space-y-2">
-              <div>
-                <label className="text-muted-foreground block text-xs font-medium">From</label>
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="border-border focus:ring-primary mt-1 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                />
-              </div>
-              <div>
-                <label className="text-muted-foreground block text-xs font-medium">To</label>
-                <input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="border-border focus:ring-primary mt-1 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* CATEGORY */}
-          <div className="mb-5">
-            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
-              Category
-            </p>
-            <ul className="space-y-1">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => setCategory('')}
-                  className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
-                    category === ''
-                      ? 'bg-secondary text-primary font-semibold'
-                      : 'hover:bg-muted text-foreground'
-                  }`}
-                >
-                  <i className="fa-solid fa-table-cells-large w-4 text-center" />
-                  All Categories
-                </button>
-              </li>
-              {(showAllCats ? categories : categories.slice(0, 6)).map((cat) => (
-                <li key={cat}>
-                  <button
-                    type="button"
-                    onClick={() => setCategory(cat)}
-                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
-                      category === cat
-                        ? 'bg-secondary text-primary font-semibold'
-                        : 'hover:bg-muted text-foreground'
-                    }`}
-                  >
-                    <i className={`fa-solid ${categoryIcon(cat)} w-4 text-center`} />
-                    {cat}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {categories.length > 6 && (
-              <button
-                type="button"
-                onClick={() => setShowAllCats((s) => !s)}
-                className="text-primary mt-2 pl-3 text-xs font-semibold hover:underline"
-              >
-                {showAllCats ? 'View less' : `View more (${categories.length - 6})`}
-              </button>
-            )}
-          </div>
-
-          {/* LOCATION */}
-          <div className="mb-5">
-            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
-              Location
-            </p>
-            <input
-              type="text"
-              placeholder="Search area…"
-              className="border-border focus:ring-primary w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
-            />
-            <div className="mt-3">
-              <div className="mb-1 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Distance</span>
-                <span className="font-semibold">
-                  {radiusKm >= 50 ? '50+ km' : `${radiusKm} km`}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={50}
-                value={radiusKm}
-                onChange={(e) => setRadiusKm(Number(e.target.value))}
-                className="accent-primary w-full"
-              />
-              <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-                <span>0 km</span>
-                <span>50+ km</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Apply button (live filter → decorative) */}
-          <button
-            type="button"
-            className="bg-primary text-primary-foreground hover:brightness-110 w-full rounded-full py-2.5 text-sm font-semibold transition-[filter]"
-          >
-            Apply Filters
-          </button>
-          </div>
+          <MeetupsFiltersPanel
+            when={when}
+            setWhen={setWhen}
+            fromDate={fromDate}
+            setFromDate={setFromDate}
+            toDate={toDate}
+            setToDate={setToDate}
+            category={category}
+            setCategory={setCategory}
+            categories={categories}
+            showAllCats={showAllCats}
+            setShowAllCats={setShowAllCats}
+            radiusKm={radiusKm}
+            setRadiusKm={setRadiusKm}
+            clearFilters={clearFilters}
+          />
         </aside>
 
         {/* ── MAIN COLUMN ────────────────────────────────────────── */}
-        <div className="order-1 min-w-0 space-y-6 lg:order-2 lg:pt-5">
+        <div className="min-w-0 space-y-6 lg:pt-5">
+          {/* mobile toolbar */}
+          <div className="flex gap-2 lg:hidden">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setFilterDrawerOpen(true)}
+              className="flex-1"
+            >
+              <i className="fa-solid fa-sliders mr-2" />
+              Filters
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRailDrawerOpen(true)}
+              className="flex-1"
+            >
+              <i className="fa-solid fa-calendar-days mr-2" />
+              More
+            </Button>
+          </div>
+
           {/* header */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div>
@@ -1019,117 +1227,58 @@ export default function MeetupsPage() {
           )}
         </div>
 
-        {/* ── RIGHT RAIL ─────────────────────────────────────────── */}
-        <aside className="order-3 max-lg:hidden space-y-4">
-          {/* Calendar */}
-          <CalendarCard joined={joinedView} />
-
-          {/* Suggested */}
-          <div className="bg-card shadow-soft rounded-3xl border p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="font-heading font-bold tracking-tight">Suggested for you</p>
-              <Link href="/discover" className="text-primary text-xs font-semibold hover:underline">
-                See all
-              </Link>
-            </div>
-            {browseView.slice(0, 3).length === 0 ? (
-              <p className="text-muted-foreground text-sm">No suggestions right now.</p>
-            ) : (
-              <div className="space-y-1">
-                {browseView.slice(0, 3).map((t) => (
-                  <SuggestedRow key={t.id} t={t} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Your invitations */}
-          <div className="bg-card shadow-soft rounded-3xl border p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="font-heading font-bold tracking-tight">Your invitations</p>
-              <Link href="/invites" className="text-primary text-xs font-semibold hover:underline">
-                View all
-              </Link>
-            </div>
-            {invitesView.length === 0 ? (
-              <div className="rounded-2xl border border-dashed py-6 text-center">
-                <p className="text-muted-foreground text-sm">No invitations yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {invitesView.slice(0, 2).map((inv) => (
-                  <div key={inv.id} className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="ring-border/40 h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-1">
-                        <Cover category={inv.table.category} className="h-full w-full object-cover" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          href={`/tables/${inv.table.id}`}
-                          className="font-heading block truncate text-xs font-bold hover:underline"
-                        >
-                          {inv.table.title ?? inv.table.category}
-                        </Link>
-                        <div className="flex items-center gap-1">
-                          <Avatar name={personName(inv.inviter)} size={14} />
-                          <span className="text-muted-foreground truncate text-[11px]">
-                            {personName(inv.inviter)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1.5">
-                      <Button
-                        size="xs"
-                        disabled={inviteBusy === inv.id}
-                        onClick={() => void handleInviteAction(inv.id, 'accept')}
-                        className="flex-1 text-[11px]"
-                      >
-                        {inviteBusy === inv.id ? '…' : 'Accept'}
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        disabled={inviteBusy === inv.id}
-                        onClick={() => void handleInviteAction(inv.id, 'maybe')}
-                        className="text-[11px]"
-                      >
-                        Maybe
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {invitesView.length > 2 && (
-                  <Link href="/invites" className="text-primary block text-center text-xs font-semibold hover:underline pt-1">
-                    +{invitesView.length - 2} more →
-                  </Link>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Host your own meetup — only shown to users with host permission */}
-          {user?.canHost === true && (
-            <div className="bg-secondary rounded-3xl p-5">
-              <div className="mb-3 text-center text-4xl">
-                <i className="fa-solid fa-mug-hot text-primary" />
-              </div>
-              <p className="font-heading text-secondary-foreground text-center font-bold tracking-tight">
-                Host your own meetup
-              </p>
-              <p className="text-secondary-foreground/80 mt-2 text-center text-sm">
-                Bring people together over coffee &amp; good conversations.
-              </p>
-              <Link
-                href="/tables/new"
-                className="bg-primary text-primary-foreground hover:brightness-110 mt-4 block rounded-full py-2.5 text-center text-sm font-semibold transition-[filter]"
-              >
-                Create Meetup
-              </Link>
-            </div>
-          )}
+        {/* ── RIGHT RAIL (desktop) ───────────────────────────────── */}
+        <aside className="hidden space-y-4 lg:sticky lg:top-24 lg:block lg:self-start">
+          <MeetupsRailPanel
+            joinedView={joinedView}
+            browseView={browseView}
+            invitesView={invitesView}
+            inviteBusy={inviteBusy}
+            handleInviteAction={handleInviteAction}
+            user={user}
+          />
         </aside>
       </div>
+
+      <SideDrawer
+        open={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        side="left"
+        title="Filters"
+      >
+        <MeetupsFiltersPanel
+          when={when}
+          setWhen={setWhen}
+          fromDate={fromDate}
+          setFromDate={setFromDate}
+          toDate={toDate}
+          setToDate={setToDate}
+          category={category}
+          setCategory={setCategory}
+          categories={categories}
+          showAllCats={showAllCats}
+          setShowAllCats={setShowAllCats}
+          radiusKm={radiusKm}
+          setRadiusKm={setRadiusKm}
+          clearFilters={clearFilters}
+        />
+      </SideDrawer>
+
+      <SideDrawer
+        open={railDrawerOpen}
+        onClose={() => setRailDrawerOpen(false)}
+        side="right"
+        title="Calendar & more"
+      >
+        <MeetupsRailPanel
+          joinedView={joinedView}
+          browseView={browseView}
+          invitesView={invitesView}
+          inviteBusy={inviteBusy}
+          handleInviteAction={handleInviteAction}
+          user={user}
+        />
+      </SideDrawer>
     </main>
   );
 }
