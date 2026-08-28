@@ -223,7 +223,7 @@ export default function LoginPage() {
 
       {/* hero wordmark */}
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-6 pt-16 text-center">
-        <Wordmark size="lg" />
+        <Wordmark size="lg" variant="white" />
         <p className="text-white/80 text-sm font-medium">
           Small groups. Real conversations. Good coffee.
         </p>
