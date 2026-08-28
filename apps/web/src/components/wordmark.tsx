@@ -8,7 +8,7 @@ type WordmarkProps = {
   variant?: 'default' | 'white';
 };
 
-const HEIGHT = { sm: 40, md: 56, lg: 112 } as const;
+const HEIGHT = { sm: 52, md: 64, lg: 112 } as const;
 
 /**
  * App logo — Nine Circles wordmark.
@@ -29,7 +29,7 @@ export function Wordmark({
         alt="Nine Circles"
         width={h}
         height={h}
-        className="rounded-xl object-contain shadow-soft"
+        className="object-contain"
         style={{ height: h, width: h }}
         priority
       />
