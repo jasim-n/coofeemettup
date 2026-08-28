@@ -248,6 +248,14 @@ function MeetupCoverCard({ t, viewerId }: { t: TableDto; viewerId?: string | nul
 
 /* ─── my meetups table row ──────────────────────────────────────── */
 
+function formatMeetupDateCompact(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString('en-PK', { weekday: 'short', day: 'numeric', month: 'short' }),
+    time: d.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }),
+  };
+}
+
 function MeetupTableRow({
   t,
   meId,
@@ -285,7 +293,7 @@ function MeetupTableRow({
       className="border-border/60 hover:bg-muted/60 cursor-pointer border-b last:border-0 transition-colors"
       aria-label={`Open ${t.title ?? t.category}`}
     >
-      <td className="py-3 pr-3 sm:pr-4">
+      <td className="py-3 pr-4">
         <div className="flex items-center gap-3">
           <div className="ring-border/40 h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1">
             <Cover src={t.imageUrl ?? undefined} category={t.category} className="h-full w-full object-cover" />
@@ -300,24 +308,56 @@ function MeetupTableRow({
           </div>
         </div>
       </td>
-      <td className="text-muted-foreground py-3 pr-3 text-xs whitespace-nowrap sm:pr-4">
+      <td className="text-muted-foreground py-3 pr-4 text-xs whitespace-nowrap">
         {formatDateTime(t.startAt)}
       </td>
-      <td className="text-muted-foreground hidden py-3 pr-4 text-xs whitespace-nowrap md:table-cell">
+      <td className="text-muted-foreground py-3 pr-4 text-xs whitespace-nowrap">
         {t.venueName ?? t.cafe?.name ?? '—'}
       </td>
-      <td className="text-muted-foreground hidden py-3 pr-4 text-xs whitespace-nowrap md:table-cell">
+      <td className="text-muted-foreground py-3 pr-4 text-xs whitespace-nowrap">
         {distLabel}
       </td>
-      <td className="hidden py-3 pr-4 md:table-cell">
+      <td className="py-3 pr-4">
         <Badge variant={hosting ? 'secondary' : approved ? 'success' : 'warning'}>
           {hosting ? 'Hosting' : approved ? 'Confirmed' : 'Pending'}
         </Badge>
       </td>
-      <td className="hidden py-3 text-right md:table-cell">
+      <td className="py-3 text-right">
         <i className="fa-solid fa-chevron-right text-muted-foreground text-xs" aria-hidden />
       </td>
     </tr>
+  );
+}
+
+function MeetupMobileRow({ t }: { t: TableDto }) {
+  const router = useRouter();
+  const { date, time } = formatMeetupDateCompact(t.startAt);
+
+  function openTable() {
+    router.push(`/tables/${t.id}`);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={openTable}
+      className="hover:bg-muted/60 flex w-full items-center gap-2 border-b border-border/60 px-1 py-3 text-left last:border-0 transition-colors"
+      aria-label={`Open ${t.title ?? t.category}`}
+    >
+      <div className="ring-border/40 h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1">
+        <Cover src={t.imageUrl ?? undefined} category={t.category} className="h-full w-full object-cover" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-heading truncate text-sm font-bold">{t.title ?? t.category}</p>
+        <p className="text-muted-foreground truncate text-xs">
+          {t.venueName ?? t.cafe?.name ?? 'See map'}
+        </p>
+      </div>
+      <div className="text-muted-foreground shrink-0 text-right text-[11px] leading-snug">
+        <p className="whitespace-nowrap">{date}</p>
+        <p className="whitespace-nowrap">{time}</p>
+      </div>
+    </button>
   );
 }
 
@@ -341,26 +381,26 @@ function MeetupTable({
   }
   return (
     <div className="bg-card shadow-soft rounded-3xl border p-4 sm:p-5">
-      <div className="md:overflow-x-auto">
+      {/* Mobile: compact two-zone rows (no table overflow) */}
+      <div className="md:hidden">
+        {rows.map((t) => (
+          <MeetupMobileRow key={t.id} t={t} />
+        ))}
+      </div>
+
+      {/* Desktop: full table */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full">
           <thead>
             <tr className="border-border/60 border-b">
-              <th className="text-muted-foreground pb-2 pr-3 text-left text-xs font-semibold sm:pr-4">
-                Meetup
-              </th>
-              <th className="text-muted-foreground pb-2 pr-3 text-left text-xs font-semibold sm:pr-4">
-                Date &amp; Time
-              </th>
-              <th className="text-muted-foreground hidden pb-2 pr-4 text-left text-xs font-semibold md:table-cell">
-                Location
-              </th>
-              <th className="text-muted-foreground hidden pb-2 pr-4 text-left text-xs font-semibold md:table-cell">
-                Distance
-              </th>
-              <th className="text-muted-foreground hidden pb-2 pr-4 text-left text-xs font-semibold md:table-cell">
-                Status
-              </th>
-              <th className="hidden pb-2 md:table-cell" aria-hidden />
+              {['Meetup', 'Date & Time', 'Location', 'Distance', 'Status', ''].map((h) => (
+                <th
+                  key={h || 'go'}
+                  className="text-muted-foreground pb-2 pr-4 text-left text-xs font-semibold last:pr-0"
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
