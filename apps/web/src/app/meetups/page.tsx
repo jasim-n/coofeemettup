@@ -1085,24 +1085,26 @@ export default function MeetupsPage() {
             )}
           </div>
 
-          {/* tabs — Past & Saved are desktop-only (available elsewhere on mobile) */}
-          <div className="border-border/60 -mx-1 flex overflow-x-auto border-b px-1">
+          {/* tabs — Past & Saved desktop-only; equal-width tabs on mobile */}
+          <div className="border-border/60 flex border-b lg:overflow-x-auto">
             {TABS.map(({ id, label, badge }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setTab(id)}
-                className={`-mb-px flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
-                  id === 'past' || id === 'saved' ? 'hidden lg:flex' : ''
+                className={`-mb-px flex items-center justify-center gap-1 py-2.5 text-center text-sm font-semibold transition-colors ${
+                  id === 'past' || id === 'saved'
+                    ? 'hidden lg:inline-flex lg:shrink-0 lg:px-4'
+                    : 'min-w-0 flex-1 px-1 lg:flex-none lg:shrink-0 lg:px-4'
                 } ${
                   tab === id
                     ? 'text-primary border-primary border-b-2'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {label}
+                <span className="truncate">{label}</span>
                 {badge !== undefined && (
-                  <span className="bg-secondary text-secondary-foreground rounded-full px-1.5 py-0.5 text-[10px] font-bold">
+                  <span className="bg-secondary text-secondary-foreground shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold">
                     {badge}
                   </span>
                 )}
