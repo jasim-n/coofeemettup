@@ -1085,7 +1085,7 @@ export default function MeetupsPage() {
             )}
           </div>
 
-          {/* tabs */}
+          {/* tabs — Past & Saved are desktop-only (available elsewhere on mobile) */}
           <div className="border-border/60 -mx-1 flex overflow-x-auto border-b px-1">
             {TABS.map(({ id, label, badge }) => (
               <button
@@ -1093,6 +1093,8 @@ export default function MeetupsPage() {
                 type="button"
                 onClick={() => setTab(id)}
                 className={`-mb-px flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
+                  id === 'past' || id === 'saved' ? 'hidden lg:flex' : ''
+                } ${
                   tab === id
                     ? 'text-primary border-primary border-b-2'
                     : 'text-muted-foreground hover:text-foreground'
