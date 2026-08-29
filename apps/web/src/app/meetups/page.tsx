@@ -491,6 +491,8 @@ type MeetupsFiltersPanelProps = {
   radiusKm: number;
   setRadiusKm: Dispatch<SetStateAction<number>>;
   clearFilters: () => void;
+  /** Mobile drawer: close after Apply */
+  onApply?: () => void;
 };
 
 function MeetupsFiltersPanel({
@@ -508,6 +510,7 @@ function MeetupsFiltersPanel({
   radiusKm,
   setRadiusKm,
   clearFilters,
+  onApply,
 }: MeetupsFiltersPanelProps) {
   return (
     <>
@@ -667,9 +670,10 @@ function MeetupsFiltersPanel({
         </div>
       </div>
 
-      {/* Apply button (live filter → decorative) */}
+      {/* Apply — filters are live; on mobile this closes the drawer */}
       <button
         type="button"
+        onClick={() => onApply?.()}
         className="bg-primary text-primary-foreground hover:brightness-110 w-full rounded-full py-2.5 text-sm font-semibold transition-[filter]"
       >
         Apply Filters
@@ -922,10 +926,15 @@ export default function MeetupsPage() {
     [browseView, when, category, fromDate, toDate, coords, radiusKm],
   );
 
-  const upcomingCards = useMemo(
-    () => filteredBrowse.filter((t) => new Date(t.startAt).getTime() >= NOW).slice(0, 3),
-    [filteredBrowse],
-  );
+  // Cover grid respects When. For non-past presets, keep only future starts so
+  // "All Meetups" still reads as an upcoming discovery strip.
+  const upcomingCards = useMemo(() => {
+    const rows =
+      when === 'past'
+        ? filteredBrowse
+        : filteredBrowse.filter((t) => new Date(t.startAt).getTime() >= NOW);
+    return rows.slice(0, 3);
+  }, [filteredBrowse, when]);
 
   // "My Meetups" = tables I host + tables I've joined (approved/pending), deduped.
   // Stay visible until the table is closed (CANCELLED / COMPLETED) — not when
@@ -1119,7 +1128,7 @@ export default function MeetupsPage() {
               <section>
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="font-heading text-lg font-bold tracking-tight">
-                    Upcoming Meetups
+                    {when === 'past' ? 'Past Meetups' : 'Upcoming Meetups'}
                   </h2>
                   <Link href="/discover" className="text-primary text-sm font-semibold hover:underline">
                     View all →
@@ -1133,7 +1142,9 @@ export default function MeetupsPage() {
                   <div className="rounded-3xl border border-dashed py-12 text-center">
                     <i className="fa-solid fa-chair text-muted-foreground text-3xl" />
                     <p className="text-muted-foreground mt-2 text-sm">
-                      No upcoming meetups match your filters.
+                      {when === 'past'
+                        ? 'No past meetups match your filters.'
+                        : 'No upcoming meetups match your filters.'}
                     </p>
                   </div>
                 ) : (
@@ -1327,6 +1338,7 @@ export default function MeetupsPage() {
           radiusKm={radiusKm}
           setRadiusKm={setRadiusKm}
           clearFilters={clearFilters}
+          onApply={() => setFilterDrawerOpen(false)}
         />
       </SideDrawer>
 

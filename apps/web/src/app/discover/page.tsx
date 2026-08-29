@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
 import { ApiError, type TableDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
@@ -10,9 +10,11 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { CategoryPills } from '@/components/category-pills';
+import { SideDrawer } from '@/components/side-drawer';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
 import { tableCta } from '@/lib/table-cta';
 
@@ -213,6 +215,219 @@ function TableCoverCard({
   );
 }
 
+/* ─── filters panel (desktop aside + mobile drawer) ──────────────── */
+
+type DiscoverFiltersPanelProps = {
+  q: string;
+  setQ: Dispatch<SetStateAction<string>>;
+  category: string;
+  setCategory: Dispatch<SetStateAction<string>>;
+  categories: string[];
+  when: WhenFilter;
+  setWhen: Dispatch<SetStateAction<WhenFilter>>;
+  customDate: string;
+  setCustomDate: Dispatch<SetStateAction<string>>;
+  distanceKm: number;
+  setDistanceKm: Dispatch<SetStateAction<number>>;
+  coords: { lat: number; lng: number } | null;
+  priceTier: PriceTier;
+  setPriceTier: Dispatch<SetStateAction<PriceTier>>;
+  clearFilters: () => void;
+  onApply?: () => void;
+};
+
+function DiscoverFiltersPanel({
+  q,
+  setQ,
+  category,
+  setCategory,
+  categories,
+  when,
+  setWhen,
+  customDate,
+  setCustomDate,
+  distanceKm,
+  setDistanceKm,
+  coords,
+  priceTier,
+  setPriceTier,
+  clearFilters,
+  onApply,
+}: DiscoverFiltersPanelProps) {
+  const PRICE_TIERS: { id: PriceTier; label: string }[] = [
+    { id: 'any', label: 'Any Price' },
+    { id: 'free', label: 'Free' },
+    { id: 'under200', label: 'Under PKR 200' },
+    { id: '200to500', label: 'PKR 200–500' },
+    { id: 'above500', label: 'Above PKR 500' },
+  ];
+
+  const WHEN_OPTS: { id: WhenFilter; label: string }[] = [
+    { id: 'anytime', label: 'Anytime' },
+    { id: 'today', label: 'Today' },
+    { id: 'week', label: 'This Week' },
+    { id: 'weekend', label: 'This Weekend' },
+    { id: 'custom', label: 'Custom Range' },
+  ];
+
+  return (
+    <>
+      <div className="mb-4 flex justify-end lg:hidden">
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="text-primary text-xs font-semibold hover:underline"
+        >
+          Clear all
+        </button>
+      </div>
+
+      <div className="mb-5">
+        <Input
+          placeholder="🔍 Tables, topics, venues…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+      </div>
+
+      <div className="mb-5">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
+          Vibes / Topics
+        </p>
+        <ul className="space-y-0.5">
+          <li>
+            <button
+              type="button"
+              onClick={() => setCategory('')}
+              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                category === ''
+                  ? 'bg-secondary text-primary'
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              <i className="fa-solid fa-grip w-4 text-center" />
+              All Vibes
+            </button>
+          </li>
+          {categories.map((c) => (
+            <li key={c}>
+              <button
+                type="button"
+                onClick={() => setCategory(category === c ? '' : c)}
+                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                  category === c
+                    ? 'bg-secondary text-primary'
+                    : 'hover:bg-muted text-foreground'
+                }`}
+              >
+                <i className={`fa-solid ${categoryIcon(c)} w-4 text-center`} />
+                {c}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mb-5">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
+          When
+        </p>
+        <ul className="space-y-0.5">
+          {WHEN_OPTS.map((opt) => (
+            <li key={opt.id}>
+              <button
+                type="button"
+                onClick={() => setWhen(opt.id)}
+                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
+                  when === opt.id
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'hover:bg-muted text-foreground'
+                }`}
+              >
+                <span
+                  className={`inline-block size-3.5 shrink-0 rounded-full border-2 ${
+                    when === opt.id
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground/40'
+                  }`}
+                />
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+        {when === 'custom' && (
+          <input
+            type="date"
+            value={customDate}
+            onChange={(e) => setCustomDate(e.target.value)}
+            className="border-border focus:ring-primary mt-2 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
+          />
+        )}
+      </div>
+
+      <div className="mb-5">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">
+            Distance
+          </p>
+          <span className="text-xs font-semibold">
+            {distanceKm >= 50 ? '50+ km' : `${distanceKm} km`}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={50}
+          value={distanceKm}
+          onChange={(e) => setDistanceKm(Number(e.target.value))}
+          className="accent-primary w-full"
+        />
+        <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
+          <span>0 km</span>
+          <span>50+ km</span>
+        </div>
+        {!coords && (
+          <p className="text-muted-foreground mt-1.5 text-[10px]">
+            Enable location to filter by distance
+          </p>
+        )}
+      </div>
+
+      <div className="mb-5">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
+          Price Range
+        </p>
+        <ul className="space-y-0.5">
+          {PRICE_TIERS.map(({ id, label }) => (
+            <li key={id}>
+              <button
+                type="button"
+                onClick={() => setPriceTier(id)}
+                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
+                  priceTier === id
+                    ? 'bg-primary text-primary-foreground font-semibold'
+                    : 'hover:bg-muted text-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onApply?.()}
+        className="bg-primary text-primary-foreground hover:brightness-110 w-full rounded-full py-2.5 text-sm font-semibold transition-[filter] lg:hidden"
+      >
+        Apply Filters
+      </button>
+    </>
+  );
+}
+
 /* ─── page ───────────────────────────────────────────────────────── */
 
 export default function DiscoverPage() {
@@ -240,7 +455,7 @@ export default function DiscoverPage() {
   const [customDate, setCustomDate] = useState('');
   const [distanceKm, setDistanceKm] = useState(50); // 50 = "50+" = no limit (show all)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -339,44 +554,31 @@ export default function DiscoverPage() {
 
   const openCount = tables?.length ?? 0;
 
-  /* ── price tier labels ─────────────────────────────────────────── */
-  const PRICE_TIERS: { id: PriceTier; label: string }[] = [
-    { id: 'any', label: 'Any Price' },
-    { id: 'free', label: 'Free' },
-    { id: 'under200', label: 'Under PKR 200' },
-    { id: '200to500', label: 'PKR 200–500' },
-    { id: 'above500', label: 'Above PKR 500' },
-  ];
-
-  /* ── when labels ───────────────────────────────────────────────── */
-  const WHEN_OPTS: { id: WhenFilter; label: string }[] = [
-    { id: 'anytime', label: 'Anytime' },
-    { id: 'today', label: 'Today' },
-    { id: 'week', label: 'This Week' },
-    { id: 'weekend', label: 'This Weekend' },
-    { id: 'custom', label: 'Custom Range' },
-  ];
+  const filterProps = {
+    q,
+    setQ,
+    category,
+    setCategory,
+    categories,
+    when,
+    setWhen,
+    customDate,
+    setCustomDate,
+    distanceKm,
+    setDistanceKm,
+    coords,
+    priceTier,
+    setPriceTier,
+    clearFilters: resetFilters,
+  };
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-6 sm:px-6">
       <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
-        {/* ── LEFT RAIL ─────────────────────────────────────────────── */}
-        <aside className="bg-card shadow-soft order-2 rounded-3xl border p-5 lg:order-1 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          {/* heading + clear */}
-          <div className="mb-5 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              className="font-heading flex items-center gap-2 font-bold tracking-tight lg:pointer-events-none"
-              onClick={() => setFiltersOpen((o) => !o)}
-              aria-expanded={filtersOpen}
-            >
-              Filters
-              <i
-                className={`fa-solid fa-chevron-down text-muted-foreground text-xs transition-transform lg:hidden ${
-                  filtersOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
+        {/* ── LEFT RAIL (desktop) ───────────────────────────────────── */}
+        <aside className="bg-card shadow-soft hidden rounded-3xl border p-5 lg:sticky lg:top-24 lg:block lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <p className="font-heading font-bold tracking-tight">Filters</p>
             <button
               type="button"
               onClick={resetFilters}
@@ -385,153 +587,25 @@ export default function DiscoverPage() {
               Clear all
             </button>
           </div>
-
-          <div className={`${filtersOpen ? 'block' : 'hidden'} lg:block`}>
-
-          {/* search */}
-          <div className="mb-5">
-            <Input
-              placeholder="🔍 Tables, topics, venues…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-          </div>
-
-          {/* VIBES / TOPICS */}
-          <div className="mb-5">
-            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
-              Vibes / Topics
-            </p>
-            <ul className="space-y-0.5">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => setCategory('')}
-                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-                    category === ''
-                      ? 'bg-secondary text-primary'
-                      : 'hover:bg-muted text-foreground'
-                  }`}
-                >
-                  <i className="fa-solid fa-grip w-4 text-center" />
-                  All Vibes
-                </button>
-              </li>
-              {categories.map((c) => (
-                <li key={c}>
-                  <button
-                    type="button"
-                    onClick={() => setCategory(category === c ? '' : c)}
-                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-                      category === c
-                        ? 'bg-secondary text-primary'
-                        : 'hover:bg-muted text-foreground'
-                    }`}
-                  >
-                    <i className={`fa-solid ${categoryIcon(c)} w-4 text-center`} />
-                    {c}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* WHEN */}
-          <div className="mb-5">
-            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
-              When
-            </p>
-            <ul className="space-y-0.5">
-              {WHEN_OPTS.map((opt) => (
-                <li key={opt.id}>
-                  <button
-                    type="button"
-                    onClick={() => setWhen(opt.id)}
-                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
-                      when === opt.id
-                        ? 'bg-primary/10 text-primary font-semibold'
-                        : 'hover:bg-muted text-foreground'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block size-3.5 rounded-full border-2 shrink-0 ${
-                        when === opt.id
-                          ? 'border-primary bg-primary'
-                          : 'border-muted-foreground/40'
-                      }`}
-                    />
-                    {opt.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {when === 'custom' && (
-              <input
-                type="date"
-                value={customDate}
-                onChange={(e) => setCustomDate(e.target.value)}
-                className="border-border focus:ring-primary mt-2 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              />
-            )}
-          </div>
-
-          {/* DISTANCE */}
-          <div className="mb-5">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">
-                Distance
-              </p>
-              <span className="text-xs font-semibold">
-                {distanceKm >= 50 ? '50+ km' : `${distanceKm} km`}
-              </span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={50}
-              value={distanceKm}
-              onChange={(e) => setDistanceKm(Number(e.target.value))}
-              className="accent-primary w-full"
-            />
-            <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
-              <span>0 km</span>
-              <span>50+ km</span>
-            </div>
-            {!coords && (
-              <p className="text-muted-foreground mt-1.5 text-[10px]">
-                Enable location to filter by distance
-              </p>
-            )}
-          </div>
-
-          {/* PRICE RANGE */}
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-widest">
-              Price Range
-            </p>
-            <ul className="space-y-0.5">
-              {PRICE_TIERS.map(({ id, label }) => (
-                <li key={id}>
-                  <button
-                    type="button"
-                    onClick={() => setPriceTier(id)}
-                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
-                      priceTier === id
-                        ? 'bg-primary text-primary-foreground font-semibold'
-                        : 'hover:bg-muted text-foreground'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-          </div>
+          <DiscoverFiltersPanel {...filterProps} />
         </aside>
 
         {/* ── MAIN ──────────────────────────────────────────────────── */}
-        <div className="order-1 min-w-0 space-y-8 lg:order-2">
+        <div className="min-w-0 space-y-8">
+          {/* mobile toolbar */}
+          <div className="flex gap-2 lg:hidden">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setFilterDrawerOpen(true)}
+              className="flex-1"
+            >
+              <i className="fa-solid fa-sliders mr-2" />
+              Filters
+            </Button>
+          </div>
+
           {/* HERO */}
           <section className="bg-ink relative overflow-hidden rounded-3xl p-5 text-white shadow-glow sm:p-8">
             {/* café-conversation photo from the design, full-bleed on the right */}
@@ -564,43 +638,53 @@ export default function DiscoverPage() {
             </div>
           </section>
 
-          {/* TOP CATEGORIES */}
+          {/* TOP CATEGORIES — compact horizontal scroll on mobile */}
           {catCounts.length > 0 && (
             <section>
-              <div className="mb-4">
-                <h2 className="font-heading text-xl font-bold tracking-tight">Top categories</h2>
+              <div className="mb-3 lg:mb-4">
+                <h2 className="font-heading text-lg font-bold tracking-tight lg:text-xl">
+                  Top categories
+                </h2>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {catCounts.map(([cat, count]) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setCategory(category === cat ? '' : cat)}
-                    className={`flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-soft ${
-                      category === cat
-                        ? 'bg-primary text-primary-foreground border-transparent shadow-glow'
-                        : 'bg-card border-border/60'
-                    }`}
-                  >
-                    <span
-                      className={`grid size-8 shrink-0 place-items-center rounded-xl text-sm ${
-                        category === cat ? 'bg-white/20' : 'bg-primary/10'
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:mx-0 lg:flex-wrap lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0">
+                {catCounts.map(([cat, count]) => {
+                  const active = category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCategory(active ? '' : cat)}
+                      className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors lg:gap-2.5 lg:rounded-2xl lg:px-4 lg:py-3 lg:text-sm lg:transition-all lg:hover:-translate-y-0.5 lg:hover:shadow-soft ${
+                        active
+                          ? 'bg-primary text-primary-foreground border-transparent lg:shadow-glow'
+                          : 'bg-card border-border/60'
                       }`}
                     >
-                      <i className={`fa-solid ${categoryIcon(cat)} ${category === cat ? 'text-white' : 'text-primary'}`} />
-                    </span>
-                    <span className="flex flex-col items-start leading-tight">
-                      <span>{cat}</span>
                       <span
-                        className={`text-[10px] font-normal ${
-                          category === cat ? 'text-white/70' : 'text-muted-foreground'
+                        className={`grid size-6 shrink-0 place-items-center rounded-full text-[11px] lg:size-8 lg:rounded-xl lg:text-sm ${
+                          active ? 'bg-white/20' : 'bg-primary/10'
                         }`}
                       >
-                        {count} {count === 1 ? 'table' : 'tables'}
+                        <i
+                          className={`fa-solid ${categoryIcon(cat)} ${active ? 'text-white' : 'text-primary'}`}
+                        />
                       </span>
-                    </span>
-                  </button>
-                ))}
+                      <span className="flex items-center gap-1.5 lg:flex-col lg:items-start lg:gap-0 lg:leading-tight">
+                        <span>{cat}</span>
+                        <span
+                          className={`font-normal tabular-nums lg:text-[10px] ${
+                            active ? 'text-white/70' : 'text-muted-foreground'
+                          }`}
+                        >
+                          <span className="lg:hidden">· {count}</span>
+                          <span className="hidden lg:inline">
+                            {count} {count === 1 ? 'table' : 'tables'}
+                          </span>
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </section>
           )}
@@ -667,7 +751,7 @@ export default function DiscoverPage() {
         </div>
 
         {/* ── RIGHT RAIL ────────────────────────────────────────────── */}
-        <aside className="order-3 space-y-4 max-lg:hidden lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+        <aside className="space-y-4 max-lg:hidden lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
           {/* TRENDING NOW */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
             <div className="mb-3">
@@ -790,6 +874,18 @@ export default function DiscoverPage() {
           </div>
         </aside>
       </div>
+
+      <SideDrawer
+        open={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        side="left"
+        title="Filters"
+      >
+        <DiscoverFiltersPanel
+          {...filterProps}
+          onApply={() => setFilterDrawerOpen(false)}
+        />
+      </SideDrawer>
     </main>
   );
 }
