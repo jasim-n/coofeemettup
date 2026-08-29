@@ -5,17 +5,20 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import { useRequestsBadge } from '@/components/requests-badge';
 
-/** Five tabs — six crowded labels on narrow phones. Nearby stays under Explore. */
+/** Bottom tabs — includes Nearby (same destinations as desktop). */
 const TABS = [
   { href: '/', label: 'Home', icon: 'fa-house', match: (p: string) => p === '/' },
   {
     href: '/discover',
     label: 'Explore',
     icon: 'fa-magnifying-glass',
-    match: (p: string) =>
-      p.startsWith('/discover') ||
-      p.startsWith('/search') ||
-      p.startsWith('/tables/nearby'),
+    match: (p: string) => p.startsWith('/discover') || p.startsWith('/search'),
+  },
+  {
+    href: '/tables/nearby',
+    label: 'Nearby',
+    icon: 'fa-location-dot',
+    match: (p: string) => p.startsWith('/tables/nearby'),
   },
   {
     href: '/meetups',
@@ -28,12 +31,6 @@ const TABS = [
     label: 'Chats',
     icon: 'fa-comment',
     match: (p: string) => p.startsWith('/messages'),
-  },
-  {
-    href: '/profile',
-    label: 'You',
-    icon: 'fa-user',
-    match: (p: string) => p.startsWith('/profile') || p.startsWith('/notifications'),
   },
 ] as const;
 
