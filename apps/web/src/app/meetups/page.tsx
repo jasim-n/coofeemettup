@@ -22,6 +22,8 @@ import { Button } from '@/components/ui/button';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { CategoryPills } from '@/components/category-pills';
 import { SideDrawer } from '@/components/side-drawer';
+import { EmptyMascot } from '@/components/empty-mascot';
+import { StaggerIn } from '@/components/stagger-in';
 import { haversineKm, formatDistance } from '@/lib/geo';
 
 /* ─── helpers ───────────────────────────────────────────────────── */
@@ -1139,20 +1141,29 @@ export default function MeetupsPage() {
                     {Array.from({ length: 3 }, (_, i) => <SkeletonCard key={i} />)}
                   </div>
                 ) : upcomingCards.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed py-12 text-center">
-                    <i className="fa-solid fa-chair text-muted-foreground text-3xl" />
-                    <p className="text-muted-foreground mt-2 text-sm">
-                      {when === 'past'
-                        ? 'No past meetups match your filters.'
-                        : 'No upcoming meetups match your filters.'}
-                    </p>
-                  </div>
+                  <EmptyMascot
+                    className="py-12"
+                    quip={
+                      when === 'past'
+                        ? 'No past circles in this filter.'
+                        : 'Nobody’s at the table yet…'
+                    }
+                    title={
+                      when === 'past'
+                        ? 'No past meetups match your filters'
+                        : 'No upcoming meetups match your filters'
+                    }
+                    description="Try another When filter or clear filters."
+                  />
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <StaggerIn
+                    className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                    deps={[upcomingCards.map((t) => t.id).join(',')]}
+                  >
                     {upcomingCards.map((t) => (
                       <MeetupCoverCard key={t.id} t={t} viewerId={user?.id} />
                     ))}
-                  </div>
+                  </StaggerIn>
                 )}
               </section>
 
@@ -1217,13 +1228,12 @@ export default function MeetupsPage() {
                 </Link>
               </div>
               {invitesView.length === 0 ? (
-                <div className="rounded-3xl border border-dashed py-16 text-center">
-                  <i className="fa-regular fa-envelope-open text-muted-foreground mb-3 text-4xl" />
-                  <p className="font-heading mt-2 font-bold">No invitations yet</p>
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    Invites to join tables will show here.
-                  </p>
-                </div>
+                <EmptyMascot
+                  className="py-16"
+                  quip="Inbox’s quiet. That’s okay."
+                  title="No invitations yet"
+                  description="Invites to join tables will show here."
+                />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {invitesView.map((inv) => (
@@ -1294,13 +1304,12 @@ export default function MeetupsPage() {
 
           {/* ── SAVED TAB ────────────────────────────────────────── */}
           {tab === 'saved' && (
-            <div className="rounded-3xl border border-dashed py-16 text-center">
-              <i className="fa-solid fa-bookmark text-muted-foreground text-4xl" />
-              <p className="font-heading mt-3 font-bold">No saved tables yet</p>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Tap the heart on any meetup to save it here.
-              </p>
-            </div>
+            <EmptyMascot
+              className="py-16"
+              quip="Bookmark a table you like."
+              title="No saved tables yet"
+              description="Tap the heart on any meetup to save it here."
+            />
           )}
         </div>
 

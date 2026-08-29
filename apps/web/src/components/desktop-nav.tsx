@@ -8,6 +8,7 @@ import { useRequestsBadge } from '@/components/requests-badge';
 import { Wordmark } from '@/components/wordmark';
 import { api } from '@/lib/api';
 import { Avatar } from '@/components/avatar';
+import { UnreadBadge } from '@/components/unread-badge';
 
 const NAV = [
   { href: '/', label: 'Home', icon: 'fa-house' },
@@ -141,11 +142,7 @@ export function DesktopNav() {
           aria-label="Notifications"
         >
           <i className="fa-regular fa-bell text-lg" />
-          {unread > 0 && (
-            <span className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold">
-              {unread}
-            </span>
-          )}
+          <UnreadBadge count={unread} />
         </Link>
 
         {/* avatar dropdown */}

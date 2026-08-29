@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { ensureGsapDefaults, prefersReducedMotion } from '@/lib/motion';
 
 type SideDrawerProps = {
   open: boolean;
@@ -21,8 +24,18 @@ export function SideDrawer({
   title,
   children,
 }: SideDrawerProps) {
+  const [mounted, setMounted] = useState(open);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const fromLeft = side === 'left';
+
   useEffect(() => {
-    if (!open) return;
+    if (open) setMounted(true);
+  }, [open]);
+
+  useEffect(() => {
+    if (!mounted || !open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -33,22 +46,61 @@ export function SideDrawer({
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [mounted, open, onClose]);
 
-  if (!open) return null;
+  useGSAP(
+    () => {
+      if (!mounted) return;
+      const backdrop = backdropRef.current;
+      const panel = panelRef.current;
+      if (!backdrop || !panel) return;
 
-  const fromLeft = side === 'left';
+      if (prefersReducedMotion()) {
+        if (!open) setMounted(false);
+        return;
+      }
+
+      ensureGsapDefaults();
+      const xFrom = fromLeft ? '-100%' : '100%';
+
+      if (open) {
+        gsap.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.25 });
+        gsap.fromTo(
+          panel,
+          { x: xFrom },
+          { x: '0%', duration: 0.35, ease: 'power2.out' },
+        );
+      } else {
+        const tl = gsap.timeline({
+          onComplete: () => setMounted(false),
+        });
+        tl.to(panel, { x: xFrom, duration: 0.28, ease: 'power2.in' }, 0);
+        tl.to(backdrop, { opacity: 0, duration: 0.22 }, 0);
+      }
+    },
+    { dependencies: [open, mounted, fromLeft] },
+  );
+
+  if (!mounted) return null;
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal aria-label={title}>
+    <div
+      ref={rootRef}
+      className="fixed inset-0 z-50 lg:hidden"
+      role="dialog"
+      aria-modal
+      aria-label={title}
+    >
       <button
+        ref={backdropRef}
         type="button"
         className="absolute inset-0 bg-ink/45 backdrop-blur-[2px]"
         aria-label="Close"
         onClick={onClose}
       />
       <div
-        className={`bg-card absolute inset-y-0 flex w-[min(100%,20rem)] flex-col shadow-glow ${
+        ref={panelRef}
+        className={`bg-card absolute inset-y-0 flex w-[min(100%,20rem)] flex-col shadow-glow will-change-transform ${
           fromLeft ? 'left-0 border-r' : 'right-0 border-l'
         }`}
       >

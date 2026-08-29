@@ -4,6 +4,16 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-29 — GSAP motion (brand-light)
+
+- Added `gsap` + `@gsap/react` with shared helpers in `lib/motion.ts`
+  (reduced-motion aware).
+- Empty states use the penguin mascot (`EmptyMascot`) on Discover,
+  Meetups, Invites, and Messages.
+- Discover / Meetups cover grids stagger in once via `StaggerIn`.
+- Mobile `SideDrawer` slides open/closed with GSAP.
+- Notification unread badge soft-pulses; invite Accept gets a success ring.
+
 ### 2026-08-28 — Mobile top bar + Meetups drawers (A1)
 
 - Sticky **MobileTopBar** on small screens (logo, search, notifications,

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import { Wordmark } from '@/components/wordmark';
 import { Avatar } from '@/components/avatar';
+import { UnreadBadge } from '@/components/unread-badge';
 import { api } from '@/lib/api';
 
 /**
@@ -87,11 +88,7 @@ export function MobileTopBar() {
           aria-label="Notifications"
         >
           <i className="fa-regular fa-bell text-lg" />
-          {unread > 0 && (
-            <span className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold">
-              {unread}
-            </span>
-          )}
+          <UnreadBadge count={unread} />
         </Link>
 
         <div className="relative shrink-0" ref={menuRef}>

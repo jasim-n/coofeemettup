@@ -18,6 +18,7 @@ import { PageLoader } from '@/components/spinner';
 import { formatDateTime } from '@/lib/format';
 import { isAdminRole } from '@/lib/roles';
 import { useFadeScrollbar } from '@/hooks/use-fade-scrollbar';
+import { EmptyMascot } from '@/components/empty-mascot';
 
 const POLL_MS = 10_000;
 
@@ -403,16 +404,21 @@ export default function MessagesPage() {
                 {search ? (
                   <p>No matches for &ldquo;{search}&rdquo;</p>
                 ) : (
-                  <div className="px-6">
-                    <i className="fa-regular fa-comment-dots mb-3 block text-2xl" />
-                    <p className="mb-2 font-medium">No conversations yet</p>
-                    <p className="mb-4 text-xs">Join a table or connect with people</p>
-                    <Link
-                      href="/discover"
-                      className="bg-primary text-primary-foreground rounded-full px-4 py-2 text-xs font-semibold"
-                    >
-                      Browse tables
-                    </Link>
+                  <div className="px-4">
+                    <EmptyMascot
+                      className="border-0 py-8"
+                      quip="Say hi — circles start with a hello."
+                      title="No conversations yet"
+                      description="Join a table or connect with people."
+                      action={
+                        <Link
+                          href="/discover"
+                          className="bg-primary text-primary-foreground rounded-full px-4 py-2 text-xs font-semibold"
+                        >
+                          Browse tables
+                        </Link>
+                      }
+                    />
                   </div>
                 )}
               </div>

@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { CategoryPills } from '@/components/category-pills';
 import { SideDrawer } from '@/components/side-drawer';
+import { EmptyMascot } from '@/components/empty-mascot';
+import { StaggerIn } from '@/components/stagger-in';
 import { haversineKm, formatDistance, googleMapsUrl } from '@/lib/geo';
 import { tableCta } from '@/lib/table-cta';
 
@@ -704,17 +706,20 @@ export default function DiscoverPage() {
             </section>
           )}
           {tables && results.length === 0 && (
-            <div className="rounded-3xl border border-dashed py-16 text-center">
-              <p className="text-3xl">🔎</p>
-              <p className="text-muted-foreground mt-2 text-sm">No tables match your filters.</p>
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="text-primary mt-3 text-sm font-semibold hover:underline"
-              >
-                Clear filters
-              </button>
-            </div>
+            <EmptyMascot
+              quip="Hmm… no tables in that filter."
+              title="No tables match your filters"
+              description="Try clearing filters or pick another vibe."
+              action={
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="text-primary text-sm font-semibold hover:underline"
+                >
+                  Clear filters
+                </button>
+              }
+            />
           )}
 
           {/* RECOMMENDED FOR YOU */}
@@ -725,11 +730,14 @@ export default function DiscoverPage() {
                   Recommended for you
                 </h2>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <StaggerIn
+                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                deps={[recommended.map((t) => t.id).join(',')]}
+              >
                 {recommended.map((t) => (
                   <TableCoverCard key={t.id} t={t} coords={coords} viewerId={user?.id} />
                 ))}
-              </div>
+              </StaggerIn>
             </section>
           )}
 
@@ -741,11 +749,14 @@ export default function DiscoverPage() {
                   More tables you might like
                 </h2>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <StaggerIn
+                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                deps={[more.map((t) => t.id).join(',')]}
+              >
                 {more.map((t) => (
                   <TableCoverCard key={t.id} t={t} coords={coords} viewerId={user?.id} />
                 ))}
-              </div>
+              </StaggerIn>
             </section>
           )}
         </div>

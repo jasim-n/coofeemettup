@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { ApiError, type InviteDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
@@ -19,6 +19,8 @@ import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
 import { Button } from '@/components/ui/button';
 import { CategoryPills } from '@/components/category-pills';
+import { EmptyMascot } from '@/components/empty-mascot';
+import { pulseSuccess } from '@/lib/motion';
 const personName = (u: { username?: string | null }) =>
   `@${u.username ?? 'member'}`;
 
@@ -39,6 +41,7 @@ function InviteCard({
 }) {
   const [busy, setBusy] = useState<'accept' | 'maybe' | 'decline' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const acceptRef = useRef<HTMLDivElement>(null);
 
   async function act(action: 'accept' | 'maybe' | 'decline') {
     setBusy(action);
@@ -48,6 +51,7 @@ function InviteCard({
       else if (action === 'maybe') await api.maybeInvite(invite.id);
       else await api.declineInvite(invite.id);
       invalidateTablesClientCache();
+      if (action === 'accept') pulseSuccess(acceptRef.current);
       const toastMsg =
         action === 'accept' ? 'Joined ✓' : action === 'maybe' ? 'Marked maybe' : 'Declined';
       onRemove(invite.id, toastMsg);
@@ -108,14 +112,16 @@ function InviteCard({
 
         {/* Actions */}
         <div className="flex gap-2 pt-1">
-          <Button
-            size="sm"
-            disabled={isBusy}
-            onClick={() => void act('accept')}
-            className="flex-1"
-          >
-            {busy === 'accept' ? '…' : 'Accept'}
-          </Button>
+          <div ref={acceptRef} className="relative min-w-0 flex-1">
+            <Button
+              size="sm"
+              disabled={isBusy}
+              onClick={() => void act('accept')}
+              className="w-full"
+            >
+              {busy === 'accept' ? '…' : 'Accept'}
+            </Button>
+          </div>
           <Button
             size="sm"
             variant="outline"
@@ -212,13 +218,12 @@ export default function InvitesPage() {
 
       {/* Empty state */}
       {fetched && invitesView.length === 0 && !error && (
-        <div className="rounded-3xl border border-dashed py-20 text-center">
-          <i className="fa-regular fa-envelope-open text-muted-foreground mb-3 text-4xl" />
-          <p className="font-heading mt-2 font-bold">No invitations right now.</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            When someone invites you to their table, it&apos;ll appear here.
-          </p>
-        </div>
+        <EmptyMascot
+          className="py-20"
+          quip="Inbox’s quiet. That’s okay."
+          title="No invitations right now"
+          description="When someone invites you to their table, it’ll appear here."
+        />
       )}
 
       {/* Invite cards grid */}
