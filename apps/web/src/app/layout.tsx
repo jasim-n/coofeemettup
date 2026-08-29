@@ -42,7 +42,7 @@ export default function RootLayout({
       lang="en"
       className={`${heading.variable} ${body.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-dvh flex-col bg-background">
         <AuthProvider>
           <AuthGate>
             <RequestsBadgeProvider>

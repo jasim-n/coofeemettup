@@ -52,7 +52,7 @@ export function MobileNav() {
 
   return (
     <nav
-      className="border-border/70 bg-card/95 safe-pb sticky bottom-0 z-40 w-full border-t backdrop-blur md:hidden"
+      className="border-border/70 bg-card/95 sticky bottom-0 z-40 w-full border-t backdrop-blur md:hidden"
       style={{ paddingBottom: 'max(0.35rem, env(safe-area-inset-bottom))' }}
       aria-label="Primary"
     >

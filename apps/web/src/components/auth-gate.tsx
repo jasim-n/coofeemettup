@@ -19,8 +19,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [isPublicPath, loading, router, user]);
 
-  if (isPublicPath) return <>{children}</>;
+  if (isPublicPath) return <div className="flex min-h-0 flex-1 flex-col">{children}</div>;
   if (loading || !user) return <PageLoader />;
 
-  return <>{children}</>;
+  return <div className="flex min-h-0 flex-1 flex-col">{children}</div>;
 }

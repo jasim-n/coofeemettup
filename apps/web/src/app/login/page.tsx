@@ -211,7 +211,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-gradient-hero">
+    <main className="relative flex min-h-0 flex-1 flex-col bg-gradient-hero">
       {/* decorative blobs */}
       <div
         aria-hidden
@@ -231,7 +231,7 @@ export default function LoginPage() {
       </div>
 
       {/* card — stays centered; mascot sits in left gutter on laptop */}
-      <div className="relative mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-24 md:pb-16">
+      <div className="relative mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-10 md:pb-16">
         <div className="mb-4 flex justify-center lg:pointer-events-none lg:absolute lg:top-1/2 lg:right-full lg:mb-0 lg:block lg:-translate-y-1/2 lg:pr-6 xl:pr-10">
           <LoginMascot />
         </div>

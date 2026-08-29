@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, loading, requestOtp, verifyOtp, login, requestPasswordReset, resetPassword, logout, refresh }}>
-      {children}
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </AuthContext.Provider>
   );
 }

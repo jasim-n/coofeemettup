@@ -46,7 +46,7 @@ export function RequestsBadgeProvider({ children }: { children: React.ReactNode 
 
   return (
     <RequestsBadgeContext.Provider value={{ count, refresh }}>
-      {children}
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </RequestsBadgeContext.Provider>
   );
 }
