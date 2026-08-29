@@ -280,6 +280,90 @@
   .animate-float-slow {
     animation: float-slow 6s ease-in-out infinite;
   }
+
+  /* Login penguin mascot — trial intro motion */
+  @keyframes login-mascot-enter {
+    0% {
+      opacity: 0;
+      transform: translateY(-48px) scale(0.55) rotate(-12deg);
+    }
+    55% {
+      opacity: 1;
+      transform: translateY(10px) scale(1.08) rotate(4deg);
+    }
+    75% {
+      transform: translateY(-4px) scale(0.96) rotate(-2deg);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1) rotate(0deg);
+    }
+  }
+  @keyframes login-mascot-bob {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    40% {
+      transform: translateY(-8px) rotate(-2deg);
+    }
+    70% {
+      transform: translateY(-3px) rotate(2deg);
+    }
+  }
+  @keyframes login-mascot-wiggle {
+    0%,
+    82%,
+    100% {
+      transform: rotate(0deg);
+    }
+    86% {
+      transform: rotate(-8deg);
+    }
+    90% {
+      transform: rotate(8deg);
+    }
+    94% {
+      transform: rotate(-4deg);
+    }
+    97% {
+      transform: rotate(3deg);
+    }
+  }
+  @keyframes login-mascot-glow {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: scale(0.92);
+    }
+    50% {
+      opacity: 0.55;
+      transform: scale(1.05);
+    }
+  }
+  .login-mascot-stage {
+    animation: login-mascot-enter 0.85s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  }
+  .login-mascot-bob {
+    animation: login-mascot-bob 3.2s ease-in-out 0.9s infinite;
+  }
+  .login-mascot-img {
+    animation: login-mascot-wiggle 7.5s ease-in-out 2s infinite;
+    transform-origin: 50% 85%;
+  }
+  .login-mascot-glow {
+    background: radial-gradient(circle, color-mix(in oklab, var(--primary) 55%, transparent) 0%, transparent 70%);
+    animation: login-mascot-glow 3.2s ease-in-out 0.9s infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .login-mascot-stage,
+    .login-mascot-bob,
+    .login-mascot-img,
+    .login-mascot-glow {
+      animation: none !important;
+    }
+  }
+
   /* Carousel autoplay progress bar (fills over the slide interval). */
   @keyframes carousel-progress {
     from {

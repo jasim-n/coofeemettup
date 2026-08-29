@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Wordmark } from '@/components/wordmark';
+import { LoginMascot } from '@/components/login-mascot';
 
 // Accepts: 03XXXXXXXXX, +923XXXXXXXXX, 923XXXXXXXXX (10 digits after the 3)
 const PK_PHONE_RE = /^(?:\+92|92|0)(3\d{9})$/;
@@ -221,16 +222,20 @@ export default function LoginPage() {
         className="pointer-events-none absolute bottom-0 -left-20 size-72 rounded-full bg-gradient-ember opacity-20 blur-3xl"
       />
 
-      {/* hero wordmark */}
+      {/* wordmark */}
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-6 pt-16 text-center">
         <Wordmark size="lg" variant="white" />
         <p className="text-white/80 text-sm font-medium">
-        Connecting People, One Circle at a Time
+          Connecting People, One Circle at a Time
         </p>
       </div>
 
-      {/* card */}
-      <div className="mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-24 md:pb-16">
+      {/* card — stays centered; mascot sits in left gutter on laptop */}
+      <div className="relative mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-24 md:pb-16">
+        <div className="mb-4 flex justify-center lg:pointer-events-none lg:absolute lg:top-1/2 lg:right-full lg:mb-0 lg:block lg:-translate-y-1/2 lg:pr-6 xl:pr-10">
+          <LoginMascot />
+        </div>
+
         <div className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6">
           <div className="space-y-1 text-center">
             <p className="eyebrow text-primary">
