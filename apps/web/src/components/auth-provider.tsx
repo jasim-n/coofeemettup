@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ApiError, type PublicUser } from '@jrst/api-client';
 import { api, TOKEN_KEY } from '@/lib/api';
+import { invalidateDataCache } from '@/lib/data-cache';
 
 interface AuthContextValue {
   user: PublicUser | null;
@@ -20,6 +21,12 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+function clearClientSession(): void {
+  window.localStorage.removeItem(TOKEN_KEY);
+  api.setAuthToken(null);
+  invalidateDataCache();
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -39,8 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 401 = no active session (including suspended/banned). Clear token so
       // a locked account cannot keep using a stale JWT from localStorage.
       if (err instanceof ApiError && (err.status === 401 || err.status === 0)) {
-        window.localStorage.removeItem(TOKEN_KEY);
-        api.setAuthToken(null);
+        clearClientSession();
         setUser(null);
       } else {
         throw err;
@@ -61,6 +67,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       active = false;
     };
   }, [refresh]);
+
+  // Browser back/forward cache can restore a logged-in page after logout with
+  // stale React state. Re-check the token whenever a persisted page is shown.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      const token = window.localStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        api.setAuthToken(null);
+        setUser(null);
+        invalidateDataCache();
+        if (!['/login', '/privacy', '/terms'].includes(window.location.pathname)) {
+          window.location.replace('/login');
+        }
+      }
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
 
   const requestOtp = useCallback(
     async (email: string, intent: 'signup' | 'login' = 'login') => {
@@ -106,15 +131,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     // Logging out locally must always succeed, even if the server call fails
     // (e.g. an expired session → CSRF 403). Clear client state regardless, then
-    // hard-redirect to /login so no in-memory/route state lingers.
+    // replace history so Back cannot restore a cached authenticated page.
     try {
       await api.logout();
     } catch {
       /* ignore — proceed to clear + redirect */
     }
-    window.localStorage.removeItem(TOKEN_KEY);
+    clearClientSession();
     setUser(null);
-    window.location.href = '/login';
+    window.location.replace('/login');
   }, []);
 
   return (

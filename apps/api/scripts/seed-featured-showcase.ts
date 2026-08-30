@@ -38,6 +38,7 @@ const prisma = new PrismaClient({
 });
 
 const SHOWCASE_DIR = path.resolve(process.cwd(), '../../apps/web/public/showcase');
+const MAP_PATH = path.resolve(process.cwd(), 'scripts/showcase-cloudinary-map.json');
 
 type SlideSeed = {
   key: string; // stable marker inside caption after [ig]
@@ -50,7 +51,14 @@ type SlideSeed = {
   layout: Prisma.InputJsonValue;
 };
 
+/** Prefer Cloudinary map (prod-safe); fall back to local /showcase only if map missing. */
 function publicUrl(file: string): string {
+  if (existsSync(MAP_PATH)) {
+    const map = JSON.parse(readFileSync(MAP_PATH, 'utf8')) as Record<string, string>;
+    const url = map[file];
+    if (!url) throw new Error(`Missing Cloudinary URL for ${file} — run migrate-showcase-to-cloudinary.ts`);
+    return url;
+  }
   return `/showcase/${file}`;
 }
 
@@ -120,6 +128,7 @@ const SLIDES: SlideSeed[] = [
 ];
 
 async function main() {
+  // When the Cloudinary map exists, local showcase files are optional.
   const neededFiles = [
     'minglers-memories.mp4',
     'minglers-memories.jpg',
@@ -132,10 +141,16 @@ async function main() {
     ...Array.from({ length: 9 }, (_, i) => `minglers-collage-${String(i + 1).padStart(2, '0')}.mp4`),
     'minglers-collage-01.jpg',
   ];
-  for (const f of neededFiles) {
-    if (!existsSync(path.join(SHOWCASE_DIR, f))) {
-      throw new Error(`Missing showcase asset: ${f}`);
+  const hasMap = existsSync(MAP_PATH);
+  if (!hasMap) {
+    for (const f of neededFiles) {
+      if (!existsSync(path.join(SHOWCASE_DIR, f))) {
+        throw new Error(`Missing showcase asset: ${f}`);
+      }
     }
+  } else {
+    // Ensure map covers every slide file
+    for (const f of neededFiles) publicUrl(f);
   }
 
   const tables = await prisma.table.findMany({
@@ -162,12 +177,13 @@ async function main() {
       (e) => e.url === slide.url || e.caption === slide.caption,
     );
     if (match) {
-      // Amend in place — never delete; ensure featured + layout stay current
+      // Amend in place — never delete; ensure featured + Cloudinary URLs stay current
       await prisma.tableImage.update({
         where: { id: match.id },
         data: {
           featured: true,
           kind: slide.kind,
+          url: slide.url,
           posterUrl: slide.posterUrl ?? null,
           durationMs: slide.durationMs ?? null,
           collageUrls: slide.collageUrls ?? [],

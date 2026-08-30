@@ -4,6 +4,15 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-08-30 — Logout back-button + featured Cloudinary
+
+- Logout now clears bearer token memory, localStorage, and client caches,
+  uses `location.replace('/login')`, and re-checks auth on BFCache
+  `pageshow` so Back after logout cannot restore a signed-in session.
+- Uploaded local `public/showcase` reels/posters to Cloudinary and rewrote
+  DB `/showcase/...` URLs to CDN links (prod was 404ing). Seed prefers
+  `scripts/showcase-cloudinary-map.json`.
+
 ### 2026-08-29 — GSAP motion (brand-light)
 
 - Added `gsap` + `@gsap/react` with shared helpers in `lib/motion.ts`
