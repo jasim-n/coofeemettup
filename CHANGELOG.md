@@ -4,6 +4,13 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-06 — Mobile nav parity (Discover / Nearby / Chats)
+
+- Bottom tabs match web: Home · Explore · Nearby · Meetups · Chats.
+- Explore filters by category, when, and city; Nearby maps tables by city + radius.
+- Chats unifies DMs + table groups; People (connections) and Invites from Chats/Home.
+- Removed retired Events/map/feedback mobile surfaces.
+
 ### 2026-09-05 — Mobile Tables-first revival
 
 - Expo app auth: email/password, signup OTP, password reset (replaces phone OTP).
