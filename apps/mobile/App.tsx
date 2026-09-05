@@ -18,11 +18,9 @@ import MapView, { Marker } from 'react-native-maps';
 import {
   ApiClient,
   ApiError,
-  type BookingDto,
   type ChatMessage,
   type CreateTableInput,
   type EventDto,
-  type GroupMember,
   type NotificationDto,
   type PublicUser,
   type SubmitFeedbackInput,
@@ -46,6 +44,9 @@ function formatWhen(iso: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+function handleOf(u?: { username?: string | null } | null): string {
+  return u?.username ? `@${u.username}` : '@member';
 }
 
 type Screen =
@@ -95,6 +96,7 @@ export default function App() {
   const onLogout = useCallback(async () => {
     await api.logout();
     await SecureStore.deleteItemAsync(TOKEN_KEY);
+    api.setAuthToken(null);
     setUser(null);
   }, []);
 
@@ -127,31 +129,33 @@ function AuthedApp({
   setUser: (u: PublicUser) => void;
   onLogout: () => void;
 }) {
-  const [screen, setScreen] = useState<Screen>({ name: 'events' });
+  const [screen, setScreen] = useState<Screen>({ name: 'tables' });
 
   if (screen.name === 'profile') {
     return (
       <ProfileScreen
         user={user}
         onSaved={setUser}
-        onBack={() => setScreen({ name: 'events' })}
+        onBack={() => setScreen({ name: 'tables' })}
       />
     );
   }
   if (screen.name === 'feedback') {
-    return <FeedbackScreen event={screen.event} onBack={() => setScreen({ name: 'events' })} />;
+    return <FeedbackScreen event={screen.event} onBack={() => setScreen({ name: 'tables' })} />;
   }
   if (screen.name === 'map') {
-    return <MapScreen onBack={() => setScreen({ name: 'events' })} />;
+    return <MapScreen onBack={() => setScreen({ name: 'tables' })} />;
   }
   if (screen.name === 'meetups') {
-    return <MeetupsScreen onBack={() => setScreen({ name: 'events' })} />;
+    return (
+      <MeetupsScreen
+        onBack={() => setScreen({ name: 'tables' })}
+        onOpenTable={(id) => setScreen({ name: 'table', id })}
+      />
+    );
   }
   if (screen.name === 'notifications') {
-    return <NotificationsScreen onBack={() => setScreen({ name: 'events' })} />;
-  }
-  if (screen.name === 'tables') {
-    return <TablesScreen user={user} nav={setScreen} />;
+    return <NotificationsScreen onBack={() => setScreen({ name: 'tables' })} />;
   }
   if (screen.name === 'table') {
     return <TableDetailScreen id={screen.id} user={user} nav={setScreen} />;
@@ -173,33 +177,87 @@ function AuthedApp({
       />
     );
   }
-  return (
-    <EventsScreen
-      user={user}
-      onLogout={onLogout}
-      onProfile={() => setScreen({ name: 'profile' })}
-      onFeedback={(event) => setScreen({ name: 'feedback', event })}
-      onMap={() => setScreen({ name: 'map' })}
-      onMeetups={() => setScreen({ name: 'meetups' })}
-      onNotifications={() => setScreen({ name: 'notifications' })}
-      onTables={() => setScreen({ name: 'tables' })}
-    />
-  );
+  if (screen.name === 'events') {
+    return (
+      <EventsScreen
+        user={user}
+        onLogout={onLogout}
+        onProfile={() => setScreen({ name: 'profile' })}
+        onFeedback={(event) => setScreen({ name: 'feedback', event })}
+        onMap={() => setScreen({ name: 'map' })}
+        onMeetups={() => setScreen({ name: 'meetups' })}
+        onNotifications={() => setScreen({ name: 'notifications' })}
+        onTables={() => setScreen({ name: 'tables' })}
+      />
+    );
+  }
+  return <TablesScreen user={user} nav={setScreen} onLogout={onLogout} />;
 }
 
 function LoginScreen({ onAuthed }: { onAuthed: (u: PublicUser) => void }) {
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
-  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState<'password' | 'signup' | 'reset'>('password');
+  const [codePhase, setCodePhase] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  const [phone, setPhone] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [isNewUser, setIsNewUser] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [devHint, setDevHint] = useState<string | null>(null);
 
-  async function requestOtp() {
+  function resetCodeState() {
+    setCode('');
+    setDevHint(null);
+    setCodePhase(false);
+  }
+
+  async function doLogin() {
     setError(null);
     setBusy(true);
     try {
-      await api.requestOtp(phone);
-      setStep('code');
+      const res = await api.login(email.trim().toLowerCase(), password || undefined);
+      onAuthed(res.user);
+    } catch (err) {
+      if (
+        err instanceof ApiError &&
+        err.status === 400 &&
+        err.message === 'Password setup required. Use email verification.'
+      ) {
+        try {
+          const result = await api.requestOtp(email.trim().toLowerCase(), 'login');
+          setIsNewUser(result.isNewUser);
+          if (result.devCode) {
+            setDevHint(result.devCode);
+            setCode(result.devCode);
+          }
+          setStep('signup');
+          setCodePhase(true);
+        } catch (otpErr) {
+          setError(otpErr instanceof ApiError ? otpErr.message : 'Something went wrong');
+        }
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Something went wrong');
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startSignup() {
+    setError(null);
+    setBusy(true);
+    try {
+      const result = await api.requestOtp(email.trim().toLowerCase(), 'signup');
+      setIsNewUser(result.isNewUser);
+      if (result.devCode) {
+        setDevHint(result.devCode);
+        setCode(result.devCode);
+      }
+      setCodePhase(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
     } finally {
@@ -207,11 +265,49 @@ function LoginScreen({ onAuthed }: { onAuthed: (u: PublicUser) => void }) {
     }
   }
 
-  async function verify() {
+  async function verifySignup() {
     setError(null);
     setBusy(true);
     try {
-      const res = await api.verifyOtp(phone, code);
+      const res = await api.verifyOtp(email.trim().toLowerCase(), code, {
+        phone: isNewUser ? phone.trim() || undefined : undefined,
+        firstName: isNewUser ? firstName.trim() || undefined : undefined,
+        lastName: isNewUser ? lastName.trim() || undefined : undefined,
+        username: isNewUser
+          ? username.trim().replace(/^@/, '').toLowerCase() || undefined
+          : undefined,
+        password: password || undefined,
+      });
+      onAuthed(res.user);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startReset() {
+    setError(null);
+    setBusy(true);
+    try {
+      const result = await api.requestPasswordReset(email.trim().toLowerCase());
+      if (result.devCode) {
+        setDevHint(result.devCode);
+        setCode(result.devCode);
+      }
+      setCodePhase(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doReset() {
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await api.resetPassword(email.trim().toLowerCase(), code, password);
       onAuthed(res.user);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -221,26 +317,106 @@ function LoginScreen({ onAuthed }: { onAuthed: (u: PublicUser) => void }) {
   }
 
   return (
-    <View style={styles.screen}>
+    <ScrollView contentContainerStyle={[styles.scroll, { justifyContent: 'center', flexGrow: 1 }]}>
       <Text style={[styles.title, { color: CORAL, textAlign: 'center', fontSize: 30 }]}>
-        ☕ Coffee Meetups
+        Nine Circles
       </Text>
-      <Text style={styles.subtitle}>
-        {step === 'phone' ? 'Enter your mobile number' : `Enter the code sent to ${phone}`}
+      <Text style={[styles.subtitle, { textAlign: 'center' }]}>
+        {step === 'password' && !codePhase
+          ? 'Sign in with email and password'
+          : step === 'signup' && !codePhase
+            ? 'Create an account'
+            : step === 'signup' && codePhase
+              ? `Enter the code sent to ${email}`
+              : step === 'reset' && !codePhase
+                ? 'Reset your password'
+                : `Enter the reset code sent to ${email}`}
       </Text>
-      {step === 'phone' ? (
+      <Text style={[styles.receiptRef, { textAlign: 'center' }]}>API: {API_URL}</Text>
+
+      {step === 'password' && (
         <>
           <TextInput
             style={styles.input}
-            placeholder="03XX XXXXXXX"
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={email}
+            onChangeText={setEmail}
             autoFocus
           />
-          <PrimaryButton label={busy ? 'Sending…' : 'Send code'} onPress={() => void requestOtp()} disabled={busy} />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          <PrimaryButton
+            label={busy ? 'Signing in…' : 'Sign in'}
+            onPress={() => void doLogin()}
+            disabled={busy}
+          />
+          <Pressable
+            onPress={() => {
+              setStep('signup');
+              resetCodeState();
+              setPassword('');
+              setError(null);
+            }}
+            hitSlop={8}
+            style={{ alignItems: 'center', marginTop: 8 }}
+          >
+            <Text style={styles.link}>Create an account</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setStep('reset');
+              resetCodeState();
+              setPassword('');
+              setError(null);
+            }}
+            hitSlop={8}
+            style={{ alignItems: 'center' }}
+          >
+            <Text style={styles.link}>Forgot password?</Text>
+          </Pressable>
         </>
-      ) : (
+      )}
+
+      {step === 'signup' && !codePhase && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={email}
+            onChangeText={setEmail}
+            autoFocus
+          />
+          <PrimaryButton
+            label={busy ? 'Sending…' : 'Send verification code'}
+            onPress={() => void startSignup()}
+            disabled={busy}
+          />
+          <Pressable
+            onPress={() => {
+              setStep('password');
+              resetCodeState();
+              setError(null);
+            }}
+            hitSlop={8}
+            style={{ alignItems: 'center', marginTop: 8 }}
+          >
+            <Text style={styles.link}>Back to sign in</Text>
+          </Pressable>
+        </>
+      )}
+
+      {step === 'signup' && codePhase && (
         <>
           <TextInput
             style={styles.input}
@@ -251,22 +427,133 @@ function LoginScreen({ onAuthed }: { onAuthed: (u: PublicUser) => void }) {
             onChangeText={setCode}
             autoFocus
           />
-          <PrimaryButton label={busy ? 'Verifying…' : 'Verify & sign in'} onPress={() => void verify()} disabled={busy} />
+          <TextInput
+            style={styles.input}
+            placeholder="Password (min 8 characters)"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          {isNewUser ? (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="First name"
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Last name"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="@username"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={username}
+                onChangeText={setUsername}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="03XX XXXXXXX"
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
+              />
+            </>
+          ) : null}
+          {devHint ? <Text style={styles.receiptRef}>Dev code: {devHint}</Text> : null}
+          <PrimaryButton
+            label={busy ? 'Verifying…' : 'Verify & continue'}
+            onPress={() => void verifySignup()}
+            disabled={busy}
+          />
           <Pressable
             onPress={() => {
-              setStep('phone');
-              setCode('');
+              resetCodeState();
               setError(null);
             }}
             hitSlop={8}
             style={{ alignItems: 'center', marginTop: 8 }}
           >
-            <Text style={styles.link}>Use a different number</Text>
+            <Text style={styles.link}>Use a different email</Text>
           </Pressable>
         </>
       )}
+
+      {step === 'reset' && !codePhase && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={email}
+            onChangeText={setEmail}
+            autoFocus
+          />
+          <PrimaryButton
+            label={busy ? 'Sending…' : 'Send reset code'}
+            onPress={() => void startReset()}
+            disabled={busy}
+          />
+          <Pressable
+            onPress={() => {
+              setStep('password');
+              resetCodeState();
+              setError(null);
+            }}
+            hitSlop={8}
+            style={{ alignItems: 'center', marginTop: 8 }}
+          >
+            <Text style={styles.link}>Back to sign in</Text>
+          </Pressable>
+        </>
+      )}
+
+      {step === 'reset' && codePhase && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="000000"
+            keyboardType="number-pad"
+            maxLength={6}
+            value={code}
+            onChangeText={setCode}
+            autoFocus
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="New password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          {devHint ? <Text style={styles.receiptRef}>Dev code: {devHint}</Text> : null}
+          <PrimaryButton
+            label={busy ? 'Saving…' : 'Reset password'}
+            onPress={() => void doReset()}
+            disabled={busy}
+          />
+          <Pressable
+            onPress={() => {
+              resetCodeState();
+              setError(null);
+            }}
+            hitSlop={8}
+            style={{ alignItems: 'center', marginTop: 8 }}
+          >
+            <Text style={styles.link}>Use a different email</Text>
+          </Pressable>
+        </>
+      )}
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -390,10 +677,11 @@ function ProfileScreen({
   onBack: () => void;
 }) {
   const [firstName, setFirstName] = useState(user.firstName ?? '');
-  const [lastInitial, setLastInitial] = useState(user.lastInitial ?? '');
+  const [lastName, setLastName] = useState(user.lastName ?? '');
   const [city, setCity] = useState<string>(user.city ?? '');
   const [interests, setInterests] = useState(user.interests.join(', '));
   const [beverage, setBeverage] = useState<string>(user.beveragePref ?? '');
+  const [agreeCodeOfConduct, setAgreeCodeOfConduct] = useState(!!user.codeOfConductAt);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -402,13 +690,14 @@ function ProfileScreen({
     setStatus(null);
     const payload: UpdateProfileInput = {
       firstName: firstName || undefined,
-      lastInitial: lastInitial || undefined,
+      lastName: lastName || undefined,
       city: city || undefined,
       interests: interests
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean),
       beveragePref: (beverage || undefined) as UpdateProfileInput['beveragePref'],
+      agreeCodeOfConduct,
     };
     try {
       const updated = await api.updateProfile(payload);
@@ -424,8 +713,14 @@ function ProfileScreen({
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <ScreenHeader title="Your profile" onBack={onBack} />
+      {user.username ? (
+        <View style={styles.fieldGap}>
+          <Text style={styles.fieldLabel}>Username</Text>
+          <Text style={styles.subtitle}>@{user.username}</Text>
+        </View>
+      ) : null}
       <Field label="First name" value={firstName} onChangeText={setFirstName} />
-      <Field label="Last initial" value={lastInitial} onChangeText={setLastInitial} maxLength={2} />
+      <Field label="Last name" value={lastName} onChangeText={setLastName} />
       <OptionRow
         label="City"
         value={city}
@@ -450,6 +745,11 @@ function ProfileScreen({
           { value: 'CHAI', label: 'Chai' },
           { value: 'EITHER', label: 'Either' },
         ]}
+      />
+      <Toggle
+        label="I agree to the code of conduct"
+        value={agreeCodeOfConduct}
+        onChange={setAgreeCodeOfConduct}
       />
       {status ? <Text style={styles.subtitle}>{status}</Text> : null}
       <PrimaryButton label={busy ? 'Saving…' : 'Save profile'} onPress={() => void save()} disabled={busy} />
@@ -658,27 +958,25 @@ function MapScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
-function bookingStatus(b: BookingDto): { label: string; tint: string } {
-  if (b.status === 'CANCELLED')
-    return b.paymentStatus === 'REFUNDED'
-      ? { label: 'Refunded', tint: MUTED }
-      : { label: 'Cancelled', tint: '#C0392B' };
-  if (b.status === 'WAITLISTED') return { label: 'Waitlisted', tint: '#B8860B' };
-  if (b.paymentStatus === 'PAID') return { label: 'Paid', tint: '#2E7D32' };
-  return { label: 'Payment pending', tint: MUTED };
-}
-
-function MeetupsScreen({ onBack }: { onBack: () => void }) {
-  const [bookings, setBookings] = useState<BookingDto[]>([]);
+function MeetupsScreen({
+  onBack,
+  onOpenTable,
+}: {
+  onBack: () => void;
+  onOpenTable: (id: string) => void;
+}) {
+  const [tables, setTables] = useState<TableDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setBookings(await api.myBookings());
+      const [joined, hosted] = await Promise.all([api.myJoinedTables(), api.myHostedTables()]);
+      const byId = new Map<string, TableDto>();
+      for (const t of [...joined, ...hosted]) byId.set(t.id, t);
+      setTables([...byId.values()].sort((a, b) => a.startAt.localeCompare(b.startAt)));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load bookings');
+      setError(err instanceof ApiError ? err.message : 'Failed to load meetups');
     } finally {
       setLoading(false);
     }
@@ -686,28 +984,6 @@ function MeetupsScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     void load();
   }, [load]);
-
-  function confirmCancel(b: BookingDto) {
-    Alert.alert('Cancel booking', 'Cancel this booking?', [
-      { text: 'Keep', style: 'cancel' },
-      {
-        text: 'Cancel booking',
-        style: 'destructive',
-        onPress: () => void doCancel(b),
-      },
-    ]);
-  }
-  async function doCancel(b: BookingDto) {
-    setBusy(b.id);
-    try {
-      const updated = await api.cancelBooking(b.id);
-      setBookings((prev) => prev.map((x) => (x.id === b.id ? updated : x)));
-    } catch (err) {
-      Alert.alert('Could not cancel', err instanceof ApiError ? err.message : 'Try again');
-    } finally {
-      setBusy(null);
-    }
-  }
 
   return (
     <View style={styles.flex}>
@@ -718,112 +994,20 @@ function MeetupsScreen({ onBack }: { onBack: () => void }) {
         <Text style={styles.error}>{error}</Text>
       ) : (
         <FlatList
-          data={bookings}
-          keyExtractor={(b) => b.id}
+          data={tables}
+          keyExtractor={(t) => t.id}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.subtitle}>You haven’t joined any meetups yet.</Text>}
-          renderItem={({ item: b }) => {
-            const s = bookingStatus(b);
-            return (
-              <View style={styles.card}>
-                <View style={styles.headerRow}>
-                  <Text style={styles.cardTitle}>{b.event?.title ?? 'Coffee meetup'}</Text>
-                  <Text style={[styles.badge, { color: s.tint }]}>{s.label}</Text>
-                </View>
-                {b.event && (
-                  <Text style={styles.meta}>
-                    {formatWhen(b.event.startAt)} · {b.event.cafe?.name ?? b.event.area}
-                  </Text>
-                )}
-                <Text style={styles.meta}>{formatPKR(b.amountPKR)}</Text>
-                {(b.paymentStatus === 'PAID' || b.paymentStatus === 'REFUNDED') &&
-                  b.paymentRef && (
-                    <Text style={styles.receiptRef}>Receipt · {b.paymentRef}</Text>
-                  )}
-                {b.status !== 'CANCELLED' && (
-                  <SecondaryButton
-                    label={busy === b.id ? 'Cancelling…' : 'Cancel booking'}
-                    onPress={() => confirmCancel(b)}
-                  />
-                )}
-                {b.status === 'ACTIVE' && <GroupMembersMobile eventId={b.eventId} />}
-              </View>
-            );
-          }}
+          ListEmptyComponent={<Text style={styles.subtitle}>You haven’t joined any tables yet.</Text>}
+          renderItem={({ item: t }) => (
+            <Pressable style={styles.card} onPress={() => onOpenTable(t.id)}>
+              <Text style={styles.cardTitle}>{t.title ?? t.category}</Text>
+              <Text style={styles.meta}>
+                {formatWhen(t.startAt)} · {t.venueName ?? t.cafe?.name ?? 'See map'}
+              </Text>
+            </Pressable>
+          )}
         />
       )}
-    </View>
-  );
-}
-
-function GroupMembersMobile({ eventId }: { eventId: string }) {
-  const [members, setMembers] = useState<GroupMember[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const r = await api.myGroup(eventId);
-        if (active) setMembers(r.members);
-      } catch {
-        /* group not formed yet */
-      } finally {
-        if (active) setLoaded(true);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [eventId]);
-
-  function actions(m: GroupMember) {
-    Alert.alert(`${m.firstName ?? 'Member'} ${m.lastInitial ?? ''}`.trim(), 'Group member', [
-      { text: 'Close', style: 'cancel' },
-      {
-        text: 'Block',
-        onPress: async () => {
-          try {
-            await api.blockUser(m.id);
-            setMsg('Blocked — you won’t be grouped again.');
-          } catch (err) {
-            setMsg(err instanceof ApiError ? err.message : 'Could not block');
-          }
-        },
-      },
-      {
-        text: 'Report',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.reportUser(m.id, 'Reported from the app', eventId);
-            setMsg('Reported — our team will review it.');
-          } catch (err) {
-            setMsg(err instanceof ApiError ? err.message : 'Could not report');
-          }
-        },
-      },
-    ]);
-  }
-
-  if (!loaded) return null;
-  if (members.length === 0)
-    return <Text style={styles.groupHint}>Group not formed yet.</Text>;
-
-  return (
-    <View style={styles.groupBox}>
-      <Text style={styles.fieldLabel}>Your group</Text>
-      {members.map((m) => (
-        <Pressable key={m.id} style={styles.groupMember} onPress={() => actions(m)}>
-          <Text style={styles.meta}>
-            {m.firstName ?? 'Member'} {m.lastInitial ?? ''}
-            {m.interests.length > 0 ? ` · ${m.interests.slice(0, 3).join(', ')}` : ''}
-          </Text>
-          <Text style={styles.link}>Manage</Text>
-        </Pressable>
-      ))}
-      {msg ? <Text style={styles.groupHint}>{msg}</Text> : null}
     </View>
   );
 }
@@ -885,7 +1069,15 @@ function NotificationsScreen({ onBack }: { onBack: () => void }) {
 }
 
 // ---------- Tables ----------
-function TablesScreen({ user, nav }: { user: PublicUser; nav: (s: Screen) => void }) {
+function TablesScreen({
+  user,
+  nav,
+  onLogout,
+}: {
+  user: PublicUser;
+  nav: (s: Screen) => void;
+  onLogout: () => void;
+}) {
   const [tables, setTables] = useState<TableDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -907,16 +1099,25 @@ function TablesScreen({ user, nav }: { user: PublicUser; nav: (s: Screen) => voi
     <View style={styles.flex}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Tables</Text>
-        <View style={styles.rowGap}>
-          {user.canHost && (
-            <Pressable onPress={() => nav({ name: 'createTable' })} hitSlop={8}>
-              <Text style={styles.link}>+ Host</Text>
-            </Pressable>
-          )}
-          <Pressable onPress={() => nav({ name: 'events' })} hitSlop={8}>
-            <Text style={styles.link}>Back</Text>
+        <Pressable onPress={() => void onLogout()} hitSlop={8}>
+          <Text style={styles.link}>Sign out</Text>
+        </Pressable>
+      </View>
+      <View style={[styles.rowGap, styles.navRow]}>
+        <Pressable onPress={() => nav({ name: 'profile' })} hitSlop={8}>
+          <Text style={styles.link}>Profile</Text>
+        </Pressable>
+        <Pressable onPress={() => nav({ name: 'meetups' })} hitSlop={8}>
+          <Text style={styles.link}>My meetups</Text>
+        </Pressable>
+        <Pressable onPress={() => nav({ name: 'notifications' })} hitSlop={8}>
+          <Text style={styles.link}>Notifications</Text>
+        </Pressable>
+        {user.canHost ? (
+          <Pressable onPress={() => nav({ name: 'createTable' })} hitSlop={8}>
+            <Text style={styles.link}>Host</Text>
           </Pressable>
-        </View>
+        ) : null}
       </View>
       {loading ? (
         <ActivityIndicator style={styles.spinner} />
@@ -936,9 +1137,7 @@ function TablesScreen({ user, nav }: { user: PublicUser; nav: (s: Screen) => voi
                 {t.venueName ?? t.cafe?.name ?? 'See map'} ·{' '}
                 {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)} · {t.seatsLeft} left
               </Text>
-              <Text style={styles.meta}>
-                Hosted by {t.host?.firstName ?? 'a host'} {t.host?.lastInitial ?? ''}
-              </Text>
+              <Text style={styles.meta}>Hosted by {handleOf(t.host)}</Text>
             </Pressable>
           )}
         />
@@ -1008,9 +1207,7 @@ function TableDetailScreen({
           {table.pricePKR == null ? 'Free' : formatPKR(table.pricePKR)} · {table.seatsLeft} of{' '}
           {table.seats} seats left
         </Text>
-        <Text style={styles.meta}>
-          Hosted by {table.host?.firstName ?? 'a host'} {table.host?.lastInitial ?? ''}
-        </Text>
+        <Text style={styles.meta}>Hosted by {handleOf(table.host)}</Text>
         {table.description ? (
           <Text style={[styles.subtitle, { marginTop: 8 }]}>{table.description}</Text>
         ) : null}
@@ -1034,7 +1231,16 @@ function TableDetailScreen({
           ) : (
             <PrimaryButton
               label={busy ? 'Sending…' : 'Request to join'}
-              onPress={() => void run(() => api.requestJoinTable(id))}
+              onPress={() => {
+                if (!user.codeOfConductAt) {
+                  Alert.alert(
+                    'Code of conduct',
+                    'Please accept the code of conduct in Profile before requesting to join.',
+                  );
+                  return;
+                }
+                void run(() => api.requestJoinTable(id));
+              }}
               disabled={busy}
             />
           )}
@@ -1050,9 +1256,7 @@ function TableDetailScreen({
           ) : (
             requests.map((r) => (
               <View key={r.id} style={styles.groupMember}>
-                <Text style={styles.meta}>
-                  {r.user?.firstName ?? 'Guest'} {r.user?.lastInitial ?? ''}
-                </Text>
+                <Text style={styles.meta}>{handleOf(r.user)}</Text>
                 <View style={styles.rowGap}>
                   <Pressable onPress={() => void run(() => api.approveTableRequest(id, r.id))}>
                     <Text style={styles.link}>Approve</Text>
@@ -1127,9 +1331,7 @@ function TableChatScreen({
               <View style={[styles.bubbleRow, { justifyContent: mine ? 'flex-end' : 'flex-start' }]}>
                 <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
                   {!mine ? (
-                    <Text style={styles.bubbleName}>
-                      {m.firstName ?? 'Member'} {m.lastInitial ?? ''}
-                    </Text>
+                    <Text style={styles.bubbleName}>{handleOf(m)}</Text>
                   ) : null}
                   <Text style={mine ? styles.bubbleTextMine : styles.bubbleText}>{m.body}</Text>
                 </View>

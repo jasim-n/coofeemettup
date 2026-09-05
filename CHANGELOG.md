@@ -4,6 +4,13 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-05 — Mobile Tables-first revival
+
+- Expo app auth: email/password, signup OTP, password reset (replaces phone OTP).
+- Default home is Tables browse/host hub; My Meetups uses hosted/joined Tables.
+- Public identity shows `@username`; profile supports CoC acceptance before join.
+- App display name/slug updated to Nine Circles.
+
 ### 2026-08-30 — Logout back-button + featured Cloudinary
 
 - Logout now clears bearer token memory, localStorage, and client caches,
