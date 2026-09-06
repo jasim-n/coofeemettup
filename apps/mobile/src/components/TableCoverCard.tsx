@@ -4,6 +4,7 @@ import type { TableDto } from '@jrst/api-client';
 import { formatDateTime, formatPKR } from '../format';
 import { categoryIcon, splitCategories } from '../lib/category-icon';
 import { coverFor } from '../lib/cover';
+import { isVideoUrl, resolveMediaUrl } from '../lib/media-url';
 import { tableCta } from '../lib/table-cta';
 import { AMBER, BORDER, CARD, INK, MUTED, PRIMARY, PRIMARY_SOFT } from '../theme';
 
@@ -23,7 +24,9 @@ export function TableCoverCard({
   const cta = tableCta(t, viewerId);
   const cats = splitCategories(t.category).slice(0, 3);
   const hostInitial = (t.host?.username ?? '?').charAt(0).toUpperCase();
-  const coverSource = t.imageUrl ? { uri: t.imageUrl } : coverFor(t.category);
+  const remote = resolveMediaUrl(t.imageUrl);
+  const coverSource =
+    remote && !isVideoUrl(remote) ? { uri: remote } : coverFor(t.category);
 
   return (
     <Pressable onPress={onPress} style={s.card}>

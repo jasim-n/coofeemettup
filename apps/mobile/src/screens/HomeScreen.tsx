@@ -1,7 +1,6 @@
 import { type ComponentProps, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -17,6 +16,7 @@ import {
 } from '@jrst/api-client';
 import { api } from '../api';
 import { TableCoverCard } from '../components/TableCoverCard';
+import { FeaturedShowcase } from '../components/FeaturedShowcase';
 import { ago, formatDateTime } from '../format';
 import { categoryIcon, splitCategories } from '../lib/category-icon';
 import {
@@ -164,11 +164,7 @@ export function HomeScreen({
           </View>
           <Text style={s.h2}>Featured from the tables</Text>
           <Text style={s.muted}>Photos, reels, and collages curated from real meetups.</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.featuredRow}>
-            {featured.slice(0, 8).map((f) => (
-              <Image key={f.id} source={{ uri: f.url }} style={s.featuredThumb} />
-            ))}
-          </ScrollView>
+          <FeaturedShowcase slides={featured} onOpenTable={onOpenTable} />
         </View>
       ) : null}
 
@@ -429,8 +425,6 @@ const s = {
     alignItems: 'baseline' as const,
     justifyContent: 'space-between' as const,
   },
-  featuredRow: { gap: 10, paddingVertical: 4 },
-  featuredThumb: { width: 120, height: 160, borderRadius: 16, backgroundColor: BORDER },
   vibeRow: { gap: 8, paddingVertical: 4 },
   vibePill: {
     flexDirection: 'row' as const,

@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import type { PublicUser } from '@jrst/api-client';
 import { api } from '../api';
+import { resolveMediaUrl } from '../lib/media-url';
 import { BORDER, CARD, DESTRUCTIVE, INK, MUTED, PRIMARY } from '../theme';
 
 /**
@@ -56,6 +57,7 @@ export function MobileTopBar({
     [user.firstName, user.lastName].filter(Boolean).join(' ') ||
     (user.username ? `@${user.username}` : 'Member');
   const initial = name.charAt(0).toUpperCase();
+  const photoUri = resolveMediaUrl(user.photoUrl);
 
   return (
     <View style={s.header}>
@@ -97,8 +99,8 @@ export function MobileTopBar({
         style={s.avatarBtn}
         accessibilityLabel="Account menu"
       >
-        {user.photoUrl ? (
-          <Image source={{ uri: user.photoUrl }} style={s.avatar} />
+        {photoUri ? (
+          <Image source={{ uri: photoUri }} style={s.avatar} />
         ) : (
           <View style={[s.avatar, s.avatarFallback]}>
             <Text style={s.avatarInitial}>{initial}</Text>
@@ -110,8 +112,8 @@ export function MobileTopBar({
         <Pressable style={s.menuBackdrop} onPress={() => setMenuOpen(false)}>
           <View style={s.menu}>
             <View style={s.menuHead}>
-              {user.photoUrl ? (
-                <Image source={{ uri: user.photoUrl }} style={s.menuAvatar} />
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={s.menuAvatar} />
               ) : (
                 <View style={[s.menuAvatar, s.avatarFallback]}>
                   <Text style={s.avatarInitial}>{initial}</Text>

@@ -4,6 +4,11 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-06 — Featured showcase + media URL fixes
+
+- Ported web full-bleed `FeaturedShowcase` (photos / reels via expo-av / collages).
+- Fixed broken images: stop passing `.mp4` into `Image`; resolve relative `/…` URLs for RN.
+
 ### 2026-09-06 — Mobile UI port from web source
 
 - Method shift: port web components/pages into RN (not approximate theming).
