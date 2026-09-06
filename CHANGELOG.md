@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-06 — Mobile design pass (teal brand + nav)
+
+- Mobile theme aligned to web Nine Circles tokens (teal `#10B89B`, slate surfaces).
+- Bottom tabs use Ionicons; safe-area insets via `react-native-safe-area-context`.
+- Empty states on Home / Explore / Nearby / Meetups / Chats / Invites; login brand mark.
+
 ### 2026-09-06 — Mobile nav parity (Discover / Nearby / Chats)
 
 - Bottom tabs match web: Home · Explore · Nearby · Meetups · Chats.

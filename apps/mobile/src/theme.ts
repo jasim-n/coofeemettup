@@ -1,39 +1,71 @@
 import { StyleSheet } from 'react-native';
 
-export const CORAL = '#E1583B';
-export const CREAM = '#FBF5EF';
+/** Nine Circles / web design system v2.1 — teal + slate (not coral/cream). */
+export const PRIMARY = '#10B89B';
+export const PRIMARY_SOFT = '#E3F7F3';
+export const BG = '#F8FAFC';
 export const CARD = '#FFFFFF';
-export const INK = '#2B2019';
-export const MUTED = '#7C6E63';
-export const BORDER = '#EBE0D5';
+export const INK = '#0F172A';
+export const MUTED = '#64748B';
+export const BORDER = '#E2E8F0';
+export const DESTRUCTIVE = '#EF4444';
+export const AMBER = '#F59E0B';
+
+/** @deprecated Use PRIMARY — kept so older imports keep compiling during the rebrand. */
+export const CORAL = PRIMARY;
+/** @deprecated Use BG */
+export const CREAM = BG;
 
 export const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: CREAM },
-  flex: { flex: 1, paddingHorizontal: 20, backgroundColor: CREAM },
-  flexBare: { flex: 1, backgroundColor: CREAM },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: CREAM },
-  screen: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, gap: 12, backgroundColor: CREAM },
-  scroll: { padding: 20, gap: 14, backgroundColor: CREAM },
+  container: { flex: 1, backgroundColor: BG },
+  flex: { flex: 1, paddingHorizontal: 20, backgroundColor: BG },
+  flexBare: { flex: 1, backgroundColor: BG },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BG },
+  screen: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 12,
+    backgroundColor: BG,
+    paddingVertical: 32,
+  },
+  scroll: { padding: 20, gap: 14, backgroundColor: BG, paddingBottom: 40 },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 4,
     paddingHorizontal: 20,
   },
   headerInPad: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 4,
   },
   rowGap: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   flexItem: { flex: 1 },
-  title: { fontSize: 24, fontWeight: '800', color: INK, letterSpacing: -0.5 },
-  subtitle: { color: MUTED, fontSize: 14 },
+  title: { fontSize: 26, fontWeight: '800', color: INK, letterSpacing: -0.6 },
+  brandTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: INK,
+    letterSpacing: -0.8,
+  },
+  brandMark: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: PRIMARY,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  brandMarkText: { color: '#fff', fontWeight: '800', fontSize: 18 },
+  subtitle: { color: MUTED, fontSize: 14, lineHeight: 20 },
   spinner: { marginTop: 24 },
-  list: { gap: 12, paddingVertical: 16, paddingHorizontal: 20 },
-  listInPad: { gap: 12, paddingVertical: 16 },
+  list: { gap: 12, paddingVertical: 16, paddingHorizontal: 20, paddingBottom: 28 },
+  listInPad: { gap: 12, paddingVertical: 16, paddingBottom: 28 },
   fieldGap: { gap: 6 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: INK },
   input: {
@@ -55,8 +87,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
-  pillActive: { backgroundColor: CORAL, borderColor: CORAL },
-  pillText: { color: INK, fontSize: 13 },
+  pillActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  pillText: { color: INK, fontSize: 13, fontWeight: '500' },
   pillTextActive: { color: '#fff', fontSize: 13, fontWeight: '600' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkbox: {
@@ -64,22 +96,22 @@ export const styles = StyleSheet.create({
     height: 22,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: '#c9bcae',
+    borderColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxOn: { backgroundColor: CORAL, borderColor: CORAL },
+  checkboxOn: { backgroundColor: PRIMARY, borderColor: PRIMARY },
   checkMark: { color: '#fff', fontSize: 14 },
   button: {
-    backgroundColor: CORAL,
+    backgroundColor: PRIMARY,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 4,
-    shadowColor: CORAL,
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    shadowColor: PRIMARY,
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   buttonDisabled: { opacity: 0.4 },
   buttonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
@@ -93,8 +125,8 @@ export const styles = StyleSheet.create({
     marginTop: 4,
   },
   buttonOutlineText: { color: INK, fontWeight: '600' },
-  link: { color: CORAL, fontWeight: '600' },
-  error: { color: '#C0392B', fontSize: 14 },
+  link: { color: PRIMARY, fontWeight: '600' },
+  error: { color: DESTRUCTIVE, fontSize: 14 },
   card: {
     borderWidth: 1,
     borderColor: BORDER,
@@ -102,10 +134,14 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     gap: 4,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
-  cardUnread: { borderColor: CORAL, backgroundColor: '#FFF4EF' },
+  cardUnread: { borderColor: PRIMARY, backgroundColor: PRIMARY_SOFT },
   cardTitle: { fontSize: 17, fontWeight: '700', color: INK },
-  meta: { color: MUTED, fontSize: 13 },
+  meta: { color: MUTED, fontSize: 13, lineHeight: 18 },
   navRow: { flexWrap: 'wrap', marginTop: 4, marginBottom: 4 },
   badge: { fontSize: 12, fontWeight: '700' },
   receiptRef: { color: MUTED, fontSize: 11, marginTop: 2 },
@@ -115,7 +151,7 @@ export const styles = StyleSheet.create({
   pickerMap: { height: 220, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: BORDER },
   bubbleRow: { flexDirection: 'row', marginVertical: 3 },
   bubble: { maxWidth: '80%', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
-  bubbleMine: { backgroundColor: CORAL, borderBottomRightRadius: 4 },
+  bubbleMine: { backgroundColor: PRIMARY, borderBottomRightRadius: 4 },
   bubbleOther: {
     backgroundColor: '#fff',
     borderWidth: 1,
@@ -125,7 +161,7 @@ export const styles = StyleSheet.create({
   bubbleName: { color: MUTED, fontSize: 11, fontWeight: '600', marginBottom: 2 },
   bubbleText: { color: INK, fontSize: 14 },
   bubbleTextMine: { color: '#fff', fontSize: 14 },
-  mapContainer: { flex: 1, backgroundColor: CREAM },
+  mapContainer: { flex: 1, backgroundColor: BG },
   mapHeader: { paddingHorizontal: 20 },
   mapWrap: { flex: 1 },
   sheet: {
@@ -150,29 +186,44 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     borderTopWidth: 1,
     borderTopColor: BORDER,
-    backgroundColor: CARD,
+    backgroundColor: 'rgba(255,255,255,0.96)',
     paddingTop: 8,
-    paddingBottom: 10,
     paddingHorizontal: 4,
   },
-  tabItem: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 4 },
-  tabLabel: { fontSize: 11, color: MUTED, fontWeight: '600' },
-  tabLabelActive: { color: CORAL, fontWeight: '700' },
-  tabIcon: { fontSize: 16, color: MUTED },
-  tabIconActive: { color: CORAL },
-  chipScroll: { paddingHorizontal: 20, paddingVertical: 8, gap: 8 },
-  sectionPad: { paddingHorizontal: 20, gap: 8 },
+  tabItem: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 4 },
+  tabLabel: { fontSize: 10, color: MUTED, fontWeight: '600' },
+  tabLabelActive: { color: PRIMARY, fontWeight: '700' },
   unreadDot: {
     position: 'absolute',
-    top: -2,
-    right: 18,
+    top: 0,
+    right: 14,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: CORAL,
+    backgroundColor: PRIMARY,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
   unreadDotText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  chipScroll: { paddingHorizontal: 20, paddingVertical: 8, gap: 8 },
+  sectionPad: { paddingHorizontal: 20, gap: 8 },
+  emptyWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 48,
+    gap: 10,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: PRIMARY_SOFT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: INK, textAlign: 'center' },
+  emptyBody: { fontSize: 14, color: MUTED, textAlign: 'center', lineHeight: 20 },
 });

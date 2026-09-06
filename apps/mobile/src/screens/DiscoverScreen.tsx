@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { ApiError, type TableDto } from '@jrst/api-client';
 import { api } from '../api';
+import { EmptyState } from '../EmptyState';
 import { formatPKR, formatWhen, handleOf } from '../format';
 import { CITIES, nearestCity, type City } from '../geo';
 import { styles } from '../theme';
@@ -118,7 +119,13 @@ export function DiscoverScreen({ onOpenTable }: { onOpenTable: (id: string) => v
           data={filtered}
           keyExtractor={(t) => t.id}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.subtitle}>No tables match these filters.</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              icon="filter-outline"
+              title="No tables match"
+              body="Try another category, city, or time window."
+            />
+          }
           renderItem={({ item: t }) => (
             <Pressable style={styles.card} onPress={() => onOpenTable(t.id)}>
               <Text style={styles.cardTitle}>{t.title ?? t.category}</Text>

@@ -18,7 +18,8 @@ import {
   tableCoords,
   type City,
 } from '../geo';
-import { CORAL, styles } from '../theme';
+import { MUTED, PRIMARY, styles } from '../theme';
+import { EmptyState } from '../EmptyState';
 import { OptionRow } from '../ui';
 
 type RadiusKm = number | null;
@@ -107,7 +108,7 @@ export function NearbyScreen({ onOpenTable }: { onOpenTable: (id: string) => voi
                   <Marker
                     key={t.id}
                     coordinate={{ latitude: coords.lat, longitude: coords.lng }}
-                    pinColor={selected?.t.id === t.id ? CORAL : '#7C6E63'}
+                    pinColor={selected?.t.id === t.id ? PRIMARY : MUTED}
                     onPress={() => setSelectedId(t.id)}
                   />
                 ) : null,
@@ -120,7 +121,9 @@ export function NearbyScreen({ onOpenTable }: { onOpenTable: (id: string) => voi
               data={withDist.map((x) => x.t)}
               keyExtractor={(t) => t.id}
               contentContainerStyle={{ padding: 12, gap: 8 }}
-              ListEmptyComponent={<Text style={styles.subtitle}>No tables near this city.</Text>}
+              ListEmptyComponent={
+                <EmptyState icon="map-outline" title="Nothing nearby" body="Try another city or widen the radius." />
+              }
               renderItem={({ item: t }) => {
                 const row = withDist.find((x) => x.t.id === t.id);
                 return (

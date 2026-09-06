@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { ApiError, type DmThread, type GroupThread } from '@jrst/api-client';
 import { api } from '../api';
+import { EmptyState } from '../EmptyState';
 import { ago, handleOf } from '../format';
-import { styles } from '../theme';
+import { PRIMARY, styles } from '../theme';
 
 type Convo =
   | { kind: 'dm'; key: string; userId: string; title: string; last: string; time: string; unread: number }
@@ -99,7 +100,11 @@ export function ChatsScreen({
           keyExtractor={(c) => c.key}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={styles.subtitle}>No conversations yet. Connect with people to message.</Text>
+            <EmptyState
+              icon="chatbubbles-outline"
+              title="No conversations yet"
+              body="Connect with people, then start a chat from People."
+            />
           }
           renderItem={({ item: c }) => (
             <Pressable
@@ -119,7 +124,7 @@ export function ChatsScreen({
                 {c.last}
               </Text>
               {c.unread > 0 ? (
-                <Text style={[styles.badge, { color: '#E1583B' }]}>{c.unread} new</Text>
+                <Text style={[styles.badge, { color: PRIMARY }]}>{c.unread} new</Text>
               ) : null}
             </Pressable>
           )}

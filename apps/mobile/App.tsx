@@ -4,7 +4,6 @@ import {
   Alert,
   FlatList,
   Pressable,
-  SafeAreaView,
   ScrollView,
   Text,
   TextInput,
@@ -13,6 +12,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import * as SecureStore from 'expo-secure-store';
 import MapView, { Marker } from 'react-native-maps';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ApiError,
   type ChatMessage,
@@ -25,6 +25,7 @@ import {
 } from '@jrst/api-client';
 import { api, TOKEN_KEY } from './src/api';
 import { BottomNav, type TabId } from './src/BottomNav';
+import { EmptyState } from './src/EmptyState';
 import { formatPKR, formatWhen, handleOf } from './src/format';
 import { DiscoverScreen } from './src/screens/DiscoverScreen';
 import { NearbyScreen } from './src/screens/NearbyScreen';
@@ -32,7 +33,7 @@ import { ChatsScreen } from './src/screens/ChatsScreen';
 import { DmScreen } from './src/screens/DmScreen';
 import { ConnectionsScreen } from './src/screens/ConnectionsScreen';
 import { InvitesScreen } from './src/screens/InvitesScreen';
-import { CORAL, styles } from './src/theme';
+import { PRIMARY, styles } from './src/theme';
 import {
   Field,
   NumberRow,
@@ -54,6 +55,14 @@ type Overlay =
   | { name: 'invites' };
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppInner />
+    </SafeAreaProvider>
+  );
+}
+
+function AppInner() {
   const [booting, setBooting] = useState(true);
   const [user, setUser] = useState<PublicUser | null>(null);
 
@@ -94,14 +103,14 @@ export default function App() {
 
   if (booting) {
     return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator />
+      <SafeAreaView style={styles.center} edges={['top', 'bottom']}>
+        <ActivityIndicator color={PRIMARY} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="dark" />
       {user ? (
         <AuthedApp user={user} setUser={setUser} onLogout={onLogout} />
@@ -124,71 +133,94 @@ function AuthedApp({
   const [tab, setTab] = useState<TabId>('home');
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [chatUnread, setChatUnread] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const close = () => setOverlay(null);
   const openTable = (id: string) => setOverlay({ name: 'table', id });
 
+  const overlayPad = { flex: 1 as const, paddingBottom: Math.max(insets.bottom, 8) };
+
   if (overlay?.name === 'profile') {
     return (
-      <ProfileScreen
-        user={user}
-        onSaved={(u) => {
-          setUser(u);
-        }}
-        onBack={close}
-      />
+      <View style={overlayPad}>
+        <ProfileScreen
+          user={user}
+          onSaved={(u) => {
+            setUser(u);
+          }}
+          onBack={close}
+        />
+      </View>
     );
   }
   if (overlay?.name === 'notifications') {
-    return <NotificationsScreen onBack={close} />;
+    return (
+      <View style={overlayPad}>
+        <NotificationsScreen onBack={close} />
+      </View>
+    );
   }
   if (overlay?.name === 'table') {
     return (
-      <TableDetailScreen
-        id={overlay.id}
-        user={user}
-        onBack={close}
-        onChat={(id) => setOverlay({ name: 'tableChat', id })}
-      />
+      <View style={overlayPad}>
+        <TableDetailScreen
+          id={overlay.id}
+          user={user}
+          onBack={close}
+          onChat={(id) => setOverlay({ name: 'tableChat', id })}
+        />
+      </View>
     );
   }
   if (overlay?.name === 'tableChat') {
     return (
-      <TableChatScreen
-        id={overlay.id}
-        userId={user.id}
-        onBack={() => setOverlay({ name: 'table', id: overlay.id })}
-      />
+      <View style={overlayPad}>
+        <TableChatScreen
+          id={overlay.id}
+          userId={user.id}
+          onBack={() => setOverlay({ name: 'table', id: overlay.id })}
+        />
+      </View>
     );
   }
   if (overlay?.name === 'createTable') {
     return (
-      <CreateTableScreen
-        onDone={(id) => setOverlay({ name: 'table', id })}
-        onBack={close}
-      />
+      <View style={overlayPad}>
+        <CreateTableScreen
+          onDone={(id) => setOverlay({ name: 'table', id })}
+          onBack={close}
+        />
+      </View>
     );
   }
   if (overlay?.name === 'dm') {
     return (
-      <DmScreen
-        userId={overlay.userId}
-        title={overlay.title}
-        myId={user.id}
-        onBack={close}
-      />
+      <View style={overlayPad}>
+        <DmScreen
+          userId={overlay.userId}
+          title={overlay.title}
+          myId={user.id}
+          onBack={close}
+        />
+      </View>
     );
   }
   if (overlay?.name === 'connections') {
     return (
-      <ConnectionsScreen
-        onBack={close}
-        onMessage={(userId, title) => setOverlay({ name: 'dm', userId, title })}
-      />
+      <View style={overlayPad}>
+        <ConnectionsScreen
+          onBack={close}
+          onMessage={(userId, title) => setOverlay({ name: 'dm', userId, title })}
+        />
+      </View>
     );
   }
   if (overlay?.name === 'invites') {
-    return <InvitesScreen onBack={close} onOpenTable={openTable} />;
+    return (
+      <View style={overlayPad}>
+        <InvitesScreen onBack={close} onOpenTable={openTable} />
+      </View>
+    );
   }
 
   return (
@@ -346,7 +378,10 @@ function LoginScreen({ onAuthed }: { onAuthed: (u: PublicUser) => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Nine Circles</Text>
+      <View style={styles.brandMark}>
+        <Text style={styles.brandMarkText}>9</Text>
+      </View>
+      <Text style={styles.brandTitle}>Nine Circles</Text>
       <Text style={styles.subtitle}>Small tables. Real conversations.</Text>
 
       {step === 'password' && (
@@ -642,7 +677,13 @@ function HomeScreen({
           data={tables}
           keyExtractor={(t) => t.id}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.subtitle}>No open tables right now.</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              icon="cafe-outline"
+              title="No open tables right now"
+              body="Check Explore or Nearby — or host one if you can."
+            />
+          }
           renderItem={({ item: t }) => (
             <Pressable style={styles.card} onPress={() => onOpenTable(t.id)}>
               <Text style={styles.cardTitle}>{t.title ?? t.category}</Text>
@@ -788,7 +829,13 @@ function MeetupsScreen({ onOpenTable }: { onOpenTable: (id: string) => void }) {
           data={tables}
           keyExtractor={(t) => t.id}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.subtitle}>You haven’t joined any tables yet.</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              icon="calendar-outline"
+              title="No meetups yet"
+              body="Request a seat at a table and it’ll show up here."
+            />
+          }
           renderItem={({ item: t }) => (
             <Pressable style={styles.card} onPress={() => onOpenTable(t.id)}>
               <Text style={styles.cardTitle}>{t.title ?? t.category}</Text>
@@ -838,7 +885,9 @@ function NotificationsScreen({ onBack }: { onBack: () => void }) {
           data={items}
           keyExtractor={(n) => n.id}
           contentContainerStyle={styles.listInPad}
-          ListEmptyComponent={<Text style={styles.subtitle}>You’re all caught up.</Text>}
+          ListEmptyComponent={
+            <EmptyState icon="notifications-outline" title="You’re all caught up" body="New alerts will land here." />
+          }
           renderItem={({ item: n }) => (
             <View style={[styles.card, n.readAt ? null : styles.cardUnread]}>
               <Text style={styles.cardTitle}>{n.title}</Text>
@@ -1135,7 +1184,7 @@ function CreateTableScreen({
           }}
           onPress={(e) => setCoord(e.nativeEvent.coordinate)}
         >
-          {coord ? <Marker coordinate={coord} pinColor={CORAL} /> : null}
+          {coord ? <Marker coordinate={coord} pinColor={PRIMARY} /> : null}
         </MapView>
       </View>
       <Field

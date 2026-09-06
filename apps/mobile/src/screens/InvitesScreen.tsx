@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { ApiError, type InviteDto } from '@jrst/api-client';
 import { api } from '../api';
+import { EmptyState } from '../EmptyState';
 import { formatWhen, handleOf } from '../format';
 import { styles } from '../theme';
 import { ScreenHeader } from '../ui';
@@ -54,7 +55,9 @@ export function InvitesScreen({
           data={pending.length ? pending : invites}
           keyExtractor={(i) => i.id}
           contentContainerStyle={styles.listInPad}
-          ListEmptyComponent={<Text style={styles.subtitle}>No invites right now.</Text>}
+          ListEmptyComponent={
+            <EmptyState icon="mail-open-outline" title="No invites" body="When a host invites you, it’ll show up here." />
+          }
           renderItem={({ item: inv }) => (
             <View style={styles.card}>
               <Pressable onPress={() => onOpenTable(inv.table.id)}>
