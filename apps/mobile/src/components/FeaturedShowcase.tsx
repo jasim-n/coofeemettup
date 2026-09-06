@@ -9,16 +9,15 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import type { FeaturedImageDto } from '@jrst/api-client';
 import { categoryIcon, splitCategories } from '../lib/category-icon';
 import { isVideoUrl, resolveMediaUrl } from '../lib/media-url';
-import { PRIMARY } from '../theme';
 
 /**
  * Ported from apps/web/src/components/featured-showcase.tsx.
- * Full-bleed carousel: photos, muted reels (expo-av), collage grids.
+ * Full-bleed carousel. VIDEO slides use poster stills in Expo Go
+ * (native AV module requires a custom/dev client).
  */
 export function FeaturedShowcase({
   slides,
@@ -30,8 +29,8 @@ export function FeaturedShowcase({
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const width = Dimensions.get('window').width - 32; // home scroll padding 16*2
-  const height = 272; // ~ web h-[17rem]
+  const width = Dimensions.get('window').width - 32;
+  const height = 272;
   const n = slides.length;
   const active = slides[idx % Math.max(n, 1)];
   const dwellMs = active?.kind === 'VIDEO' ? 8000 : active?.kind === 'COLLAGE' ? 5500 : 4000;
@@ -69,7 +68,7 @@ export function FeaturedShowcase({
         onMomentumScrollEnd={onScrollEnd}
         decelerationRate="fast"
       >
-        {slides.map((slide, i) => {
+        {slides.map((slide) => {
           const heading = slide.tableTitle ?? slide.category;
           const cats = splitCategories(slide.category).slice(0, 3);
           return (
@@ -78,18 +77,7 @@ export function FeaturedShowcase({
               onPress={() => onOpenTable(slide.tableId)}
               style={{ width, height, backgroundColor: '#000' }}
             >
-              <SlideMedia slide={slide} active={i === idx} width={width} height={height} />
-              <View
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  top: 0,
-                  backgroundColor: 'transparent',
-                }}
-              />
+              <SlideMedia slide={slide} width={width} height={height} />
               <View
                 style={{
                   position: 'absolute',
@@ -101,16 +89,15 @@ export function FeaturedShowcase({
                 }}
               >
                 {slide.caption ? (
-                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginBottom: 4 }} numberOfLines={2}>
+                  <Text
+                    style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginBottom: 4 }}
+                    numberOfLines={2}
+                  >
                     {slide.caption}
                   </Text>
                 ) : null}
                 <Text
-                  style={{
-                    color: '#fff',
-                    fontFamily: 'Poppins_700Bold',
-                    fontSize: 18,
-                  }}
+                  style={{ color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 18 }}
                   numberOfLines={1}
                 >
                   {heading}
@@ -130,7 +117,9 @@ export function FeaturedShowcase({
                       }}
                     >
                       <Ionicons name={categoryIcon(c)} size={10} color="#fff" />
-                      <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'Poppins_600SemiBold' }}>{c}</Text>
+                      <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'Poppins_600SemiBold' }}>
+                        {c}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -168,75 +157,44 @@ export function FeaturedShowcase({
   );
 }
 
-function SlideMedia({
-  slide,
-  active,
-  width,
-  height,
-}: {
-  slide: FeaturedImageDto;
-  active: boolean;
-  width: number;
-  height: number;
-}) {
-  const videoRef = useRef<Video>(null);
+function slideImageUri(slide: FeaturedImageDto): string | null {
   const url = resolveMediaUrl(slide.url);
   const poster = resolveMediaUrl(slide.posterUrl);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v || slide.kind !== 'VIDEO') return;
-    if (active) void v.playAsync().catch(() => undefined);
-    else {
-      void v.pauseAsync().catch(() => undefined);
-      void v.setPositionAsync(0).catch(() => undefined);
-    }
-  }, [active, slide.kind]);
-
-  if (slide.kind === 'VIDEO' && url) {
-    return (
-      <View style={{ width, height, backgroundColor: '#000' }}>
-        <Video
-          ref={videoRef}
-          source={{ uri: url }}
-          posterSource={poster ? { uri: poster } : undefined}
-          usePoster={!!poster}
-          style={{ width, height }}
-          resizeMode={ResizeMode.COVER}
-          isMuted
-          isLooping
-          shouldPlay={active}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            left: 16,
-            top: 40,
-            flexDirection: 'row',
-            gap: 8,
-          }}
-        >
-          <Badge label="Reel" />
-        </View>
-      </View>
-    );
-  }
-
+  if (slide.kind === 'VIDEO') return poster ?? (url && !isVideoUrl(url) ? url : null);
   if (slide.kind === 'COLLAGE') {
     const urls = [slide.url, ...slide.collageUrls]
       .map((u) => resolveMediaUrl(u))
       .filter((u): u is string => !!u && !isVideoUrl(u));
-    const cells = urls.slice(0, 4);
+    return urls[0] ?? poster;
+  }
+  if (url && !isVideoUrl(url)) return url;
+  return poster;
+}
+
+function SlideMedia({
+  slide,
+  width,
+  height,
+}: {
+  slide: FeaturedImageDto;
+  width: number;
+  height: number;
+}) {
+  if (slide.kind === 'COLLAGE') {
+    const urls = [slide.url, ...slide.collageUrls]
+      .map((u) => resolveMediaUrl(u))
+      .filter((u): u is string => !!u && !isVideoUrl(u))
+      .slice(0, 4);
     return (
       <View style={{ width, height, backgroundColor: '#000' }}>
         <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
-          {cells.map((u) => (
+          {urls.map((u) => (
             <Image
               key={u}
               source={{ uri: u }}
               style={{
-                width: cells.length === 1 ? width : width / 2,
-                height: cells.length <= 2 ? height : height / 2,
+                width: urls.length === 1 ? width : width / 2,
+                height: urls.length <= 2 ? height : height / 2,
               }}
               resizeMode="cover"
             />
@@ -249,8 +207,7 @@ function SlideMedia({
     );
   }
 
-  // PHOTO — never pass .mp4 to Image
-  const photo = poster && isVideoUrl(url ?? '') ? poster : url && !isVideoUrl(url) ? url : poster;
+  const photo = slideImageUri(slide);
   return (
     <View style={{ width, height, backgroundColor: '#000' }}>
       {photo ? (
@@ -260,6 +217,11 @@ function SlideMedia({
           <Ionicons name="image-outline" size={32} color="rgba(255,255,255,0.4)" />
         </View>
       )}
+      {slide.kind === 'VIDEO' ? (
+        <View style={{ position: 'absolute', left: 16, top: 40 }}>
+          <Badge label="Reel" />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -288,5 +250,3 @@ function Badge({ label }: { label: string }) {
     </View>
   );
 }
-
-void PRIMARY;

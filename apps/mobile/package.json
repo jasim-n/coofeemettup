@@ -8,7 +8,6 @@
     "@jrst/api-client": "workspace:*",
     "@jrst/types": "workspace:*",
     "expo": "~57.0.6",
-    "expo-av": "^16.0.8",
     "expo-font": "~57.0.3",
     "expo-linear-gradient": "~57.0.1",
     "expo-secure-store": "~57.0.1",
