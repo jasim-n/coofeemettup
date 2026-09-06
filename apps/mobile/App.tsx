@@ -35,6 +35,8 @@ import { DmScreen } from './src/screens/DmScreen';
 import { ConnectionsScreen } from './src/screens/ConnectionsScreen';
 import { InvitesScreen } from './src/screens/InvitesScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
+import { HomeScreen } from './src/screens/HomeScreen';
+import { MobileTopBar } from './src/components/MobileTopBar';
 import { PRIMARY, styles } from './src/theme';
 import {
   Field,
@@ -239,16 +241,25 @@ function AuthedApp({
 
   return (
     <View style={styles.flexBare}>
+      <MobileTopBar
+        user={user}
+        onLogout={onLogout}
+        onNotifications={() => setOverlay({ name: 'notifications' })}
+        onProfile={() => setOverlay({ name: 'profile' })}
+        onInvites={() => setOverlay({ name: 'invites' })}
+        onSearch={() => setTab('discover')}
+        onHost={user.canHost ? () => setOverlay({ name: 'createTable' }) : undefined}
+      />
       <View style={{ flex: 1 }}>
         {tab === 'home' ? (
           <HomeScreen
             user={user}
-            onLogout={onLogout}
+            onOpenTable={openTable}
+            onNearby={() => setTab('nearby')}
+            onDiscover={() => setTab('discover')}
             onProfile={() => setOverlay({ name: 'profile' })}
             onNotifications={() => setOverlay({ name: 'notifications' })}
-            onCreate={() => setOverlay({ name: 'createTable' })}
-            onOpenTable={openTable}
-            onInvites={() => setOverlay({ name: 'invites' })}
+            onInvite={() => setOverlay({ name: 'invites' })}
           />
         ) : null}
         {tab === 'discover' ? <DiscoverScreen onOpenTable={openTable} /> : null}
@@ -271,97 +282,7 @@ function AuthedApp({
 
 
 
-function HomeScreen({
-  user,
-  onLogout,
-  onProfile,
-  onNotifications,
-  onCreate,
-  onOpenTable,
-  onInvites,
-}: {
-  user: PublicUser;
-  onLogout: () => void;
-  onProfile: () => void;
-  onNotifications: () => void;
-  onCreate: () => void;
-  onOpenTable: (id: string) => void;
-  onInvites: () => void;
-}) {
-  const [tables, setTables] = useState<TableDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      setTables(await api.browseTables());
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load tables');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return (
-    <View style={styles.flexBare}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Tables</Text>
-        <Pressable onPress={() => void onLogout()} hitSlop={8}>
-          <Text style={styles.link}>Sign out</Text>
-        </Pressable>
-      </View>
-      <View style={[styles.rowGap, styles.navRow, { paddingHorizontal: 20 }]}>
-        <Pressable onPress={onProfile} hitSlop={8}>
-          <Text style={styles.link}>Profile</Text>
-        </Pressable>
-        <Pressable onPress={onNotifications} hitSlop={8}>
-          <Text style={styles.link}>Alerts</Text>
-        </Pressable>
-        <Pressable onPress={onInvites} hitSlop={8}>
-          <Text style={styles.link}>Invites</Text>
-        </Pressable>
-        {user.canHost ? (
-          <Pressable onPress={onCreate} hitSlop={8}>
-            <Text style={styles.link}>Host</Text>
-          </Pressable>
-        ) : null}
-      </View>
-      {loading ? (
-        <ActivityIndicator style={styles.spinner} />
-      ) : error ? (
-        <Text style={[styles.error, { paddingHorizontal: 20 }]}>{error}</Text>
-      ) : (
-        <FlatList
-          data={tables}
-          keyExtractor={(t) => t.id}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <EmptyState
-              icon="cafe-outline"
-              title="No open tables right now"
-              body="Check Explore or Nearby — or host one if you can."
-            />
-          }
-          renderItem={({ item: t }) => (
-            <Pressable style={styles.card} onPress={() => onOpenTable(t.id)}>
-              <Text style={styles.cardTitle}>{t.title ?? t.category}</Text>
-              <Text style={styles.meta}>{formatWhen(t.startAt)}</Text>
-              <Text style={styles.meta}>
-                {t.venueName ?? t.cafe?.name ?? 'See map'} ·{' '}
-                {t.pricePKR == null ? 'Free' : formatPKR(t.pricePKR)} · {t.seatsLeft} left
-              </Text>
-              <Text style={styles.meta}>Hosted by {handleOf(t.host)}</Text>
-            </Pressable>
-          )}
-        />
-      )}
-    </View>
-  );
-}
 
 function ProfileScreen({
   user,

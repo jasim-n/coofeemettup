@@ -4,6 +4,11 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-06 — Mobile UI port from web source
+
+- Method shift: port web components/pages into RN (not approximate theming).
+- Login, MobileTopBar, HomeDashboard (hero/vibes/table cards/rail), shared `table-cta` / covers / category icons copied from web.
+
 ### 2026-09-06 — Mobile login matches web
 
 - Login rebuilt to mirror web: hero gradient, white wordmark, mascot + quips, white card, Poppins, same copy/flow.
