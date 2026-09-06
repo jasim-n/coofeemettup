@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold } from '@expo-google-fonts/poppins';
 import * as SecureStore from 'expo-secure-store';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,6 +34,7 @@ import { ChatsScreen } from './src/screens/ChatsScreen';
 import { DmScreen } from './src/screens/DmScreen';
 import { ConnectionsScreen } from './src/screens/ConnectionsScreen';
 import { InvitesScreen } from './src/screens/InvitesScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
 import { PRIMARY, styles } from './src/theme';
 import {
   Field,
@@ -65,6 +67,13 @@ export default function App() {
 function AppInner() {
   const [booting, setBooting] = useState(true);
   const [user, setUser] = useState<PublicUser | null>(null);
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+  });
 
   useEffect(() => {
     let active = true;
@@ -101,7 +110,7 @@ function AppInner() {
     setUser(null);
   }, []);
 
-  if (booting) {
+  if (booting || !fontsLoaded) {
     return (
       <SafeAreaView style={styles.center} edges={['top', 'bottom']}>
         <ActivityIndicator color={PRIMARY} />
@@ -109,14 +118,19 @@ function AppInner() {
     );
   }
 
+  if (!user) {
+    return (
+      <>
+        <StatusBar style="light" />
+        <LoginScreen onAuthed={onAuthed} />
+      </>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="dark" />
-      {user ? (
-        <AuthedApp user={user} setUser={setUser} onLogout={onLogout} />
-      ) : (
-        <LoginScreen onAuthed={onAuthed} />
-      )}
+      <AuthedApp user={user} setUser={setUser} onLogout={onLogout} />
     </SafeAreaView>
   );
 }
@@ -255,359 +269,7 @@ function AuthedApp({
   );
 }
 
-function LoginScreen({ onAuthed }: { onAuthed: (u: PublicUser) => void }) {
-  const [step, setStep] = useState<'password' | 'signup' | 'reset'>('password');
-  const [codePhase, setCodePhase] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [code, setCode] = useState('');
-  const [phone, setPhone] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [username, setUsername] = useState('');
-  const [isNewUser, setIsNewUser] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [devHint, setDevHint] = useState<string | null>(null);
 
-  function resetCodeState() {
-    setCode('');
-    setDevHint(null);
-    setCodePhase(false);
-  }
-
-  async function doLogin() {
-    setError(null);
-    setBusy(true);
-    try {
-      const res = await api.login(email.trim().toLowerCase(), password || undefined);
-      onAuthed(res.user);
-    } catch (err) {
-      if (
-        err instanceof ApiError &&
-        err.status === 400 &&
-        err.message === 'Password setup required. Use email verification.'
-      ) {
-        try {
-          const result = await api.requestOtp(email.trim().toLowerCase(), 'login');
-          setIsNewUser(result.isNewUser);
-          if (result.devCode) {
-            setDevHint(result.devCode);
-            setCode(result.devCode);
-          }
-          setStep('signup');
-          setCodePhase(true);
-        } catch (otpErr) {
-          setError(otpErr instanceof ApiError ? otpErr.message : 'Something went wrong');
-        }
-      } else {
-        setError(err instanceof ApiError ? err.message : 'Something went wrong');
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function startSignup() {
-    setError(null);
-    setBusy(true);
-    try {
-      const result = await api.requestOtp(email.trim().toLowerCase(), 'signup');
-      setIsNewUser(result.isNewUser);
-      if (result.devCode) {
-        setDevHint(result.devCode);
-        setCode(result.devCode);
-      }
-      setCodePhase(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function verifySignup() {
-    setError(null);
-    setBusy(true);
-    try {
-      const res = await api.verifyOtp(email.trim().toLowerCase(), code, {
-        phone: isNewUser ? phone.trim() || undefined : undefined,
-        firstName: isNewUser ? firstName.trim() || undefined : undefined,
-        lastName: isNewUser ? lastName.trim() || undefined : undefined,
-        username: isNewUser ? username.trim().replace(/^@/, '') || undefined : undefined,
-        password: password || undefined,
-      });
-      onAuthed(res.user);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function startReset() {
-    setError(null);
-    setBusy(true);
-    try {
-      const result = await api.requestPasswordReset(email.trim().toLowerCase());
-      if (result.devCode) {
-        setDevHint(result.devCode);
-        setCode(result.devCode);
-      }
-      setCodePhase(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function doReset() {
-    setError(null);
-    setBusy(true);
-    try {
-      await api.resetPassword(email.trim().toLowerCase(), code, password);
-      const res = await api.login(email.trim().toLowerCase(), password);
-      onAuthed(res.user);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <View style={styles.brandMark}>
-        <Text style={styles.brandMarkText}>9</Text>
-      </View>
-      <Text style={styles.brandTitle}>Nine Circles</Text>
-      <Text style={styles.subtitle}>Small tables. Real conversations.</Text>
-
-      {step === 'password' && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={email}
-            onChangeText={setEmail}
-            autoFocus
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          <PrimaryButton label={busy ? 'Signing in…' : 'Sign in'} onPress={() => void doLogin()} disabled={busy} />
-          <Pressable
-            onPress={() => {
-              setStep('signup');
-              resetCodeState();
-              setError(null);
-            }}
-            hitSlop={8}
-            style={{ alignItems: 'center', marginTop: 8 }}
-          >
-            <Text style={styles.link}>Create an account</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              setStep('reset');
-              resetCodeState();
-              setError(null);
-            }}
-            hitSlop={8}
-            style={{ alignItems: 'center' }}
-          >
-            <Text style={styles.link}>Forgot password?</Text>
-          </Pressable>
-        </>
-      )}
-
-      {step === 'signup' && !codePhase && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={email}
-            onChangeText={setEmail}
-            autoFocus
-          />
-          <PrimaryButton
-            label={busy ? 'Sending…' : 'Send verification code'}
-            onPress={() => void startSignup()}
-            disabled={busy}
-          />
-          <Pressable
-            onPress={() => {
-              setStep('password');
-              resetCodeState();
-              setError(null);
-            }}
-            hitSlop={8}
-            style={{ alignItems: 'center', marginTop: 8 }}
-          >
-            <Text style={styles.link}>Back to sign in</Text>
-          </Pressable>
-        </>
-      )}
-
-      {step === 'signup' && codePhase && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="000000"
-            keyboardType="number-pad"
-            maxLength={6}
-            value={code}
-            onChangeText={setCode}
-            autoFocus
-          />
-          {isNewUser ? (
-            <>
-              <TextInput
-                style={styles.input}
-                placeholder="First name"
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Last name"
-                value={lastName}
-                onChangeText={setLastName}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="@username"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={username}
-                onChangeText={setUsername}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="03XXXXXXXXX"
-                keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Create a password"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </>
-          ) : (
-            <TextInput
-              style={styles.input}
-              placeholder="Set a password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-          )}
-          {devHint ? <Text style={styles.receiptRef}>Dev code: {devHint}</Text> : null}
-          <PrimaryButton
-            label={busy ? 'Verifying…' : 'Verify & continue'}
-            onPress={() => void verifySignup()}
-            disabled={busy}
-          />
-          <Pressable
-            onPress={() => {
-              resetCodeState();
-              setError(null);
-            }}
-            hitSlop={8}
-            style={{ alignItems: 'center', marginTop: 8 }}
-          >
-            <Text style={styles.link}>Use a different email</Text>
-          </Pressable>
-        </>
-      )}
-
-      {step === 'reset' && !codePhase && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={email}
-            onChangeText={setEmail}
-            autoFocus
-          />
-          <PrimaryButton
-            label={busy ? 'Sending…' : 'Send reset code'}
-            onPress={() => void startReset()}
-            disabled={busy}
-          />
-          <Pressable
-            onPress={() => {
-              setStep('password');
-              resetCodeState();
-              setError(null);
-            }}
-            hitSlop={8}
-            style={{ alignItems: 'center', marginTop: 8 }}
-          >
-            <Text style={styles.link}>Back to sign in</Text>
-          </Pressable>
-        </>
-      )}
-
-      {step === 'reset' && codePhase && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="000000"
-            keyboardType="number-pad"
-            maxLength={6}
-            value={code}
-            onChangeText={setCode}
-            autoFocus
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="New password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          {devHint ? <Text style={styles.receiptRef}>Dev code: {devHint}</Text> : null}
-          <PrimaryButton
-            label={busy ? 'Saving…' : 'Reset password'}
-            onPress={() => void doReset()}
-            disabled={busy}
-          />
-          <Pressable
-            onPress={() => {
-              resetCodeState();
-              setError(null);
-            }}
-            hitSlop={8}
-            style={{ alignItems: 'center', marginTop: 8 }}
-          >
-            <Text style={styles.link}>Use a different email</Text>
-          </Pressable>
-        </>
-      )}
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-    </ScrollView>
-  );
-}
 
 function HomeScreen({
   user,

@@ -4,6 +4,10 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-06 — Mobile login matches web
+
+- Login rebuilt to mirror web: hero gradient, white wordmark, mascot + quips, white card, Poppins, same copy/flow.
+
 ### 2026-09-06 — Mobile design pass (teal brand + nav)
 
 - Mobile theme aligned to web Nine Circles tokens (teal `#10B89B`, slate surfaces).
