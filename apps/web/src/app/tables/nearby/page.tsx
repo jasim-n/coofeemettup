@@ -318,7 +318,7 @@ export default function NearbyTablesPage() {
       <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)_300px]">
         {/* ── LEFT: filters ───────────────────────────────────────────── */}
         <aside className="bg-card order-2 rounded-3xl border p-5 shadow-soft lg:order-1 lg:sticky lg:top-24 lg:self-start">
-          <h2 className="font-bold tracking-tight">Find tables nearby</h2>
+          <h2 className="font-bold tracking-tight">Find meetups nearby</h2>
           <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
             Discover conversations happening around you.
           </p>
@@ -505,7 +505,7 @@ export default function NearbyTablesPage() {
                     onClick={() => setVisible((v) => v + PAGE_SIZE)}
                     className="bg-card border-border rounded-full border px-6 py-2.5 text-sm font-semibold shadow-soft transition-shadow hover:shadow-glow"
                   >
-                    Load more tables
+                    Load more meetups
                   </button>
                 </div>
               )}
@@ -520,10 +520,10 @@ export default function NearbyTablesPage() {
             <p className="mb-4 font-bold tracking-tight">Nearby summary</p>
             <div className="space-y-3">
               {[
-                { value: stats.total, label: 'Active tables', sub: 'around you' },
+                { value: stats.total, label: 'Active meetups', sub: 'around you' },
                 { value: stats.seatsLeft, label: 'Available seats', sub: 'right now' },
                 { value: stats.venues, label: 'Cafes hosting', sub: 'conversations' },
-                { value: stats.freeTables, label: 'Free tables', sub: 'no cover' },
+                { value: stats.freeTables, label: 'Free meetups', sub: 'no cover' },
               ].map((row) => (
                 <div key={row.label} className="flex items-center gap-3">
                   <span className="text-primary text-xl font-extrabold leading-none w-10 shrink-0">
@@ -569,15 +569,15 @@ export default function NearbyTablesPage() {
             <div className="bg-primary/10 mb-3 grid size-10 place-items-center rounded-2xl">
               <i className="fa-solid fa-mug-hot text-primary" />
             </div>
-            <p className="font-bold tracking-tight">Can&apos;t find the right table?</p>
+            <p className="font-bold tracking-tight">Can&apos;t find the right meetup?</p>
             <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-              Create your own table and invite people to join your conversation.
+              Create your own meetup and invite people to join your conversation.
             </p>
             <Link
               href="/tables/new"
               className="bg-primary text-primary-foreground mt-4 block rounded-full py-2.5 text-center text-sm font-semibold transition-[filter] hover:brightness-110"
             >
-              Create a Table
+              Create a meetup
             </Link>
           </div>
         </aside>

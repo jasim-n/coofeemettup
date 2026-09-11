@@ -170,6 +170,10 @@
   html {
     @apply font-sans;
   }
+  button:not(:disabled),
+  a[href] {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {
@@ -252,6 +256,15 @@
   .scrollbar-fade:hover::-webkit-scrollbar-thumb,
   .scrollbar-fade[data-scrolling='true']::-webkit-scrollbar-thumb {
     background-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+  }
+
+  /* Sidebars & drawers — scrollable but no visible scrollbar. */
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
   }
 
   /* Let a MapLibre popup render our own card chrome instead of its default box. */
@@ -373,4 +386,11 @@
       width: 100%;
     }
   }
+}
+
+/* Above layered Tailwind preflight so interactive controls show a pointer. */
+button:not(:disabled),
+a[href],
+[role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
 }

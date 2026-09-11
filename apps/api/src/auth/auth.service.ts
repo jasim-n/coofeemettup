@@ -143,7 +143,7 @@ export class AuthService {
     return this.issueSession(user);
   }
 
-  async login(email: string, password?: string) {
+  async login(email: string, password?: string, rememberMe = true) {
     const user = await this.users.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -160,7 +160,7 @@ export class AuthService {
     if (!(await verifyPassword(password, user.passwordHash))) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    return this.issueSession(user);
+    return this.issueSession(user, rememberMe);
   }
 
   async requestPasswordReset(email: string) {
@@ -207,10 +207,13 @@ export class AuthService {
 
   private async issueSession(
     user: NonNullable<Awaited<ReturnType<UsersService['findByEmail']>>>,
+    rememberMe = true,
   ) {
     this.assertActiveAccount(user.status);
     const payload: SessionPayload = { sub: user.id, role: user.role };
-    const token = await this.jwt.signAsync(payload);
+    const token = await this.jwt.signAsync(payload, {
+      expiresIn: rememberMe ? '30d' : '1d',
+    });
     return { user, token };
   }
 }

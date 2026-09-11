@@ -57,8 +57,8 @@ export default function InvitePage() {
     if (navigator.share && link) {
       try {
         await navigator.share({
-          title: 'Coffee Meetups',
-          text: 'Join me for a coffee meetup — meet interesting people over coffee ☕',
+          title: 'Nine Circles',
+          text: 'Join me on Nine Circles — meet interesting people at small in-person meetups',
           url: link,
         });
       } catch {

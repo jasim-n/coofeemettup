@@ -231,7 +231,7 @@ export default function ConnectionsPage() {
           {suggestions === null ? (
             <PageLoader label="Loading suggestions…" />
           ) : suggestions.length === 0 ? (
-            <Empty icon="fa-user-group" message="No suggestions right now. Join more tables to meet people!" />
+            <Empty icon="fa-user-group" message="No suggestions right now. Join more meetups to meet people!" />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {suggestions.map(({ user: u, mutuals }) => (

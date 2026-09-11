@@ -396,8 +396,8 @@ export default function ProfilePage() {
   const interestList = parseList(user.interests.join(', ')).filter(Boolean);
   const bioLine =
     interestList.length > 0
-      ? `Coffee lover · ${interestList.slice(0, 2).join(' · ')}`
-      : 'Here for good coffee and better conversations.';
+      ? `${interestList.slice(0, 2).join(' · ')}`
+      : 'Here for good conversations and new connections.';
   const [s1, s2, s3, s4] = splitScore(user.reliabilityScore);
 
   /* form helpers (original) */
@@ -509,7 +509,7 @@ export default function ProfilePage() {
     { id: 'overview', icon: 'fa-user', label: 'Overview', shortLabel: 'Overview' },
     { href: '/meetups', icon: 'fa-calendar-days', label: 'My Meetups', shortLabel: 'Meetups' },
     { id: 'reviews', icon: 'fa-star', label: 'Reviews & Ratings', shortLabel: 'Reviews' },
-    { href: '/saved', icon: 'fa-bookmark', label: 'Saved Tables', shortLabel: 'Saved' },
+    { href: '/saved', icon: 'fa-bookmark', label: 'Saved meetups', shortLabel: 'Saved' },
     { id: 'overview', icon: 'fa-clock-rotate-left', label: 'Activity', shortLabel: 'Activity', tab: 'activity' },
     { href: '/invites', icon: 'fa-envelope-open', label: 'Invitations', shortLabel: 'Invites' },
     { id: 'identity', icon: 'fa-shield-halved', label: 'Identity Verification', shortLabel: 'Verify' },
@@ -597,7 +597,7 @@ export default function ProfilePage() {
             <p className="text-2xl mb-2"><i className="fa-solid fa-mug-hot text-primary" /></p>
             <p className="font-heading font-bold text-secondary-foreground text-sm">Invite friends</p>
             <p className="text-secondary-foreground/80 text-xs mt-1">
-              Grow your coffee circle.
+              Grow your circle.
             </p>
             <Link
               href="/invite"
@@ -1164,7 +1164,29 @@ export default function ProfilePage() {
                       onChange={(e) => setConsent(e.target.checked)}
                       className="mt-0.5 shrink-0 accent-primary"
                     />
-                    <span className="min-w-0 break-words">I agree to the Community Code of Conduct</span>
+                    <span className="min-w-0 break-words">
+                      I agree to the{' '}
+                      <Link
+                        href="/terms"
+                        className="text-primary font-semibold underline underline-offset-2"
+                      >
+                        Terms of Service
+                      </Link>
+                      ,{' '}
+                      <Link
+                        href="/privacy"
+                        className="text-primary font-semibold underline underline-offset-2"
+                      >
+                        Privacy Policy
+                      </Link>
+                      , and{' '}
+                      <Link
+                        href="/community-guidelines"
+                        className="text-primary font-semibold underline underline-offset-2"
+                      >
+                        Community Guidelines
+                      </Link>
+                    </span>
                   </label>
                 </section>
 

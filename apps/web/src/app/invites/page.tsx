@@ -222,7 +222,7 @@ export default function InvitesPage() {
           className="py-20"
           quip="Inbox’s quiet. That’s okay."
           title="No invitations right now"
-          description="When someone invites you to their table, it’ll appear here."
+          description="When someone invites you to their meetup, it’ll appear here."
         />
       )}
 

@@ -147,26 +147,26 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                 {name}
               </h1>
               <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70 sm:text-base">
-                Find meaningful conversations, one coffee at a time.
+                Find meaningful conversations with people near you.
               </p>
               <div className="mt-5 flex flex-wrap gap-2.5 sm:mt-6 sm:gap-3">
                 <Link
                   href="/tables/nearby"
                   className="text-ink rounded-full bg-white px-4 py-2 text-sm font-bold transition-transform hover:-translate-y-0.5 sm:px-5 sm:py-2.5"
                 >
-                  Find a Table →
+                  Find a meetup →
                 </Link>
                 <Link
                   href="/discover"
                   className="rounded-full px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition-colors hover:bg-white/10 sm:px-5 sm:py-2.5"
                 >
-                  Explore tables
+                  Explore meetups
                 </Link>
               </div>
             </div>
             {/* stats row */}
             <div className="mt-5 flex flex-col gap-3 border-t border-white/10 pt-4 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-10 sm:gap-y-3 sm:pt-5">
-              <HeroStat icon="fa-location-dot" value={String(tables.length)} label="Tables nearby" />
+              <HeroStat icon="fa-location-dot" value={String(tables.length)} label="Meetups nearby" />
               <HeroStat
                 icon="fa-calendar-day"
                 value={next ? next.title ?? next.category : 'None yet'}
@@ -191,7 +191,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                   <p className="eyebrow text-primary mb-0">Moments</p>
                 </div>
                 <h2 className="font-heading text-xl font-bold tracking-tight">
-                  Featured from the tables
+                  Featured from meetups
                 </h2>
                 <p className="text-muted-foreground text-sm">
                   Photos, reels, and collages curated from real meetups.
@@ -238,7 +238,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         {/* tables near you */}
         <div>
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="font-heading text-xl font-bold tracking-tight">Tables near you</h2>
+            <h2 className="font-heading text-xl font-bold tracking-tight">Meetups near you</h2>
             <Link href="/discover" className="text-primary text-sm font-semibold hover:underline">
               See all →
             </Link>
@@ -253,7 +253,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
             <div className="rounded-3xl border border-dashed py-12 text-center">
               <i className="fa-solid fa-chair text-3xl text-muted-foreground" />
               <p className="text-muted-foreground mt-2 text-sm">
-                No open tables right now — check{' '}
+                No open meetups right now — check{' '}
                 <Link href="/discover" className="text-primary font-semibold hover:underline">
                   Discover
                 </Link>
@@ -271,7 +271,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
       </div>
 
       {/* ---------- right rail ---------- */}
-      <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+      <aside className="scrollbar-hidden space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
         {/* profile card */}
         <div className="bg-card shadow-soft rounded-3xl border p-5">
           <div className="flex items-center gap-3">
@@ -331,7 +331,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
                 Invite friends
               </p>
               <p className="text-secondary-foreground/80 mt-1 text-sm">
-                Better tables with people you know.
+                Better meetups with people you know.
               </p>
               <Link
                 href="/invite"
@@ -379,7 +379,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
               <div>
                 <p className="font-heading font-bold tracking-tight">Verify your identity</p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Verified members build trust and get into tables faster.
+                  Verified members build trust and get into meetups faster.
                 </p>
                 <Link
                   href="/profile"

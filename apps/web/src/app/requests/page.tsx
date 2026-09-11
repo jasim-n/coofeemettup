@@ -92,7 +92,7 @@ export default function RequestsPage() {
           <h1 className="display mt-1 text-2xl sm:text-3xl">Requests</h1>
         </div>
         <Link href="/meetups" className="text-primary text-sm font-semibold hover:underline">
-          Your Tables →
+          Your meetups →
         </Link>
       </div>
 
@@ -101,7 +101,7 @@ export default function RequestsPage() {
           <CardContent className="p-0">
             <p className="font-heading font-bold">Only hosts manage join requests.</p>
             <p className="text-muted-foreground mt-1 text-sm">
-              Become a host to start managing your own table requests.
+              Become a host to start managing your own meetup requests.
             </p>
           </CardContent>
         </Card>
@@ -126,7 +126,7 @@ export default function RequestsPage() {
               href="/tables/new"
               className="text-primary mt-2 inline-block text-sm font-semibold hover:underline"
             >
-              Host a table →
+              Host a meetup →
             </Link>
           )}
         </div>
@@ -144,7 +144,7 @@ export default function RequestsPage() {
                     className="font-heading text-lg font-bold tracking-tight hover:underline"
                   >
                     <i className={`fa-solid ${categoryIcon(r.table?.category)} mr-1`} />
-                    {r.table?.title ?? r.table?.category ?? 'Your table'}
+                    {r.table?.title ?? r.table?.category ?? 'Your meetup'}
                   </Link>
                   <Badge variant="warning">pending</Badge>
                 </div>

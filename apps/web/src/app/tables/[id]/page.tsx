@@ -29,6 +29,7 @@ import { CategoryPills } from '@/components/category-pills';
 import { splitCategories } from '@/lib/category-icon';
 import { haversineKm, formatDistance } from '@/lib/geo';
 import { invalidateTablesClientCache } from '@/lib/data-cache';
+import { isGroupChatOpen, isUpcomingTable } from '@/lib/table-time';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
 
@@ -99,7 +100,7 @@ export default function TableDetailPage() {
       try {
         await load();
       } catch (err) {
-        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load table');
+        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load meetup');
       }
     })();
     return () => {
@@ -255,6 +256,7 @@ export default function TableDetailPage() {
 
   // eventEnded uses module-level NOW_MS so Date.now() is never called during render.
   const eventEnded = table ? new Date(table.startAt).getTime() < NOW_MS : false;
+  const chatOpen = table ? isGroupChatOpen(table, NOW_MS) : false;
 
   if (error && !table) return <main className="p-6 text-destructive text-sm">{error}</main>;
   if (!table) return <PageLoader />;
@@ -262,7 +264,8 @@ export default function TableDetailPage() {
   const status = table.myRequestStatus;
   const canViewMoments = isHost || isStaff || status === 'APPROVED';
   const canManageMoments = isHost || isStaff;
-  const full = table.seatsLeft <= 0 || table.status !== 'OPEN';
+  const canJoin = isUpcomingTable(table.startAt, NOW_MS) && table.status === 'OPEN';
+  const full = !canJoin || table.seatsLeft <= 0;
   const filled = table.seats - table.seatsLeft;
   const price = table.pricePKR == null ? 'Free' : formatPKR(table.pricePKR);
   const venue = table.venueName ?? table.cafe?.name ?? table.venueAddress ?? 'See map';
@@ -288,7 +291,7 @@ export default function TableDetailPage() {
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       <Link href="/discover" className="text-primary text-sm font-semibold hover:underline">
-        ← Back to all tables
+        ← Back to all meetups
       </Link>
 
       <div className="mt-4 grid gap-6 lg:grid-cols-3">
@@ -376,7 +379,7 @@ export default function TableDetailPage() {
           {/* about */}
           {(table.description || table.rules) && (
             <section className="bg-card shadow-soft rounded-3xl border p-6">
-              <h2 className="font-heading text-lg font-bold tracking-tight">About this table</h2>
+              <h2 className="font-heading text-lg font-bold tracking-tight">About this meetup</h2>
               {table.description && (
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   {table.description}
@@ -747,7 +750,7 @@ export default function TableDetailPage() {
           {/* join card */}
           <div className="bg-card shadow-glow rounded-3xl border p-5">
             <div className="flex items-baseline justify-between">
-              <p className="font-heading font-bold tracking-tight">Join this table</p>
+              <p className="font-heading font-bold tracking-tight">Join this meetup</p>
               <Badge variant="brand">{price}</Badge>
             </div>
             <div
@@ -757,7 +760,7 @@ export default function TableDetailPage() {
             >
               {table.seatsLeft > 0 ? (
                 <><i className="fa-solid fa-chair mr-1" />{table.seatsLeft} seat{table.seatsLeft === 1 ? '' : 's'} left{table.seatsLeft <= 2 ? ' — filling up fast!' : ''}</>
-              ) : 'This table is full.'}
+              ) : 'This meetup is full.'}
             </div>
 
             {error && <p className="text-destructive mt-3 text-sm">{error}</p>}
@@ -770,30 +773,36 @@ export default function TableDetailPage() {
                     <p className="text-foreground text-sm font-medium">
                       {"You're in!"} <i className="fa-solid fa-circle-check ml-1 text-primary" />
                     </p>
-                    <Link
-                      href={`/tables/${id}/chat`}
-                      className={buttonVariants({
-                        variant: 'hero',
-                        size: 'lg',
-                        className: 'w-full',
-                      })}
-                    >
-                      <i className="fa-solid fa-comment mr-1.5" />Open group chat
-                    </Link>
+                    {chatOpen ? (
+                      <Link
+                        href={`/tables/${id}/chat`}
+                        className={buttonVariants({
+                          variant: 'hero',
+                          size: 'lg',
+                          className: 'w-full',
+                        })}
+                      >
+                        <i className="fa-solid fa-comment mr-1.5" />Open group chat
+                      </Link>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        Group chat is closed for this meetup.
+                      </p>
+                    )}
                     <Button
                       variant="ghost"
                       className="w-full"
                       disabled={busy}
                       onClick={() => void run(() => api.leaveTable(id))}
                     >
-                      Leave table
+                      Leave meetup
                     </Button>
                   </>
-                ) : table.myInvite ? (
+                ) : table.myInvite && canJoin ? (
                   <>
                     <div className="bg-secondary rounded-2xl px-4 py-3 text-sm font-medium">
                       <i className="fa-solid fa-envelope-open text-primary mr-1" />{' '}
-                      {"You're invited to this table."}
+                      {"You're invited to this meetup."}
                     </div>
                     <Button
                       variant="hero"
@@ -827,14 +836,30 @@ export default function TableDetailPage() {
                       Cancel request
                     </Button>
                   </>
+                ) : !canJoin ? (
+                  <Button variant="hero" size="lg" className="w-full" disabled>
+                    {eventEnded ? 'Meetup ended' : 'Not open to join'}
+                  </Button>
                 ) : full ? (
                   <Button variant="hero" size="lg" className="w-full" disabled>
-                    Table full
+                    Meetup full
                   </Button>
                 ) : user && !user.codeOfConductAt ? (
                   <>
                     <p className="text-muted-foreground text-sm">
-                      Accept the Community Code of Conduct in your profile before joining.
+                      Accept the{' '}
+                      <Link href="/terms" className="text-primary font-semibold underline underline-offset-2">
+                        Terms of Service
+                      </Link>
+                      ,{' '}
+                      <Link href="/privacy" className="text-primary font-semibold underline underline-offset-2">
+                        Privacy Policy
+                      </Link>
+                      , and{' '}
+                      <Link href="/community-guidelines" className="text-primary font-semibold underline underline-offset-2">
+                        Community Guidelines
+                      </Link>{' '}
+                      in your profile before joining.
                     </p>
                     <Link
                       href="/profile#code-of-conduct"
@@ -855,14 +880,14 @@ export default function TableDetailPage() {
                     disabled={busy}
                     onClick={() => void run(() => api.requestJoinTable(id))}
                   >
-                    {busy ? 'Sending…' : 'Join Table'}
+                    {busy ? 'Sending…' : 'Join meetup'}
                   </Button>
                 )}
               </div>
             ) : (
               <div className="mt-4 space-y-3">
                 <p className="text-muted-foreground text-sm">
-                  {"You're"} hosting this table — manage requests below.
+                  {"You're"} hosting this meetup — manage requests below.
                 </p>
                 {!eventEnded &&
                   table.status !== 'COMPLETED' &&
@@ -904,7 +929,7 @@ export default function TableDetailPage() {
 
           {/* table details */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
-            <p className="font-heading mb-3 font-bold tracking-tight">Table details</p>
+            <p className="font-heading mb-3 font-bold tracking-tight">Meetup details</p>
             <ul className="space-y-2.5 text-sm">
               <li className="flex items-start justify-between gap-2">
                 <span className="text-muted-foreground"><i className="fa-solid fa-location-dot mr-1" />{venue}</span>

@@ -140,7 +140,7 @@ export default function TableChatPage() {
             </Button>
           )}
           <Link href={`/tables/${id}`} className="text-muted-foreground text-sm font-semibold hover:underline">
-            ← Table
+            ← Meetup
           </Link>
         </div>
       </div>
@@ -258,7 +258,7 @@ export default function TableChatPage() {
           <Input
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Message the table…"
+            placeholder="Message the group…"
             maxLength={1000}
           />
           <Button type="submit" disabled={sending || !body.trim()}>

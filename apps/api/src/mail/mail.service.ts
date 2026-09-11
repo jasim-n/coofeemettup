@@ -252,6 +252,18 @@ export class MailService {
   }
 
   /** Admin "send test" — throws on total failure so the portal can surface it. */
+  /** Footer newsletter welcome — best-effort; returns provider used or null. */
+  async sendNewsletterWelcome(email: string): Promise<MailProvider | null> {
+    return this.send(
+      email,
+      "You're subscribed to Nine Circles updates",
+      "Thanks for subscribing to Nine Circles. We'll email you about product updates, new features, and launch news in Islamabad and Lahore.\n\nYou can ignore this message if you didn't sign up.",
+      `<p>Thanks for subscribing to <strong>Nine Circles</strong>.</p>
+<p>We'll email you about product updates, new features, and launch news in Islamabad and Lahore.</p>
+<p style="color:#64748b;font-size:13px;">If you didn't sign up, you can ignore this message.</p>`,
+    );
+  }
+
   async sendTest(email: string): Promise<MailProvider> {
     const sent = await this.send(
       email,

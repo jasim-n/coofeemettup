@@ -92,7 +92,11 @@ export class AuthController {
     @Headers('x-client') client?: string,
   ) {
     const email = dto.email.trim().toLowerCase();
-    const { user, token } = await this.auth.login(email, dto.password);
+    const { user, token } = await this.auth.login(
+      email,
+      dto.password,
+      dto.rememberMe !== false,
+    );
     return this.finishLogin(res, client, user, token);
   }
 

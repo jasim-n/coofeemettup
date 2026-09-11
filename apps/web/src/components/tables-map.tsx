@@ -96,7 +96,7 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
           setTables(next);
         }
       } catch (err) {
-        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load tables');
+        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load meetups');
       } finally {
         if (active) setLoading(false);
       }
@@ -222,7 +222,7 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
           </button>
         )}
         <span className="text-muted-foreground ml-auto text-sm font-medium">
-          {loading ? 'Finding tables…' : `${visible.length} of ${pins.length} tables`}
+          {loading ? 'Finding meetups…' : `${visible.length} of ${pins.length} meetups`}
         </span>
       </div>
 
@@ -271,11 +271,11 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
       <div className={`flex flex-col gap-4 ${mapOnly ? '' : 'md:h-[74vh] md:flex-row'}`}>
       {/* desktop list rail */}
       {!mapOnly && (
-      <aside className="hidden md:flex md:w-80 md:shrink-0 md:flex-col md:gap-2 md:overflow-y-auto md:pr-1">
+      <aside className="scrollbar-hidden hidden md:flex md:w-80 md:shrink-0 md:flex-col md:gap-2 md:overflow-y-auto md:pr-1">
         {/* header row */}
         <div className="flex items-center justify-between px-1 pb-1">
           <span className="eyebrow text-primary">
-            {loading ? 'Finding tables…' : `${visible.length} nearby`}
+            {loading ? 'Finding meetups…' : `${visible.length} nearby`}
           </span>
           <button
             type="button"
@@ -326,8 +326,8 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
         ) : visible.length === 0 ? (
           <p className="text-muted-foreground px-1 text-sm">
             {activeCount > 0 || statusFilter !== 'all'
-              ? 'No tables match these filters.'
-              : 'No open tables nearby right now.'}
+              ? 'No meetups match these filters.'
+              : 'No open meetups nearby right now.'}
           </p>
         ) : (
           <div className="space-y-2">
@@ -453,7 +453,7 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
         </MapGL>
 
         <div className="glass ring-border/60 absolute left-3 top-3 rounded-full px-3 py-1.5 text-xs font-bold ring-1">
-          <i className="fa-solid fa-chair mr-1" />{visible.length} table{visible.length === 1 ? '' : 's'} nearby
+          <i className="fa-solid fa-chair mr-1" />{visible.length} meetup{visible.length === 1 ? '' : 's'} nearby
         </div>
         <button
           type="button"

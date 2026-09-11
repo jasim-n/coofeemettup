@@ -10,6 +10,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { InviteStatus } from '../../generated/prisma/client';
 import { toPublicUser } from '../users/user.serializer';
 import { CacheService } from '../redis/cache.service';
+import { assertJoinableTable } from '../tables/table-time';
 
 const TABLE_SELECT = {
   id: true,
@@ -57,6 +58,7 @@ export class InvitesService {
     if (table.hostId !== me) {
       throw new ForbiddenException('Only the host can invite');
     }
+    assertJoinableTable(table);
     if (inviteeId === me || inviteeId === table.hostId) {
       throw new BadRequestException('Invalid invitee');
     }
@@ -163,6 +165,9 @@ export class InvitesService {
     }
 
     const { tableId } = invite;
+    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    if (!table) throw new NotFoundException('Table not found');
+    assertJoinableTable(table);
 
     await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.table.updateMany({
@@ -204,12 +209,8 @@ export class InvitesService {
       { tableId },
     );
 
-    const table = await this.prisma.table.findUnique({
-      where: { id: tableId },
-      select: { hostId: true },
-    });
     void this.cache.invalidateTableMutation({
-      hostId: table?.hostId,
+      hostId: table.hostId,
       userIds: [me],
     });
 

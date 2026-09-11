@@ -45,7 +45,7 @@ export default function SavedPage() {
         <Link href="/login" className="text-primary underline">
           sign in
         </Link>{' '}
-        to view your saved tables.
+        to view your saved meetups.
       </main>
     );
   }
@@ -56,11 +56,11 @@ export default function SavedPage() {
       <p className="eyebrow text-muted-foreground text-xs font-semibold uppercase tracking-widest">
         Bookmarks
       </p>
-      <h1 className="display text-2xl font-extrabold tracking-tight mt-1 sm:text-3xl">Saved tables</h1>
+      <h1 className="display text-2xl font-extrabold tracking-tight mt-1 sm:text-3xl">Saved meetups</h1>
 
       <div className="mt-8">
         {/* loading */}
-        {tablesView === null && <PageLoader label="Loading saved tables…" />}
+        {tablesView === null && <PageLoader label="Loading saved meetups…" />}
 
         {/* empty state */}
         {tablesView !== null && tablesView.length === 0 && (
@@ -68,15 +68,15 @@ export default function SavedPage() {
             <span className="text-4xl">
               <i className="fa-regular fa-bookmark text-muted-foreground" />
             </span>
-            <p className="font-heading mt-4 font-bold">No saved tables yet</p>
+            <p className="font-heading mt-4 font-bold">No saved meetups yet</p>
             <p className="text-muted-foreground mt-1 text-sm">
-              Tap the heart on any table to bookmark it.
+              Tap the heart on any meetup to bookmark it.
             </p>
             <Link
               href="/discover"
               className="bg-primary text-primary-foreground hover:brightness-110 mt-5 inline-block rounded-full px-5 py-2.5 text-sm font-semibold transition-[filter]"
             >
-              Explore tables
+              Explore meetups
             </Link>
           </div>
         )}

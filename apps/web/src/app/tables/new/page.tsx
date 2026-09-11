@@ -70,10 +70,10 @@ export default function NewTablePage() {
         <p className="text-4xl">🔒</p>
         <h1 className="display mt-3 text-2xl">Hosting is invite-only</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Your account isn’t enabled to host tables yet. Ask an admin to grant host access.
+          Your account isn’t enabled to host meetups yet. Ask an admin to grant host access.
         </p>
         <Link href="/discover" className="text-primary mt-4 inline-block text-sm font-semibold hover:underline">
-          ← Browse tables
+          ← Browse meetups
         </Link>
       </main>
     );
@@ -121,7 +121,7 @@ export default function NewTablePage() {
       invalidateTablesClientCache();
       router.push(`/tables/${table.id}`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not publish the table');
+      setError(err instanceof ApiError ? err.message : 'Could not publish the meetup');
     } finally {
       setBusy(false);
     }
@@ -130,13 +130,13 @@ export default function NewTablePage() {
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       <div className="mb-6">
-        <p className="eyebrow text-primary">Host a table</p>
-        <h1 className="display mt-1 text-2xl sm:text-3xl">Create a table</h1>
+        <p className="eyebrow text-primary">Host a meetup</p>
+        <h1 className="display mt-1 text-2xl sm:text-3xl">Create a meetup</h1>
         <Link
           href="/discover"
           className="text-muted-foreground mt-2 inline-block text-sm font-semibold hover:underline"
         >
-          ← Tables
+          ← Meetups
         </Link>
       </div>
 
@@ -264,7 +264,7 @@ export default function NewTablePage() {
 
         <Section step="7" title="Description & rules">
           <div className="space-y-1.5">
-            <Label htmlFor="description">What’s this table about?</Label>
+            <Label htmlFor="description">What’s this meetup about?</Label>
             <Textarea
               id="description"
               rows={3}
@@ -297,7 +297,7 @@ export default function NewTablePage() {
         </Section>
 
         <Button type="submit" variant="hero" size="lg" className="w-full lg:col-span-2" disabled={busy}>
-          {busy ? 'Publishing…' : 'Publish table →'}
+          {busy ? 'Publishing…' : 'Publish meetup →'}
         </Button>
       </form>
     </main>

@@ -111,7 +111,7 @@ export function BannerPicker({
 
       {error && <p className="text-destructive text-xs">{error}</p>}
       <p className="text-muted-foreground text-xs">
-        Shown on cards and the table page. If you skip this, a category cover is used.
+        Shown on cards and the meetup page. If you skip this, a category cover is used.
       </p>
     </div>
   );

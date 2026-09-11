@@ -132,7 +132,7 @@ export default function EditTablePage() {
           href={`/tables/${id}`}
           className="text-primary mt-4 inline-block text-sm font-semibold hover:underline"
         >
-          ← Back to table
+          ← Back to meetup
         </Link>
       </main>
     );
@@ -197,7 +197,7 @@ export default function EditTablePage() {
           href={`/tables/${id}`}
           className="text-muted-foreground mt-2 inline-block text-sm font-semibold hover:underline"
         >
-          ← Back to table
+          ← Back to meetup
         </Link>
       </div>
 
@@ -324,7 +324,7 @@ export default function EditTablePage() {
 
         <Section step="7" title="Description & rules">
           <div className="space-y-1.5">
-            <Label htmlFor="description">What&apos;s this table about?</Label>
+            <Label htmlFor="description">What&apos;s this meetup about?</Label>
             <Textarea
               id="description"
               rows={3}
