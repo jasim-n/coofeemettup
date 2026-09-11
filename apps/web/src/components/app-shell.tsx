@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import { MobileNav } from '@/components/mobile-nav';
 import { MobileTopBar } from '@/components/mobile-top-bar';
+import { PageEnter } from '@/components/page-enter';
 
 /** Top + bottom mobile chrome; desktop uses DesktopNav only. */
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-1 flex-col">
       {!isChat && <MobileTopBar />}
-      <div className={`flex flex-1 flex-col ${mobileChromePad}`}>{children}</div>
+      <PageEnter className={`flex flex-1 flex-col ${mobileChromePad}`}>{children}</PageEnter>
       <MobileNav />
     </div>
   );

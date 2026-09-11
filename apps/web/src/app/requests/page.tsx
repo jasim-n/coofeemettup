@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageLoader, Spinner } from '@/components/spinner';
+import { StaggerIn } from '@/components/stagger-in';
 
 export default function RequestsPage() {
   const { user, loading } = useAuth();
@@ -133,7 +134,7 @@ export default function RequestsPage() {
       )}
 
       {reqs !== null && reqs.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <StaggerIn className="grid gap-4 lg:grid-cols-2" deps={[reqs.length]}>
           {reqs.map((r) => (
             <Card key={r.id} className="flex-row gap-0 p-0">
               <div className="bg-gradient-ember w-2 shrink-0" />
@@ -187,7 +188,7 @@ export default function RequestsPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </StaggerIn>
       )}
     </main>
   );

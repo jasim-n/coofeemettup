@@ -13,6 +13,7 @@ import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { CategoryPills } from '@/components/category-pills';
 import { haversineKm, formatDistance } from '@/lib/geo';
 import { tableCta } from '@/lib/table-cta';
+import { useDeviceLocation } from '@/lib/use-device-location';
 
 // Map libraries touch window/document — load client-only.
 const TablesMap = dynamic(() => import('@/components/tables-map'), { ssr: false });
@@ -216,7 +217,15 @@ export default function NearbyTablesPage() {
   const [tables, setTables] = useState<TableDto[] | null>(null);
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [loadingTables, setLoadingTables] = useState(() => seedBrowse == null);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const {
+    location,
+    error: locationError,
+    pending: locationPending,
+    refresh: refreshLocation,
+  } = useDeviceLocation();
+  const coords = location
+    ? { lat: location.lat, lng: location.lng }
+    : null;
 
   // filters
   const [radiusKm, setRadiusKm] = useState<number | null>(null); // null = Any
@@ -250,15 +259,6 @@ export default function NearbyTablesPage() {
       active = false;
     };
   }, [user?.id]);
-
-  /* geolocation — request once on mount */
-  useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(
-      (p) => setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => {}, // denied/unavailable → stay null
-      { timeout: 8000 },
-    );
-  }, []);
 
   /* derived categories */
   const categories = useMemo(
@@ -331,22 +331,27 @@ export default function NearbyTablesPage() {
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">
-                  {coords ? 'Near you' : 'Location off'}
+                  {locationPending
+                    ? 'Locating…'
+                    : location
+                      ? `Near you (±${Math.round(location.accuracyM)} m)`
+                      : locationError === 'denied'
+                        ? 'Location blocked'
+                        : 'Location off'}
                 </span>
                 <button
                   type="button"
-                  onClick={() =>
-                    navigator.geolocation?.getCurrentPosition(
-                      (p) => setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }),
-                      () => {},
-                      { timeout: 8000 },
-                    )
-                  }
+                  onClick={refreshLocation}
                   className="text-primary text-xs font-semibold hover:underline"
                 >
-                  Change
+                  Refresh
                 </button>
               </div>
+              {location && location.accuracyM > 150 && (
+                <p className="text-muted-foreground mt-1 text-[10px] leading-relaxed">
+                  Signal is coarse — try refreshing outdoors or enable precise location in your browser.
+                </p>
+              )}
             </div>
 
             {/* RADIUS */}
@@ -430,7 +435,12 @@ export default function NearbyTablesPage() {
         {/* ── CENTER: map + list ──────────────────────────────────────── */}
         <div className="order-1 min-w-0 space-y-4 lg:order-2">
           {/* map */}
-          <TablesMap mapOnly />
+          <TablesMap
+            mapOnly
+            tables={filtered}
+            loading={listsPending}
+            userCoords={location}
+          />
 
           {/* status filter row */}
           <div className="flex flex-wrap items-center justify-between gap-3">

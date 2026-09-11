@@ -14,6 +14,7 @@ import { PageLoader } from '@/components/spinner';
 import { SaveButton } from '@/components/save-button';
 import { CategoryPills } from '@/components/category-pills';
 import { tableCta } from '@/lib/table-cta';
+import { StaggerIn } from '@/components/stagger-in';
 
 export default function SavedPage() {
   const { user, loading } = useAuth();
@@ -83,7 +84,10 @@ export default function SavedPage() {
 
         {/* grid */}
         {tablesView !== null && tablesView.length > 0 && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StaggerIn
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            deps={[tablesView.length]}
+          >
             {tablesView.map((t) => {
               const low = t.seatsLeft > 0 && t.seatsLeft <= 2;
               const cta = tableCta(t, user?.id);
@@ -137,7 +141,7 @@ export default function SavedPage() {
                 </Link>
               );
             })}
-          </div>
+          </StaggerIn>
         )}
       </div>
     </main>

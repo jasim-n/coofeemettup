@@ -1,5 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { Wordmark } from '@/components/wordmark';
+import { FadeIn } from '@/components/fade-in';
+import { StaggerIn } from '@/components/stagger-in';
 
 export const LEGAL_EFFECTIVE_DATE = '11 September 2026';
 export const LEGAL_LAST_UPDATED = '11 September 2026';
@@ -29,7 +33,7 @@ export function LegalPageShell({
 }) {
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-10 sm:px-6 lg:px-12">
-      <div className="mb-8">
+      <FadeIn className="mb-8">
         <Link href="/" className="inline-flex cursor-pointer" aria-label="9 Circles home">
           <Wordmark size="sm" />
         </Link>
@@ -38,11 +42,18 @@ export function LegalPageShell({
         <p className="text-muted-foreground mt-2 text-sm">
           Effective date: {LEGAL_EFFECTIVE_DATE} · Last updated: {LEGAL_LAST_UPDATED}
         </p>
-      </div>
+      </FadeIn>
 
-      <div className="text-muted-foreground space-y-6 text-sm leading-relaxed">{children}</div>
+      <StaggerIn
+        className="text-muted-foreground space-y-6 text-sm leading-relaxed"
+        itemSelector="section, p"
+      >
+        {children}
+      </StaggerIn>
 
-      <LegalNav current={current} />
+      <FadeIn delay={0.1}>
+        <LegalNav current={current} />
+      </FadeIn>
     </main>
   );
 }

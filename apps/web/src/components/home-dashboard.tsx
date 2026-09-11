@@ -18,6 +18,8 @@ import { categoryIcon, splitCategories } from '@/lib/category-icon';
 import { CategoryPills } from '@/components/category-pills';
 import { FeaturedShowcase } from '@/components/featured-showcase';
 import { tableCta } from '@/lib/table-cta';
+import { FadeIn } from '@/components/fade-in';
+import { StaggerIn } from '@/components/stagger-in';
 
 const initial = (s?: string | null) => (s ?? '?').charAt(0).toUpperCase();
 
@@ -130,6 +132,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
       {/* ---------- main column ---------- */}
       <div className="min-w-0 space-y-5 md:space-y-6">
         {/* hero band — café illustration from the design, full-bleed on the right */}
+        <FadeIn>
         <section className="bg-ink relative overflow-hidden rounded-3xl shadow-glow">
           <div aria-hidden className="pointer-events-none absolute inset-0">
             {/* eslint-disable-next-line @next/next/no-img-element -- static bundled hero art */}
@@ -178,6 +181,7 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
             </div>
           </div>
         </section>
+        </FadeIn>
 
         {/* featured moments — photos, reels, collages */}
         {featured.length > 0 && (
@@ -261,11 +265,14 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <StaggerIn
+              className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+              deps={[upcoming.length, busy]}
+            >
               {upcoming.map((t) => (
                 <TableCoverCard key={t.id} t={t} viewerId={viewerId} />
               ))}
-            </div>
+            </StaggerIn>
           )}
         </div>
       </div>

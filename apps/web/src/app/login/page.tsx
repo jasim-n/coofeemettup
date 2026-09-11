@@ -15,6 +15,7 @@ import {
   getRememberMePreference,
   loadSavedLoginEmail,
 } from '@/lib/auth-storage';
+import { FadeIn } from '@/components/fade-in';
 
 // Accepts: 03XXXXXXXXX, +923XXXXXXXXX, 923XXXXXXXXX (10 digits after the 3)
 const PK_PHONE_RE = /^(?:\+92|92|0)(3\d{9})$/;
@@ -219,14 +220,14 @@ export default function LoginPage() {
       />
 
       {/* wordmark */}
-      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-6 pt-16 text-center">
+      <FadeIn className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-6 pt-16 text-center">
         <Link href="/" className="inline-flex cursor-pointer" aria-label="Nine Circles home">
           <Wordmark size="lg" variant="white" />
         </Link>
         <p className="text-white/80 text-sm font-medium">
           Connecting People, One Circle at a Time
         </p>
-      </div>
+      </FadeIn>
 
       {/* card — stays centered; mascot sits in left gutter on laptop */}
       <div className="relative mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-10 md:pb-16">
@@ -234,7 +235,11 @@ export default function LoginPage() {
           <LoginMascot />
         </div>
 
-        <div className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6">
+        <FadeIn
+          className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6"
+          delay={0.08}
+          deps={[step]}
+        >
           <div className="space-y-1 text-center">
             <p className="eyebrow text-primary">
               {step === 'password'
@@ -496,7 +501,7 @@ export default function LoginPage() {
               </Button>
             </form>
           )}
-        </div>
+        </FadeIn>
       </div>
     </main>
   );

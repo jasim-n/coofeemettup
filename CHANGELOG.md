@@ -4,6 +4,18 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-12 — Nearby map: English labels and filter sync
+
+- Basemap labels prefer English/Latin script (`name:en`, `name:latin`) on Nearby, search preview, and venue picker maps.
+- Nearby map pins now follow the same filters as the list (radius, category, status); empty results center on the user when location is available.
+- Blue pulsing dot shows the user’s current location when geolocation is enabled (or after tapping locate on the map).
+- Nearby geolocation uses high-accuracy live GPS (`watchPosition`), shows accuracy in the sidebar, and keeps the map centered on the user instead of zooming out to distant meetups nationwide.
+
+### 2026-09-11 — Subtle GSAP motion across web
+
+- Added reusable `FadeIn`, `PageEnter`, and improved `StaggerIn` primitives (respect reduced motion).
+- Route transitions, login card steps, hero/marketing content, legal pages, and list grids (home, saved, requests, connections, search, invites) use light fade/stagger entrances; buttons get a soft tap scale.
+
 ### 2026-09-11 — Legal pages (Terms, Privacy, Community Guidelines)
 
 - Replaced Terms of Service and Privacy Policy with the new 9 Circles legal drafts; added a public Community Guidelines page with cross-links in the footer and signed-out home hero.

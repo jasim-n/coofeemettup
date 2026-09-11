@@ -34,18 +34,15 @@ export function StaggerIn({
         ? root.querySelectorAll(itemSelector)
         : root.children;
       if (!items.length) return;
-      gsap.fromTo(
-        items,
-        { opacity: 0, y: 14 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.4,
-          stagger: 0.06,
-          ease: 'power2.out',
-          clearProps: 'transform',
-        },
-      );
+      gsap.set(items, { opacity: 0, y: 14 });
+      gsap.to(items, {
+        opacity: 1,
+        y: 0,
+        duration: 0.4,
+        stagger: 0.06,
+        ease: 'power2.out',
+        clearProps: 'transform',
+      });
     },
     { scope: rootRef, dependencies: deps },
   );

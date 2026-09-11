@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { CategoryPills } from '@/components/category-pills';
 import { EmptyMascot } from '@/components/empty-mascot';
 import { pulseSuccess } from '@/lib/motion';
+import { StaggerIn } from '@/components/stagger-in';
 const personName = (u: { username?: string | null }) =>
   `@${u.username ?? 'member'}`;
 
@@ -228,11 +229,14 @@ export default function InvitesPage() {
 
       {/* Invite cards grid */}
       {invitesView.length > 0 && (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerIn
+          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+          deps={[invitesView.length]}
+        >
           {invitesView.map((inv) => (
             <InviteCard key={inv.id} invite={inv} onRemove={handleRemove} />
           ))}
-        </div>
+        </StaggerIn>
       )}
     </main>
   );

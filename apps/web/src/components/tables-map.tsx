@@ -21,6 +21,10 @@ import {
   PAKISTAN_MAX_BOUNDS,
   isInPakistan,
 } from '@/lib/map-style';
+import { bindMapEnglishLabels } from '@/lib/map-labels';
+import { haversineKm } from '@/lib/geo';
+import { GEOLOCATION_OPTIONS, type DeviceLocation } from '@/lib/use-device-location';
+import { UserLocationMarker } from '@/components/user-location-marker';
 
 const TIMES = [
   { key: 'morning', label: 'Morning', emoji: '🌅' },
@@ -50,8 +54,24 @@ interface Pin {
 }
 
 const POLL_MS = 15_000;
+/** Nearby map: only auto-fit meetups within this radius of the user. */
+const NEARBY_FOCUS_KM = 30;
 
-export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {}) {
+type TablesMapProps = {
+  mapOnly?: boolean;
+  /** Parent-provided meetups (e.g. Nearby page filters). Skips internal fetch when set. */
+  tables?: TableDto[] | null;
+  loading?: boolean;
+  userCoords?: DeviceLocation | null;
+};
+
+export default function TablesMap({
+  mapOnly = false,
+  tables: externalTables,
+  loading: externalLoading,
+  userCoords = null,
+}: TablesMapProps = {}) {
+  const useExternal = externalTables !== undefined;
   const { user } = useAuth();
   const browseKey = tablesCacheKeys(user?.id).browse;
   const seedBrowse = peekCache<TableDto[]>(browseKey);
@@ -59,10 +79,16 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
   const [tables, setTables] = useState<TableDto[]>(() => seedBrowse ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(() => seedBrowse == null);
+  const [loading, setLoading] = useState(() => !useExternal && seedBrowse == null);
   const mapRef = useRef<MapRef | null>(null);
+  const labelCleanupRef = useRef<(() => void) | null>(null);
   const railRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [ready, setReady] = useState(false);
+  const [deviceCoords, setDeviceCoords] = useState<DeviceLocation | null>(null);
+
+  useEffect(() => {
+    if (userCoords) setDeviceCoords(userCoords);
+  }, [userCoords]);
 
   // filters
   const [showFilters, setShowFilters] = useState(false);
@@ -81,6 +107,7 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
   };
 
   useEffect(() => {
+    if (useExternal) return;
     let active = true;
     const key = tablesCacheKeys(user?.id).browse;
     const load = async (forceNetwork: boolean) => {
@@ -107,20 +134,32 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
       active = false;
       clearInterval(timer);
     };
-  }, [user?.id]);
+  }, [user?.id, useExternal]);
+
+  useEffect(
+    () => () => {
+      labelCleanupRef.current?.();
+      labelCleanupRef.current = null;
+    },
+    [],
+  );
+
+  const sourceTables = useExternal ? (externalTables ?? []) : tables;
+  const showLoading = useExternal ? (externalLoading ?? false) : loading;
 
   const pins = useMemo(() => {
     const out: Pin[] = [];
-    for (const t of tables) {
+    for (const t of sourceTables) {
       const lat = t.lat ?? t.cafe?.lat ?? null;
       const lng = t.lng ?? t.cafe?.lng ?? null;
       if (lat == null || lng == null) continue;
       out.push({ table: t, lat, lng, name: t.venueName ?? t.cafe?.name ?? t.category });
     }
     return out;
-  }, [tables]);
+  }, [sourceTables]);
 
   const visible = useMemo(() => {
+    if (useExternal) return pins;
     return pins.filter((p) => {
       const d = new Date(p.table.startAt);
       if (fromDate && d < new Date(`${fromDate}T00:00:00`)) return false;
@@ -132,15 +171,71 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
       if (statusFilter === 'full' && seats > 0) return false;
       return true;
     });
-  }, [pins, fromDate, toDate, times, statusFilter]);
+  }, [pins, useExternal, fromDate, toDate, times, statusFilter]);
 
   useEffect(() => {
-    const m = mapRef.current;
-    if (!m || !ready || visible.length === 0) return;
-    if (visible.length === 1) {
+    const m = mapRef.current?.getMap();
+    if (!m || !ready) return;
+
+    if (mapOnly) {
+      if (!deviceCoords) return;
+
+      const localPins = visible.filter(
+        (p) =>
+          haversineKm(deviceCoords.lat, deviceCoords.lng, p.lat, p.lng) <=
+          NEARBY_FOCUS_KM,
+      );
+
+      if (localPins.length === 0) {
+        m.flyTo({
+          center: [deviceCoords.lng, deviceCoords.lat],
+          zoom: 14,
+          duration: 600,
+        });
+        return;
+      }
+
+      let minLng = deviceCoords.lng;
+      let maxLng = deviceCoords.lng;
+      let minLat = deviceCoords.lat;
+      let maxLat = deviceCoords.lat;
+      for (const p of localPins) {
+        minLng = Math.min(minLng, p.lng);
+        maxLng = Math.max(maxLng, p.lng);
+        minLat = Math.min(minLat, p.lat);
+        maxLat = Math.max(maxLat, p.lat);
+      }
+      m.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        { padding: 80, maxZoom: 15, duration: 600 },
+      );
+      return;
+    }
+
+    const includeUser =
+      deviceCoords && isInPakistan(deviceCoords.lat, deviceCoords.lng)
+        ? deviceCoords
+        : null;
+
+    if (visible.length === 0) {
+      if (includeUser) {
+        m.flyTo({
+          center: [includeUser.lng, includeUser.lat],
+          zoom: 11,
+          duration: 600,
+        });
+      }
+      return;
+    }
+
+    if (visible.length === 1 && !includeUser) {
       m.flyTo({ center: [visible[0]!.lng, visible[0]!.lat], zoom: 13, duration: 600 });
       return;
     }
+
     let minLng = Infinity,
       minLat = Infinity,
       maxLng = -Infinity,
@@ -151,6 +246,12 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
       minLat = Math.min(minLat, p.lat);
       maxLat = Math.max(maxLat, p.lat);
     }
+    if (includeUser) {
+      minLng = Math.min(minLng, includeUser.lng);
+      maxLng = Math.max(maxLng, includeUser.lng);
+      minLat = Math.min(minLat, includeUser.lat);
+      maxLat = Math.max(maxLat, includeUser.lat);
+    }
     m.fitBounds(
       [
         [minLng, minLat],
@@ -158,11 +259,17 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
       ],
       { padding: 70, maxZoom: 14, duration: 600 },
     );
-  }, [visible, ready]);
+  }, [visible, ready, deviceCoords, mapOnly]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const ids = new Set(visible.map((p) => p.table.id));
+    if (selectedId && !ids.has(selectedId)) setSelectedId(null);
+  }, [visible, selectedId, ready]);
 
   const select = useCallback((p: Pin, scrollRail = false) => {
     setSelectedId(p.table.id);
-    mapRef.current?.easeTo({ center: [p.lng, p.lat], duration: 400 });
+    mapRef.current?.getMap()?.easeTo({ center: [p.lng, p.lat], duration: 400 });
     if (scrollRail)
       railRefs.current[p.table.id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, []);
@@ -171,23 +278,31 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const { latitude, longitude } = pos.coords;
+        const { latitude, longitude, accuracy } = pos.coords;
+        const next: DeviceLocation = {
+          lat: latitude,
+          lng: longitude,
+          accuracyM: accuracy,
+        };
+        setDeviceCoords(next);
+        const map = mapRef.current?.getMap();
+        if (!map) return;
         if (!isInPakistan(latitude, longitude)) {
-          mapRef.current?.flyTo({
+          map.flyTo({
             center: [ISLAMABAD_CENTER.lng, ISLAMABAD_CENTER.lat],
             zoom: 11,
             duration: 700,
           });
           return;
         }
-        mapRef.current?.flyTo({
+        map.flyTo({
           center: [longitude, latitude],
-          zoom: 13,
+          zoom: 14,
           duration: 700,
         });
       },
       () => undefined,
-      { timeout: 5000 },
+      GEOLOCATION_OPTIONS,
     );
   }, []);
 
@@ -222,7 +337,7 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
           </button>
         )}
         <span className="text-muted-foreground ml-auto text-sm font-medium">
-          {loading ? 'Finding meetups…' : `${visible.length} of ${pins.length} meetups`}
+          {showLoading ? 'Finding meetups…' : `${visible.length} of ${pins.length} meetups`}
         </span>
       </div>
 
@@ -275,7 +390,7 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
         {/* header row */}
         <div className="flex items-center justify-between px-1 pb-1">
           <span className="eyebrow text-primary">
-            {loading ? 'Finding meetups…' : `${visible.length} nearby`}
+            {showLoading ? 'Finding meetups…' : `${visible.length} nearby`}
           </span>
           <button
             type="button"
@@ -287,7 +402,7 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
         </div>
 
         {/* summary line */}
-        {!loading && visible.length > 0 && (
+        {!showLoading && visible.length > 0 && (
           <p className="text-muted-foreground px-1 text-xs">
             {visible.length} table{visible.length === 1 ? '' : 's'} · {totalSeatsOpen} seat{totalSeatsOpen === 1 ? '' : 's'} open
           </p>
@@ -319,7 +434,7 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
         </div>
 
         {/* list body */}
-        {loading ? (
+        {showLoading ? (
           <div className="grid flex-1 place-items-center">
             <Spinner className="text-primary size-6" />
           </div>
@@ -392,14 +507,18 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
 
       {/* map */}
       <div className={`relative overflow-hidden rounded-3xl border shadow-soft ${mapOnly ? 'h-[320px] w-full' : 'h-[68vh] flex-1 md:h-full'}`}>
-        {loading && (
+        {showLoading && (
           <div className="bg-background/60 absolute inset-0 z-10 grid place-items-center backdrop-blur-sm">
             <Spinner className="text-primary size-8" />
           </div>
         )}
         <MapGL
           ref={mapRef}
-          onLoad={() => setReady(true)}
+          onLoad={(evt) => {
+            setReady(true);
+            labelCleanupRef.current?.();
+            labelCleanupRef.current = bindMapEnglishLabels(evt.target);
+          }}
           initialViewState={{
             longitude: PAKISTAN_CENTER.lng,
             latitude: PAKISTAN_CENTER.lat,
@@ -435,6 +554,14 @@ export default function TablesMap({ mapOnly = false }: { mapOnly?: boolean } = {
               </Marker>
             );
           })}
+
+          {deviceCoords && (
+            <UserLocationMarker
+              lat={deviceCoords.lat}
+              lng={deviceCoords.lng}
+              accuracyM={deviceCoords.accuracyM}
+            />
+          )}
 
           {selected && (
             <Popup

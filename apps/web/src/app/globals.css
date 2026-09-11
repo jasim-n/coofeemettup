@@ -377,6 +377,41 @@
     }
   }
 
+  /* Subtle interactive surfaces — cards and panels already use Tailwind hover lifts. */
+  @media (prefers-reduced-motion: no-preference) {
+    .motion-tap {
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .motion-tap:active {
+      transform: scale(0.98);
+    }
+  }
+
+  @keyframes user-location-pulse {
+    0% {
+      transform: scale(0.85);
+      opacity: 0.7;
+    }
+    70% {
+      transform: scale(1.45);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1.45);
+      opacity: 0;
+    }
+  }
+  .user-location-pulse {
+    animation: user-location-pulse 2s ease-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .user-location-pulse {
+      animation: none;
+      opacity: 0.35;
+      transform: scale(1.1);
+    }
+  }
+
   /* Carousel autoplay progress bar (fills over the slide interval). */
   @keyframes carousel-progress {
     from {

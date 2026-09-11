@@ -11,6 +11,7 @@ import { RequestsBadgeProvider } from '@/components/requests-badge';
 import { DesktopNav } from '@/components/desktop-nav';
 import { AppShell } from '@/components/app-shell';
 import { SiteFooter } from '@/components/site-footer';
+import { PageEnter } from '@/components/page-enter';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -31,7 +32,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (publicPath) {
     return (
       <div className="flex min-h-dvh flex-col overflow-x-hidden">
-        <div className="flex-1">{children}</div>
+        <PageEnter className="flex flex-1 flex-col">{children}</PageEnter>
         {showFooter && <SiteFooter />}
       </div>
     );

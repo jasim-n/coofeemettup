@@ -6,6 +6,8 @@ import { buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
 import { HomeDashboard } from '@/components/home-dashboard';
 import { PageLoader } from '@/components/spinner';
+import { FadeIn } from '@/components/fade-in';
+import { StaggerIn } from '@/components/stagger-in';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -24,7 +26,7 @@ export default function Home() {
         />
 
         <div className="mx-auto grid w-full max-w-md flex-1 items-center gap-8 px-6 py-14 md:max-w-6xl md:grid-cols-2 md:gap-16 md:py-20">
-          <div className="flex flex-col gap-7">
+          <StaggerIn className="flex flex-col gap-7">
             <Wordmark size="md" />
 
             <div>
@@ -78,10 +80,10 @@ export default function Home() {
                 Guidelines
               </Link>
             </div>
-          </div>
+          </StaggerIn>
 
           {/* desktop visual */}
-          <div className="hidden md:block">
+          <FadeIn className="hidden md:block" delay={0.12}>
             <div className="bg-gradient-hero shadow-glow relative grid aspect-[4/5] place-items-center overflow-hidden rounded-[2rem]">
               <div
                 aria-hidden
@@ -93,7 +95,7 @@ export default function Home() {
                 <p className="text-sm text-white/80">real conversations, in person</p>
               </div>
             </div>
-          </div>
+          </FadeIn>
         </div>
       </main>
     );
