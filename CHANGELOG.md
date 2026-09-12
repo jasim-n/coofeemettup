@@ -9,6 +9,7 @@ All notable UI/product changes are logged here.
 - Messages and Table group chat send optimistically: the bubble appears immediately, the composer clears and stays enabled; the server copy replaces the placeholder, and on failure the bubble is removed and the text restored. Poll results are skipped while a send is in flight.
 - Thread panes scroll themselves to the newest message (`scrollTo` on the pane) instead of `scrollIntoView`, so the page no longer jumps after sending. Pane heights account for the fixed nav so the pane, not the page, is the scroller on desktop and mobile.
 - On small screens, `/messages` opens on the conversation list instead of auto-opening the most recent thread; desktop two-pane still pre-selects it.
+- Message reactions toggle instantly (`toggleReactionLocally` in `lib/reactions.ts` mirrors the server toggle); the server summary reconciles afterwards and a failure reverts to the previous state.
 
 ### 2026-09-12 — Space below desktop nav
 

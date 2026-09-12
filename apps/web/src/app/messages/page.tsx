@@ -7,6 +7,7 @@ import {
   type ChatMessage,
   type DmMessage,
   type PublicUser,
+  type ReactionSummary,
   type TableDto,
 } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
@@ -18,6 +19,7 @@ import { MessagesSkeleton } from '@/components/skeletons/messages-skeleton';
 import { formatDateTime } from '@/lib/format';
 import { isAdminRole } from '@/lib/roles';
 import { useFadeScrollbar } from '@/hooks/use-fade-scrollbar';
+import { toggleReactionLocally } from '@/lib/reactions';
 import { EmptyMascot } from '@/components/empty-mascot';
 
 const POLL_MS = 10_000;
@@ -318,19 +320,47 @@ export default function MessagesPage() {
   // ---- reaction toggle ----
   async function toggleReaction(messageId: string, emoji: string) {
     const kind = selected?.kind === 'dm' ? 'dm' : 'group';
-    try {
-      const updated = await api.toggleReaction(kind, messageId, emoji);
+    if (messageId.startsWith('tmp-')) return; // placeholder not yet saved
+
+    // Optimistic: apply the toggle locally now, reconcile with the server after.
+    const applyReactions = (
+      update: (current: ReactionSummary[] | undefined) => ReactionSummary[] | undefined,
+    ) => {
       if (kind === 'dm') {
-        setDmMsgs((prev) => prev.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)));
+        setDmMsgs((prev) =>
+          prev.map((m) => (m.id === messageId ? { ...m, reactions: update(m.reactions) } : m)),
+        );
       } else {
         setGroupChat((prev) =>
           prev
-            ? { ...prev, messages: prev.messages.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)) }
+            ? {
+                ...prev,
+                messages: prev.messages.map((m) =>
+                  m.id === messageId ? { ...m, reactions: update(m.reactions) } : m,
+                ),
+              }
             : prev,
         );
       }
-    } catch { /* ignore */ }
+    };
+
+    const previous =
+      kind === 'dm'
+        ? dmMsgs.find((m) => m.id === messageId)?.reactions
+        : groupChat?.messages.find((m) => m.id === messageId)?.reactions;
+
     setReactPickerId(null);
+    applyReactions((current) => toggleReactionLocally(current, emoji));
+    inflightRef.current += 1; // keep the poll from overwriting the optimistic state
+
+    try {
+      const updated = await api.toggleReaction(kind, messageId, emoji);
+      applyReactions(() => updated);
+    } catch {
+      applyReactions(() => previous);
+    } finally {
+      inflightRef.current = Math.max(0, inflightRef.current - 1);
+    }
   }
 
   // ---- derived ----

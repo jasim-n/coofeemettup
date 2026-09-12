@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ApiError, type ChatMessage } from '@jrst/api-client';
+import { ApiError, type ChatMessage, type ReactionSummary } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatSkeleton } from '@/components/skeletons/chat-skeleton';
 import { UserLink } from '@/components/user-link';
+import { toggleReactionLocally } from '@/lib/reactions';
 
 const POLL_MS = 6000;
 const QUICK_EMOJIS = ['❤️', '👍', '😂', '🎉', '☕', '😮'];
@@ -32,15 +33,27 @@ export default function TableChatPage() {
   const inflightRef = useRef(0);
 
   async function toggleReaction(messageId: string, emoji: string) {
-    if (closed) return;
+    if (closed || messageId.startsWith('tmp-')) return;
+
+    // Optimistic: apply locally now, reconcile with the server after.
+    const previous = messages.find((m) => m.id === messageId)?.reactions;
+    const apply = (reactions: ReactionSummary[] | undefined) =>
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, reactions } : m)));
+
+    setReactPickerId(null);
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, reactions: toggleReactionLocally(m.reactions, emoji) } : m,
+      ),
+    );
+    inflightRef.current += 1; // keep the poll from overwriting the optimistic state
+
     try {
-      const updated = await api.toggleReaction('group', messageId, emoji);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)),
-      );
-      setReactPickerId(null);
+      apply(await api.toggleReaction('group', messageId, emoji));
     } catch {
-      /* best-effort */
+      apply(previous);
+    } finally {
+      inflightRef.current = Math.max(0, inflightRef.current - 1);
     }
   }
 
