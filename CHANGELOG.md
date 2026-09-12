@@ -4,6 +4,10 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-12 — Messages inbox cached across visits
+
+- `/messages` seeds the conversation list (and last-opened thread) from the existing SWR cache, so client navigations skip the skeleton and refresh in the background. Cache is written on poll, send, and read; logout still clears it.
+
 ### 2026-09-12 — Chat: instant send, no page jump, no auto-open on mobile
 
 - Messages and Table group chat send optimistically: the bubble appears immediately, the composer clears and stays enabled; the server copy replaces the placeholder, and on failure the bubble is removed and the text restored. Poll results are skipped while a send is in flight.

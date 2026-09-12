@@ -169,6 +169,21 @@ export function tablesCacheKeys(userId: string | null | undefined) {
   };
 }
 
+/** Inbox + per-thread keys so /messages can paint without a skeleton on revisit. */
+export function messagesCacheKeys(userId: string | null | undefined) {
+  const uid = userId ?? 'anon';
+  return {
+    inbox: `messages:inbox:${uid}`,
+    thread: (key: string) => `messages:thread:${uid}:${key}`,
+  };
+}
+
+/** Chat lists stay serveable across in-app hops; polling refreshes while the page is open. */
+export const MESSAGES_CACHE_TTL = {
+  freshMs: 15_000,
+  staleMs: 30 * 60_000,
+};
+
 /** Write-through helper (e.g. map poll) so other pages see fresh data. */
 export function putCache<T>(
   key: string,

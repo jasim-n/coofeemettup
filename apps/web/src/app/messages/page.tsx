@@ -20,6 +20,12 @@ import { formatDateTime } from '@/lib/format';
 import { isAdminRole } from '@/lib/roles';
 import { useFadeScrollbar } from '@/hooks/use-fade-scrollbar';
 import { toggleReactionLocally } from '@/lib/reactions';
+import {
+  MESSAGES_CACHE_TTL,
+  messagesCacheKeys,
+  peekCache,
+  putCache,
+} from '@/lib/data-cache';
 import { EmptyMascot } from '@/components/empty-mascot';
 
 const POLL_MS = 10_000;
@@ -60,34 +66,58 @@ type GroupConvo = {
 
 type Convo = DmConvo | GroupConvo;
 
+type InboxCache = {
+  convos: Convo[];
+  connections: PublicUser[];
+};
+
+type ThreadCache = {
+  dmMsgs: DmMessage[];
+  groupChat: { member: boolean; messages: ChatMessage[] } | null;
+};
+
 type TabFilter = 'All' | 'Unread' | 'Groups';
+
+function cacheInbox(userId: string, convos: Convo[], connections: PublicUser[]) {
+  putCache<InboxCache>(messagesCacheKeys(userId).inbox, { convos, connections }, MESSAGES_CACHE_TTL);
+}
+
+function cacheThread(userId: string, key: string, thread: ThreadCache) {
+  putCache<ThreadCache>(messagesCacheKeys(userId).thread(key), thread, MESSAGES_CACHE_TTL);
+}
 
 export default function MessagesPage() {
   const { user, loading } = useAuth();
   const isAdmin = isAdminRole(user?.role);
+  const cacheKeys = messagesCacheKeys(user?.id);
+  const seedInbox = peekCache<InboxCache>(cacheKeys.inbox);
 
-  // ---- unified convo list ----
-  const [convos, setConvos] = useState<Convo[]>([]);
-  const [connections, setConnections] = useState<PublicUser[]>([]);
-  const [convoLoading, setConvoLoading] = useState(true);
+  // ---- unified convo list — seed from SWR cache so revisits skip the skeleton ----
+  const [convos, setConvos] = useState<Convo[]>(() => seedInbox?.convos ?? []);
+  const [connections, setConnections] = useState<PublicUser[]>(() => seedInbox?.connections ?? []);
+  const [convoLoading, setConvoLoading] = useState(() => seedInbox == null);
 
-  // ---- selection — seed from ?dm=<userId> if present ----
+  // ---- selection — seed from ?dm=<userId>, else last inbox on desktop ----
   const [selectedKey, setSelectedKey] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
     const dm = new URLSearchParams(window.location.search).get('dm');
-    return dm ? `dm:${dm}` : null;
+    if (dm) return `dm:${dm}`;
+    const twoPane = window.matchMedia('(min-width: 1024px)').matches;
+    return twoPane ? (seedInbox?.convos[0]?.key ?? null) : null;
   });
 
-  // ---- DM thread state ----
-  const [dmMsgs, setDmMsgs] = useState<DmMessage[]>([]);
+  const seedThread = selectedKey
+    ? peekCache<ThreadCache>(cacheKeys.thread(selectedKey))
+    : undefined;
 
-  // ---- group thread state ----
+  // ---- DM / group thread — seed so opening a known chat is instant ----
+  const [dmMsgs, setDmMsgs] = useState<DmMessage[]>(() => seedThread?.dmMsgs ?? []);
   const [groupChat, setGroupChat] = useState<{ member: boolean; messages: ChatMessage[] } | null>(
-    null,
+    () => seedThread?.groupChat ?? null,
   );
 
   // ---- shared loading / send state ----
-  const [chatLoading, setChatLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(() => selectedKey != null && seedThread == null);
   const [body, setBody] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
 
@@ -117,6 +147,7 @@ export default function MessagesPage() {
   // unread badges / ordering update when new messages arrive.
   useEffect(() => {
     if (!user) return;
+    const uid = user.id;
     let active = true;
     const loadConvos = async () => {
       const [threads, groups, conns] = await Promise.all([
@@ -149,6 +180,7 @@ export default function MessagesPage() {
       setConvos(all);
       setConnections(conns);
       setConvoLoading(false);
+      cacheInbox(uid, all, conns);
       // Desktop shows list + thread side by side, so pre-opening the newest
       // thread is helpful. On small screens the thread replaces the list, so
       // stay on the list until the user picks one.
@@ -175,35 +207,52 @@ export default function MessagesPage() {
     void api
       .markGroupRead(tid)
       .then(() =>
-        setConvos((prev) =>
-          prev.map((c) => (c.key === selectedKey ? { ...c, unread: 0 } : c)),
-        ),
+        setConvos((prev) => {
+          const next = prev.map((c) => (c.key === selectedKey ? { ...c, unread: 0 } : c));
+          cacheInbox(user.id, next, connections);
+          return next;
+        }),
       )
       .catch(() => undefined);
-  }, [selectedKey, user]);
+  }, [selectedKey, user, connections]);
 
   // ---- load + poll selected thread ----
   useEffect(() => {
     if (!selectedKey || !user) return;
+    const uid = user.id;
+    const threadKey = selectedKey;
 
     let active = true;
 
     async function fetchThread(initial?: boolean) {
       if (initial) {
-        setChatLoading(true);
-        setDmMsgs([]);
-        setGroupChat(null);
+        const cached = peekCache<ThreadCache>(messagesCacheKeys(uid).thread(threadKey));
+        if (cached) {
+          setDmMsgs(cached.dmMsgs);
+          setGroupChat(cached.groupChat);
+          setChatLoading(false);
+        } else {
+          setChatLoading(true);
+          setDmMsgs([]);
+          setGroupChat(null);
+        }
         setSendError(null);
       }
       try {
-        if (selectedKey?.startsWith('dm:')) {
-          const uid = selectedKey.slice(3);
-          const msgs = await api.dmThread(uid);
-          if (active && (initial || inflightRef.current === 0)) setDmMsgs(msgs);
-        } else if (selectedKey?.startsWith('group:')) {
-          const tid = selectedKey.slice(6);
+        if (threadKey.startsWith('dm:')) {
+          const otherId = threadKey.slice(3);
+          const msgs = await api.dmThread(otherId);
+          if (active && (initial || inflightRef.current === 0)) {
+            setDmMsgs(msgs);
+            cacheThread(uid, threadKey, { dmMsgs: msgs, groupChat: null });
+          }
+        } else if (threadKey.startsWith('group:')) {
+          const tid = threadKey.slice(6);
           const res = await api.tableChat(tid);
-          if (active && (initial || inflightRef.current === 0)) setGroupChat(res);
+          if (active && (initial || inflightRef.current === 0)) {
+            setGroupChat(res);
+            cacheThread(uid, threadKey, { dmMsgs: [], groupChat: res });
+          }
         }
       } finally {
         if (initial && active) setChatLoading(false);
@@ -265,6 +314,16 @@ export default function MessagesPage() {
     setSendError(null);
     inflightRef.current += 1;
 
+    const bumpInbox = () => {
+      setConvos((prev) => {
+        const next = prev
+          .map((c) => (c.key === selectedKey ? { ...c, last: text, time: now, unread: 0 } : c))
+          .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        cacheInbox(me.id, next, connections);
+        return next;
+      });
+    };
+
     try {
       if (selectedKey.startsWith('dm:')) {
         const uid = selectedKey.slice(3);
@@ -277,10 +336,19 @@ export default function MessagesPage() {
           readAt: null,
           reactions: [],
         };
-        setDmMsgs((prev) => [...prev, placeholder]);
+        setDmMsgs((prev) => {
+          const next = [...prev, placeholder];
+          cacheThread(me.id, selectedKey, { dmMsgs: next, groupChat: null });
+          return next;
+        });
+        bumpInbox();
         try {
           const saved = await api.sendDm(uid, text);
-          setDmMsgs((prev) => prev.map((m) => (m.id === tempId ? saved : m)));
+          setDmMsgs((prev) => {
+            const next = prev.map((m) => (m.id === tempId ? saved : m));
+            cacheThread(me.id, selectedKey, { dmMsgs: next, groupChat: null });
+            return next;
+          });
         } catch (err) {
           setDmMsgs((prev) => prev.filter((m) => m.id !== tempId));
           throw err;
@@ -295,13 +363,17 @@ export default function MessagesPage() {
           username: me.username ?? null,
           reactions: [],
         };
-        setGroupChat((prev) =>
-          prev ? { ...prev, messages: [...prev.messages, placeholder] } : prev,
-        );
+        setGroupChat((prev) => {
+          const next = prev ? { ...prev, messages: [...prev.messages, placeholder] } : prev;
+          if (next) cacheThread(me.id, selectedKey, { dmMsgs: [], groupChat: next });
+          return next;
+        });
+        bumpInbox();
         try {
           await api.sendTableMessage(tid, text);
           const res = await api.tableChat(tid);
           setGroupChat(res);
+          cacheThread(me.id, selectedKey, { dmMsgs: [], groupChat: res });
         } catch (err) {
           setGroupChat((prev) =>
             prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== tempId) } : prev,
