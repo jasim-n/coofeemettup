@@ -4,6 +4,18 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-12 — Skeleton loading vs counter loader
+
+- Page content loading uses layout skeletons (`ContentPlaceholder`, route-specific skeletons); the ink counter loader remains auth boot only (`AuthGate`).
+- Counter loader locks document scroll and uses `scrollbar-gutter: stable` so the viewport width does not shift when content mounts under the overlay.
+- `LoadingGate` mounts the app shell only after the counter settles at 100 (`PageLoader.onReady`), so the shell's render cost can no longer stall the ticker and make the count jump.
+
+### 2026-09-12 — GSAP page transitions (OUTFIT / Framer wipe)
+
+- In-app navigation uses a single ink wipe with light content fade/drift (~0.4s leave / ~0.48s enter). Respects reduced motion.
+- Public/auth routes (login, legal) skip ink transitions; logo links on those pages navigate instantly.
+- Page-level loading: counter tracks elapsed load time (caps ~88%), then always eases smoothly to 100 over a duration scaled to remaining progress before the ink wipe-off. Route transitions use longer `expo` easing (~0.72s leave / ~0.82s enter).
+
 ### 2026-09-12 — Footer scroll to top
 
 - Site footer adds a Back to top button (smooth scroll, respects reduced motion).

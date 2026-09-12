@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { Spinner } from '@/components/spinner';
+import { PageShellSkeleton } from '@/components/skeletons/page-shell-skeleton';
 import type { TableDto } from '@jrst/api-client';
 
 const LocationPicker = dynamic(() => import('@/components/location-picker'), {
@@ -107,14 +108,14 @@ export default function EditTablePage() {
       .finally(() => setTableLoading(false));
   }, [id]);
 
-  if (authLoading || tableLoading) return <PageLoader />;
-
-  if (!user)
+  if (!authLoading && !tableLoading && !user)
     return (
       <main className="p-6 text-sm">
         Please <Link href="/login" className="underline">sign in</Link> first.
       </main>
     );
+  if (!user) return null;
+  if (tableLoading) return <PageShellSkeleton rows={10} />;
 
   // Guard: host-only + time-limited + status check
   if (

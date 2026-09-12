@@ -221,7 +221,12 @@ export default function LoginPage() {
 
       {/* wordmark */}
       <FadeIn className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-6 pt-16 text-center">
-        <Link href="/" className="inline-flex cursor-pointer" aria-label="Nine Circles home">
+        <Link
+          href="/"
+          data-no-page-transition
+          className="inline-flex cursor-pointer"
+          aria-label="Nine Circles home"
+        >
           <Wordmark size="lg" variant="white" />
         </Link>
         <p className="text-white/80 text-sm font-medium">

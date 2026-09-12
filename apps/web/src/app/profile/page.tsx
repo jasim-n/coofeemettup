@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import MyReviews from '@/components/my-reviews';
-import { PageLoader } from '@/components/spinner';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { FutureProfilePanel } from '@/components/future-profile-panel';
@@ -364,13 +363,13 @@ export default function ProfilePage() {
     return () => { active = false; };
   }, []);
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please <Link href="/login" className="underline">sign in</Link> first.
       </main>
     );
+  if (!user) return null;
 
   /* derived — self sees own real name; handle is the public identity */
   const displayName =

@@ -6,7 +6,7 @@ import { ApiError, type ReferralInfo } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { PageShellSkeleton } from '@/components/skeletons/page-shell-skeleton';
 
 export default function InvitePage() {
   const { user, loading } = useAuth();
@@ -30,8 +30,7 @@ export default function InvitePage() {
     };
   }, [user]);
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please <Link href="/login" className="underline">sign in</Link> first.
@@ -82,7 +81,7 @@ export default function InvitePage() {
       </div>
 
       {error && <p className="text-destructive text-sm">{error}</p>}
-      {!info && !error && <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>}
+      {!info && !error && <PageShellSkeleton rows={4} />}
 
       {info && (
         <div className="space-y-5">

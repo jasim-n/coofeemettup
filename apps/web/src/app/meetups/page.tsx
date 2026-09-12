@@ -16,7 +16,6 @@ import { tableCta } from '@/lib/table-cta';
 import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
-import { PageLoader } from '@/components/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { categoryIcon, splitCategories } from '@/lib/category-icon';
@@ -970,8 +969,7 @@ export default function MeetupsPage() {
     return mine.filter((t) => (seen.has(t.id) ? false : seen.add(t.id)));
   }, [hostedView, joinedView]);
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please{' '}

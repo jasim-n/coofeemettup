@@ -6,7 +6,7 @@ import { ApiError, type DashboardMetrics } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { PageShellSkeleton } from '@/components/skeletons/page-shell-skeleton';
 
 const VERDICT: Record<
   DashboardMetrics['goNoGo']['verdict'],
@@ -55,8 +55,7 @@ export default function AdminDashboardPage() {
       );
   }, [isAdmin]);
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only. <Link href="/" className="underline">Home</Link>
@@ -79,7 +78,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
-      {!m && !error && <div className="flex justify-center py-12"><Spinner className="text-primary size-6" /></div>}
+      {!m && !error && <PageShellSkeleton rows={8} />}
 
       {m && (
         <div className="space-y-4">

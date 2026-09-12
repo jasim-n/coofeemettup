@@ -8,7 +8,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PageLoader } from '@/components/spinner';
+import { ChatSkeleton } from '@/components/skeletons/chat-skeleton';
 import { UserLink } from '@/components/user-link';
 
 const POLL_MS = 6000;
@@ -73,8 +73,7 @@ export default function TableChatPage() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please <Link href="/login" className="underline">sign in</Link> first.
@@ -120,6 +119,9 @@ export default function TableChatPage() {
       dateStyle: 'medium',
       timeStyle: 'short',
     });
+
+  if (!user) return null;
+  if (member === null && !error) return <ChatSkeleton />;
 
   return (
     <main className="mx-auto flex h-[100dvh] w-full max-w-[1508px] flex-col px-4 py-4">

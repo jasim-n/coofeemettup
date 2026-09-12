@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PageLoader } from '@/components/spinner';
 
 const PROVIDERS: { id: MailProvider; name: string; blurb: string }[] = [
   { id: 'brevo', name: 'Brevo', blurb: 'Transactional email — recommended' },
@@ -40,8 +39,7 @@ export default function AdminSettingsPage() {
     load();
   }, [load]);
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only.{' '}

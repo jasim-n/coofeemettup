@@ -7,7 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { Spinner } from '@/components/spinner';
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
@@ -55,8 +55,7 @@ export default function AdminNewsletterPage() {
     };
   }, [query, isAdmin]);
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin) {
+  if (!loading && !isAdmin) {
     return (
       <main className="p-6 text-sm">
         Admins only.{' '}

@@ -16,7 +16,8 @@ import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { PageLoader } from '@/components/spinner';
+import { ContentPlaceholder } from '@/components/spinner';
+import { TableCardGridSkeleton } from '@/components/skeletons/table-card-skeleton';
 import { StaggerIn } from '@/components/stagger-in';
 import { CategoryPills } from '@/components/category-pills';
 import {
@@ -757,8 +758,6 @@ function SearchInner() {
     return sortResults(filtered, sortKey);
   }, [tablesView, q, selectedCats, priceFilter, dateFilter, timeFilter, sortKey]);
 
-  if (!user) return <PageLoader label="Loading…" />;
-
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-6">
       <div className="grid gap-6 lg:grid-cols-[260px_1fr_320px]">
@@ -857,10 +856,10 @@ function SearchInner() {
             </div>
           </div>
 
-          {/* loading state */}
-          {tablesView === null && <PageLoader label="Searching…" />}
-
-          {/* empty state */}
+          <ContentPlaceholder
+            loading={tablesView === null}
+            skeleton={<TableCardGridSkeleton count={6} />}
+          >
           {tables !== null && results.length === 0 && (
             <div className="rounded-3xl border border-dashed py-16 text-center">
               <p className="text-4xl">🔎</p>
@@ -895,6 +894,7 @@ function SearchInner() {
               ))}
             </StaggerIn>
           )}
+          </ContentPlaceholder>
         </div>
 
         {/* ── RIGHT RAIL ───────────────────────────────────────────── */}
@@ -911,7 +911,7 @@ function SearchInner() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<PageLoader />}>
+    <Suspense fallback={<TableCardGridSkeleton count={6} />}>
       <SearchInner />
     </Suspense>
   );

@@ -6,7 +6,6 @@ import { ApiError, type NotificationDto } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageLoader } from '@/components/spinner';
 
 /** Where a notification should take the user when tapped. */
 function notificationHref(n: NotificationDto): string | null {
@@ -45,8 +44,7 @@ export default function NotificationsPage() {
     };
   }, [user]);
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please <Link href="/login" className="underline">sign in</Link> first.

@@ -10,7 +10,8 @@ import { formatDateTime, formatPKR } from '@/lib/format';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
-import { PageLoader } from '@/components/spinner';
+import { ContentPlaceholder } from '@/components/spinner';
+import { TableCardGridSkeleton } from '@/components/skeletons/table-card-skeleton';
 import { SaveButton } from '@/components/save-button';
 import { CategoryPills } from '@/components/category-pills';
 import { tableCta } from '@/lib/table-cta';
@@ -38,8 +39,7 @@ export default function SavedPage() {
     return () => { active = false; };
   }, [user]);
 
-  if (loading) return <PageLoader />;
-  if (!user) {
+  if (!loading && !user) {
     return (
       <main className="p-6 text-sm">
         Please{' '}
@@ -60,10 +60,10 @@ export default function SavedPage() {
       <h1 className="display text-2xl font-extrabold tracking-tight mt-1 sm:text-3xl">Saved meetups</h1>
 
       <div className="mt-8">
-        {/* loading */}
-        {tablesView === null && <PageLoader label="Loading saved meetups…" />}
-
-        {/* empty state */}
+        <ContentPlaceholder
+          loading={tablesView === null}
+          skeleton={<TableCardGridSkeleton count={3} />}
+        >
         {tablesView !== null && tablesView.length === 0 && (
           <div className="rounded-3xl border border-dashed py-20 text-center">
             <span className="text-4xl">
@@ -82,7 +82,6 @@ export default function SavedPage() {
           </div>
         )}
 
-        {/* grid */}
         {tablesView !== null && tablesView.length > 0 && (
           <StaggerIn
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
@@ -143,6 +142,7 @@ export default function SavedPage() {
             })}
           </StaggerIn>
         )}
+        </ContentPlaceholder>
       </div>
     </main>
   );

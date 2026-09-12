@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Stars } from '@/components/stars';
 import TableReviews from '@/components/table-reviews';
-import { PageLoader } from '@/components/spinner';
+import { TableDetailSkeleton } from '@/components/skeletons/table-detail-skeleton';
 import { SaveButton } from '@/components/save-button';
 import { UserLink } from '@/components/user-link';
 import { CategoryPills } from '@/components/category-pills';
@@ -259,7 +259,7 @@ export default function TableDetailPage() {
   const chatOpen = table ? isGroupChatOpen(table, NOW_MS) : false;
 
   if (error && !table) return <main className="p-6 text-destructive text-sm">{error}</main>;
-  if (!table) return <PageLoader />;
+  if (!table) return <TableDetailSkeleton />;
 
   const status = table.myRequestStatus;
   const canViewMoments = isHost || isStaff || status === 'APPROVED';

@@ -13,7 +13,8 @@ import { UserLink } from '@/components/user-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { Spinner } from '@/components/spinner';
+import { ListSkeleton } from '@/components/skeletons/list-skeleton';
 import { StaggerIn } from '@/components/stagger-in';
 
 export default function RequestsPage() {
@@ -73,8 +74,7 @@ export default function RequestsPage() {
     }
   }
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please{' '}
@@ -84,6 +84,7 @@ export default function RequestsPage() {
         first.
       </main>
     );
+  if (!user) return null;
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-10">
@@ -110,11 +111,7 @@ export default function RequestsPage() {
 
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
 
-      {reqs === null && !error && (
-        <div className="flex justify-center py-12">
-          <Spinner className="text-primary size-6" />
-        </div>
-      )}
+      {reqs === null && !error && <ListSkeleton rows={4} />}
 
       {reqs !== null && reqs.length === 0 && (
         <div className="rounded-3xl border border-dashed py-12 text-center">

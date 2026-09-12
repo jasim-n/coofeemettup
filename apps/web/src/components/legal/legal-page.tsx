@@ -34,7 +34,12 @@ export function LegalPageShell({
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-10 sm:px-6 lg:px-12">
       <FadeIn className="mb-8">
-        <Link href="/" className="inline-flex cursor-pointer" aria-label="9 Circles home">
+        <Link
+          href="/"
+          data-no-page-transition
+          className="inline-flex cursor-pointer"
+          aria-label="9 Circles home"
+        >
           <Wordmark size="sm" />
         </Link>
         <p className="eyebrow text-primary mt-6">{eyebrow}</p>

@@ -5,7 +5,7 @@ import { useAuth } from '@/components/auth-provider';
 import { buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
 import { HomeDashboard } from '@/components/home-dashboard';
-import { PageLoader } from '@/components/spinner';
+import { HomeDashboardSkeleton } from '@/components/skeletons/home-dashboard-skeleton';
 import { FadeIn } from '@/components/fade-in';
 import { StaggerIn } from '@/components/stagger-in';
 
@@ -102,10 +102,7 @@ export default function Home() {
   }
 
   // ---- signed-in ----
-  if (loading) {
-    return <PageLoader />;
-  }
-
+  if (loading) return <HomeDashboardSkeleton />;
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-6 md:py-8">
       <HomeDashboard user={user!} />
