@@ -9,6 +9,12 @@ import { Wordmark } from '@/components/wordmark';
 import { api } from '@/lib/api';
 import { Avatar } from '@/components/avatar';
 import { UnreadBadge } from '@/components/unread-badge';
+import {
+  accountDisplayName,
+  AccountMenuHeader,
+  AccountMenuLinks,
+  AccountMenuLogout,
+} from '@/components/account-menu';
 
 const NAV = [
   { href: '/', label: 'Home', icon: 'fa-house' },
@@ -59,10 +65,7 @@ export function DesktopNav() {
   }, [menuOpen]);
 
   if (loading || !user) return null;
-  const isAdmin = user.role === 'ADMIN' || user.role === 'ORGANIZER';
-  const name =
-    [user.firstName, user.lastName].filter(Boolean).join(' ') ||
-    (user.username ? `@${user.username}` : 'Member');
+  const name = accountDisplayName(user);
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
   function search(e: React.FormEvent) {
@@ -71,11 +74,11 @@ export function DesktopNav() {
   }
 
   return (
-    <header className="glass ring-border/60 sticky top-0 z-40 hidden border-b ring-1 md:block">
+    <header className="glass ring-border/60 fixed inset-x-0 top-0 z-50 hidden border-b ring-1 md:block">
       <nav className="mx-auto flex w-full max-w-[1508px] items-center gap-3 px-4 sm:px-6 lg:px-12 py-3">
         {/* brand */}
         <Link href="/" className="mr-1 flex shrink-0 items-center" aria-label="Nine Circles home">
-          <Wordmark size="sm" />
+          <Wordmark size="nav" />
         </Link>
 
         {/* nav items */}
@@ -157,85 +160,21 @@ export function DesktopNav() {
           </button>
 
           {menuOpen && (
-            <div
-              onClick={() => setMenuOpen(false)}
-              className="bg-card ring-border/60 shadow-glow absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-3xl ring-1"
-            >
-              {/* header */}
-              <div className="flex items-center gap-3 p-4">
-                <Avatar name={name} src={user.photoUrl} size={48} online />
-                <div className="min-w-0">
-                  <p className="font-heading truncate font-bold tracking-tight">{name}</p>
-                  <p className="text-muted-foreground truncate text-xs">
-                    {user.username ? `@${user.username}` : 'Set your handle'}
-                  </p>
-                  <span className="bg-secondary text-secondary-foreground mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold">
-                    <i className="fa-solid fa-star text-[0.9em]" />
-                    {user.verificationStatus === 'VERIFIED' ? 'Verified member' : 'Member'}
-                  </span>
-                </div>
-              </div>
+            <div className="bg-card ring-border/60 shadow-glow absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-3xl ring-1">
+              <AccountMenuHeader user={user} />
               <div className="bg-border h-px" />
-              <div className="p-2">
-                <MenuItem href="/profile" icon="fa-user" title="View Profile" sub="See your public profile" />
-                <MenuItem href="/meetups" icon="fa-calendar-days" title="My Meetups" sub="Manage your meetups" />
-                <MenuItem
-                  href="/invites"
-                  icon="fa-user-group"
-                  title="Invitations"
-                  sub="Requests & invites"
-                />
-                <MenuItem href="/saved" icon="fa-bookmark" title="Saved" sub="Browse & saved tables" />
-                <MenuItem href="/profile" icon="fa-gear" title="Settings" sub="Account & preferences" />
-                {isAdmin && (
-                  <MenuItem href="/admin" icon="fa-shield-halved" title="Admin" sub="Console & moderation" />
-                )}
-                <MenuItem href="/terms" icon="fa-circle-question" title="Help & Support" sub="Get help and support" />
-              </div>
+              <AccountMenuLinks user={user} onNavigate={() => setMenuOpen(false)} />
               <div className="bg-border h-px" />
-              <button
-                type="button"
-                onClick={() => void logout()}
-                className="text-destructive hover:bg-destructive/5 flex w-full items-center gap-3 px-4 py-3 text-left"
-              >
-                <i className="fa-solid fa-right-from-bracket w-4 text-center" />
-                <span>
-                  <span className="block text-sm font-semibold">Log Out</span>
-                  <span className="block text-xs opacity-80">Sign out from your account</span>
-                </span>
-              </button>
+              <AccountMenuLogout
+                onLogout={async () => {
+                  setMenuOpen(false);
+                  await logout();
+                }}
+              />
             </div>
           )}
         </div>
       </nav>
     </header>
-  );
-}
-
-function MenuItem({
-  href,
-  icon,
-  title,
-  sub,
-}: {
-  href: string;
-  icon: string;
-  title: string;
-  sub: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="hover:bg-muted flex items-center gap-3 rounded-2xl px-2.5 py-2 transition-colors"
-    >
-      <span className="bg-secondary text-primary grid size-9 shrink-0 place-items-center rounded-xl">
-        <i className={`fa-solid ${icon} text-sm`} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">{title}</span>
-        <span className="text-muted-foreground block truncate text-xs">{sub}</span>
-      </span>
-      <i className="fa-solid fa-chevron-right text-muted-foreground text-xs" />
-    </Link>
   );
 }

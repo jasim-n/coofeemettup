@@ -897,3 +897,21 @@ export interface TestMailResult {
   ok: boolean;
   provider: MailProvider;
 }
+
+export interface NewsletterSubscribeResult {
+  ok: true;
+  alreadySubscribed: boolean;
+  emailSent: boolean;
+}
+
+export interface NewsletterSubscriberDto {
+  id: string;
+  email: string;
+  welcomeSentAt: string | null;
+  createdAt: string;
+}
+
+export interface NewsletterSubscribersResponse {
+  subscribers: NewsletterSubscriberDto[];
+  total: number;
+}

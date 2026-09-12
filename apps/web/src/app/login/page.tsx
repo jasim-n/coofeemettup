@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ApiError } from '@jrst/api-client';
 import { api } from '@/lib/api';
@@ -10,6 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Wordmark } from '@/components/wordmark';
 import { LoginMascot } from '@/components/login-mascot';
+import {
+  getRememberMePreference,
+  loadSavedLoginEmail,
+} from '@/lib/auth-storage';
+import { FadeIn } from '@/components/fade-in';
 
 // Accepts: 03XXXXXXXXX, +923XXXXXXXXX, 923XXXXXXXXX (10 digits after the 3)
 const PK_PHONE_RE = /^(?:\+92|92|0)(3\d{9})$/;
@@ -37,18 +43,21 @@ export default function LoginPage() {
     'idle' | 'checking' | 'ok' | 'taken' | 'invalid'
   >('idle');
   const [isNewUser, setIsNewUser] = useState(false);
-  const [devCode, setDevCode] = useState<string | null>(null);
   const [resetRequested, setResetRequested] = useState(false);
   const [ref, setRef] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   // Capture referral code from URL (/login?ref=CODE) once on mount.
   useEffect(() => {
     const refCode = new URLSearchParams(window.location.search).get('ref');
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of URL on mount
     if (refCode) setRef(refCode.toUpperCase());
+    setRememberMe(getRememberMePreference());
+    const savedEmail = loadSavedLoginEmail();
+    if (savedEmail) setEmail(savedEmail);
   }, []);
 
   // Debounced live handle-availability check (new users only).
@@ -77,15 +86,11 @@ export default function LoginPage() {
     setBusy(true);
     try {
       // Create-account path: API rejects existing emails before sending a code.
-      const { isNewUser: newUser, devCode: dev } = await requestOtp(
+      const { isNewUser: newUser } = await requestOtp(
         email.trim().toLowerCase(),
         'signup',
       );
       setIsNewUser(newUser);
-      if (dev) {
-        setDevCode(dev);
-        setCode(dev); // dev convenience: prefill so you can just tap Verify
-      }
       setStep('code');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -99,7 +104,7 @@ export default function LoginPage() {
     setError(null);
     setBusy(true);
     try {
-      await login(email.trim().toLowerCase(), password || undefined);
+      await login(email.trim().toLowerCase(), password || undefined, rememberMe);
       router.push('/');
     } catch (err) {
       if (
@@ -110,10 +115,6 @@ export default function LoginPage() {
         try {
           const result = await requestOtp(email.trim().toLowerCase());
           setIsNewUser(result.isNewUser);
-          if (result.devCode) {
-            setDevCode(result.devCode);
-            setCode(result.devCode);
-          }
           setStep('code');
           return;
         } catch (otpError) {
@@ -136,11 +137,7 @@ export default function LoginPage() {
     setError(null);
     setBusy(true);
     try {
-      const result = await requestPasswordReset(email.trim().toLowerCase());
-      if (result.devCode) {
-        setDevCode(result.devCode);
-        setCode(result.devCode);
-      }
+      await requestPasswordReset(email.trim().toLowerCase());
       setResetRequested(true);
       setStep('reset');
     } catch (err) {
@@ -211,7 +208,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-0 flex-1 flex-col bg-gradient-hero">
+    <main className="relative flex min-h-dvh flex-1 flex-col overflow-x-hidden bg-gradient-hero">
       {/* decorative blobs */}
       <div
         aria-hidden
@@ -223,12 +220,14 @@ export default function LoginPage() {
       />
 
       {/* wordmark */}
-      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-6 pt-16 text-center">
-        <Wordmark size="lg" variant="white" />
+      <FadeIn className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-6 pt-16 text-center">
+        <Link href="/" className="inline-flex cursor-pointer" aria-label="Nine Circles home">
+          <Wordmark size="lg" variant="white" />
+        </Link>
         <p className="text-white/80 text-sm font-medium">
           Connecting People, One Circle at a Time
         </p>
-      </div>
+      </FadeIn>
 
       {/* card — stays centered; mascot sits in left gutter on laptop */}
       <div className="relative mx-auto mt-8 w-full max-w-sm flex-1 px-6 pb-10 md:pb-16">
@@ -236,7 +235,11 @@ export default function LoginPage() {
           <LoginMascot />
         </div>
 
-        <div className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6">
+        <FadeIn
+          className="rounded-3xl border border-white/20 bg-card p-7 shadow-glow space-y-6"
+          delay={0.08}
+          deps={[step]}
+        >
           <div className="space-y-1 text-center">
             <p className="eyebrow text-primary">
               {step === 'password'
@@ -284,25 +287,31 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="font-semibold">Email address</Label>
-                <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required />
+                <Input id="email" type="email" placeholder="name@email.com" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="font-semibold">Password</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="Leave blank if you have not set one yet" />
+                <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
               </div>
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="size-4 shrink-0 accent-primary"
+                />
+                <span className="text-muted-foreground">Remember me on this device</span>
+              </label>
               {error && <p className="text-destructive text-sm font-medium">{error}</p>}
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
                 {busy ? 'Signing in…' : 'Sign in →'}
               </Button>
-              <button type="button" className="text-primary w-full text-sm font-semibold hover:underline" onClick={() => { setStep('email'); setError(null); }}>
-                Create an account with email code
-              </button>
-              <button type="button" className="text-muted-foreground w-full text-sm hover:underline" onClick={() => { setStep('reset'); setError(null); setResetRequested(false); setDevCode(null); setCode(''); }}>
+              <Button type="button" variant="link" className="h-auto w-full p-0 text-sm font-semibold" onClick={() => { setStep('email'); setError(null); }}>
+                Create an account
+              </Button>
+              <Button type="button" variant="link" className="h-auto w-full p-0 text-sm font-normal text-muted-foreground hover:text-muted-foreground" onClick={() => { setStep('reset'); setError(null); setResetRequested(false); setCode(''); }}>
                 Forgot password?
-              </button>
-              <button type="button" className="bg-secondary text-secondary-foreground w-full rounded-2xl px-4 py-2.5 text-center text-xs transition-[filter] hover:brightness-95" onClick={() => setEmail('coffeemeetupsadmin@yopmail.com')}>
-                Testing? Tap to use admin email
-              </button>
+              </Button>
             </form>
           ) : step === 'email' ? (
             <form onSubmit={handleRequest} className="space-y-4">
@@ -311,7 +320,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="name@email.com"
                   value={email ?? ''}
                   onChange={(e) => setEmail(e.target.value)}
                   autoFocus
@@ -322,18 +331,18 @@ export default function LoginPage() {
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
                 {busy ? 'Sending…' : 'Send email code →'}
               </Button>
-              <button
+              <Button
                 type="button"
-                className="text-muted-foreground w-full text-sm hover:underline"
+                variant="link"
+                className="h-auto w-full p-0 text-sm font-normal text-muted-foreground hover:text-muted-foreground"
                 onClick={() => {
                   setStep('password');
                   setError(null);
-                  setDevCode(null);
                   setCode('');
                 }}
               >
                 Already have an account? Sign in
-              </button>
+              </Button>
             </form>
           ) : step === 'reset' ? (
             <form onSubmit={resetRequested ? handleReset : handleResetRequest} className="space-y-4">
@@ -341,15 +350,21 @@ export default function LoginPage() {
                 <>
                   <div className="space-y-1.5">
                     <Label htmlFor="reset-email" className="font-semibold">Email address</Label>
-                    <Input id="reset-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required />
+                    <Input id="reset-email" type="email" placeholder="name@email.com" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required />
                   </div>
                   <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>{busy ? 'Sending…' : 'Send reset code →'}</Button>
                 </>
               ) : (
                 <>
-                  <Input inputMode="numeric" maxLength={6} placeholder="Verification code" value={code} onChange={(e) => setCode(e.target.value)} required />
-                  {devCode && <p className="bg-secondary text-secondary-foreground rounded-2xl px-4 py-2.5 text-center text-sm">Dev code: <span className="font-mono font-bold">{devCode}</span></p>}
-                  <Input type="password" placeholder="New password (8+ characters)" value={resetPasswordValue} onChange={(e) => setResetPasswordValue(e.target.value)} autoComplete="new-password" required />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reset-code" className="font-semibold">Verification code</Label>
+                    <Input id="reset-code" inputMode="numeric" maxLength={6} placeholder="6-digit code" value={code} onChange={(e) => setCode(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reset-password" className="font-semibold">New password</Label>
+                    <Input id="reset-password" type="password" placeholder="At least 8 characters" value={resetPasswordValue} onChange={(e) => setResetPasswordValue(e.target.value)} autoComplete="new-password" minLength={8} required />
+                    <p className="text-muted-foreground text-xs">At least 8 characters.</p>
+                  </div>
                   <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>{busy ? 'Resetting…' : 'Set new password →'}</Button>
                 </>
               )}
@@ -363,7 +378,7 @@ export default function LoginPage() {
                   id="code"
                   inputMode="numeric"
                   maxLength={6}
-                  placeholder="000000"
+                  placeholder="6-digit code"
                   value={code ?? ''}
                   onChange={(e) => setCode(e.target.value)}
                   autoFocus
@@ -373,7 +388,7 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="first-password" className="font-semibold">Set your password</Label>
                 <Input id="first-password" type="password" placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={8} required />
-                <p className="text-muted-foreground text-xs">You’ll use this password for future sign-ins.</p>
+                <p className="text-muted-foreground text-xs">At least 8 characters. You’ll use this for future sign-ins.</p>
               </div>
               {isNewUser && (
                 <>
@@ -382,7 +397,7 @@ export default function LoginPage() {
                       <Label htmlFor="firstName" className="font-semibold">First name</Label>
                       <Input
                         id="firstName"
-                        placeholder="Sarah"
+                        placeholder="Your first name"
                         value={firstName ?? ''}
                         onChange={(e) => setFirstName(e.target.value)}
                         required
@@ -392,7 +407,7 @@ export default function LoginPage() {
                       <Label htmlFor="lastName" className="font-semibold">Last name</Label>
                       <Input
                         id="lastName"
-                        placeholder="Khan"
+                        placeholder="Your last name"
                         value={lastName ?? ''}
                         onChange={(e) => setLastName(e.target.value)}
                         required
@@ -409,7 +424,7 @@ export default function LoginPage() {
                       <Input
                         id="username"
                         className="pl-7"
-                        placeholder="sarah_k"
+                        placeholder="choose_a_handle"
                         autoCapitalize="none"
                         autoComplete="off"
                         value={username ?? ''}
@@ -466,11 +481,6 @@ export default function LoginPage() {
                   </div>
                 </>
               )}
-              {devCode && (
-                <p className="bg-secondary text-secondary-foreground rounded-2xl px-4 py-2.5 text-center text-sm">
-                  Dev code: <span className="font-mono font-bold">{devCode}</span>
-                </p>
-              )}
               {error && <p className="text-destructive text-sm font-medium">{error}</p>}
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
                 {busy ? 'Verifying…' : 'Verify & sign in →'}
@@ -483,7 +493,6 @@ export default function LoginPage() {
                 onClick={() => {
                   setStep('email');
                   setCode('');
-                  setDevCode(null);
                   setError(null);
                   setPhoneError(null);
                 }}
@@ -492,7 +501,7 @@ export default function LoginPage() {
               </Button>
             </form>
           )}
-        </div>
+        </FadeIn>
       </div>
     </main>
   );

@@ -115,7 +115,9 @@ export function SideDrawer({
             <i className="fa-solid fa-xmark" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">{children}</div>
+        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+          {children}
+        </div>
       </div>
     </div>
   );

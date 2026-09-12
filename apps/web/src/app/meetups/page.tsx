@@ -801,7 +801,7 @@ function MeetupsRailPanel({
             Host your own meetup
           </p>
           <p className="text-secondary-foreground/80 mt-2 text-center text-sm">
-            Bring people together over coffee &amp; good conversations.
+            Bring people together for good conversations in person.
           </p>
           <Link
             href="/tables/new"
@@ -1083,7 +1083,7 @@ export default function MeetupsPage() {
             <div>
               <h1 className="display text-2xl font-extrabold tracking-tight sm:text-3xl">Meetups</h1>
               <p className="text-muted-foreground mt-1 text-sm">
-                Discover, join and manage your coffee conversations.
+                Discover, join and manage your meetups.
               </p>
             </div>
             {user?.canHost === true && (
@@ -1146,7 +1146,7 @@ export default function MeetupsPage() {
                     quip={
                       when === 'past'
                         ? 'No past circles in this filter.'
-                        : 'Nobody’s at the table yet…'
+                        : 'No meetups here yet…'
                     }
                     title={
                       when === 'past'
@@ -1232,7 +1232,7 @@ export default function MeetupsPage() {
                   className="py-16"
                   quip="Inbox’s quiet. That’s okay."
                   title="No invitations yet"
-                  description="Invites to join tables will show here."
+                  description="Invites to join meetups will show here."
                 />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -1306,8 +1306,8 @@ export default function MeetupsPage() {
           {tab === 'saved' && (
             <EmptyMascot
               className="py-16"
-              quip="Bookmark a table you like."
-              title="No saved tables yet"
+              quip="Bookmark a meetup you like."
+              title="No saved meetups yet"
               description="Tap the heart on any meetup to save it here."
             />
           )}

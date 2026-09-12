@@ -15,6 +15,11 @@ import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { Prisma } from '../../generated/prisma/client';
 import { toPublicUser } from '../users/user.serializer';
+import {
+  assertJoinableTable,
+  isChatClosed as isTableChatClosed,
+  isUpcomingTable,
+} from './table-time';
 
 // Public identity only — hosts/participants are shown by @handle, never real name.
 const HOST_SELECT = { id: true, username: true };
@@ -253,7 +258,9 @@ export class TablesService {
     for (const t of hosted) byId.set(t.id, t);
     for (const r of approved)
       if (!byId.has(r.table.id)) byId.set(r.table.id, r.table);
-    const tables = [...byId.values()];
+    const tables = [...byId.values()].filter(
+      (t) => !isTableChatClosed(t).closed,
+    );
     const tableIds = tables.map((t) => t.id);
     if (tableIds.length === 0) return [];
 
@@ -430,9 +437,10 @@ export class TablesService {
     let tables = await this.cache.getJson<BrowseTableRow[]>(
       CacheService.BROWSE_OPEN,
     );
+    const now = new Date();
     if (!tables) {
       tables = await this.prisma.table.findMany({
-        where: { status: 'OPEN' },
+        where: { status: 'OPEN', startAt: { gt: now } },
         include: { cafe: true, host: { select: HOST_SELECT } },
         orderBy: { startAt: 'asc' },
       });
@@ -441,6 +449,9 @@ export class TablesService {
         tables,
         CacheService.TTL_BROWSE_SEC,
       );
+    } else {
+      // Cache TTL can outlive a table's start time — drop anything no longer upcoming.
+      tables = tables.filter((t) => isUpcomingTable(t.startAt, now.getTime()));
     }
     // Per-viewer fields stay live (cheap) so we can share one browse cache.
     const saved = await this.savedSet(userId);
@@ -596,9 +607,7 @@ export class TablesService {
       where: { id: tableId },
     });
     if (!table) throw new NotFoundException('Table not found');
-    if (table.status !== 'OPEN') {
-      throw new BadRequestException('This table is not open for requests');
-    }
+    assertJoinableTable(table);
     if (table.hostId === userId) {
       throw new BadRequestException('You are the host of this table');
     }
@@ -706,6 +715,7 @@ export class TablesService {
 
   async approve(userId: string, tableId: string, requestId: string) {
     const table = await this.assertHost(tableId, userId);
+    assertJoinableTable(table);
     const req = await this.prisma.tableJoinRequest.findUnique({
       where: { id: requestId },
     });
@@ -818,8 +828,6 @@ export class TablesService {
   }
 
   // ---------- per-table chat (host + approved guests) ----------
-  /** Group chat auto-closes 24h after the host ends the meetup. */
-  static readonly CHAT_AUTO_CLOSE_MS = 24 * 60 * 60 * 1000;
 
   private async isMember(userId: string, tableId: string): Promise<boolean> {
     const table = await this.prisma.table.findUnique({
@@ -855,29 +863,16 @@ export class TablesService {
     return this.isStaff(userId);
   }
 
-  /** Effective chat close time: manual `chatClosedAt`, else completedAt + 24h. */
-  private chatClosesAt(table: {
-    chatClosedAt: Date | null;
-    completedAt: Date | null;
-  }): Date | null {
-    if (table.chatClosedAt) return table.chatClosedAt;
-    if (table.completedAt) {
-      return new Date(
-        table.completedAt.getTime() + TablesService.CHAT_AUTO_CLOSE_MS,
-      );
-    }
-    return null;
-  }
-
   private isChatClosed(
-    table: { chatClosedAt: Date | null; completedAt: Date | null },
+    table: {
+      chatClosedAt: Date | null;
+      completedAt: Date | null;
+      startAt: Date;
+    },
     now = Date.now(),
   ): { closed: boolean; closesAt: Date | null } {
-    const closesAt = this.chatClosesAt(table);
-    return {
-      closesAt,
-      closed: closesAt != null && now >= closesAt.getTime(),
-    };
+    const { closed, closesAt } = isTableChatClosed(table, now);
+    return { closed, closesAt };
   }
 
   async getChat(userId: string, tableId: string) {

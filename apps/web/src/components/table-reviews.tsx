@@ -39,7 +39,7 @@ export default function TableReviews({ tableId }: { tableId: string }) {
       <div className="border-t pt-4">
         <p className="eyebrow text-primary mb-1">Reviews</p>
         <p className="text-muted-foreground text-sm">
-          You’ll be able to leave a review once the table has happened.
+          You’ll be able to leave a review once the meetup has happened.
         </p>
       </div>
     );

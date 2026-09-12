@@ -63,6 +63,8 @@ import type {
   UpdateProfileInput,
   UserStatus,
   InviteDto,
+  NewsletterSubscribeResult,
+  NewsletterSubscribersResponse,
 } from '@jrst/types';
 
 export * from '@jrst/types';
@@ -193,10 +195,15 @@ export class ApiClient {
     return res;
   }
 
-  async login(email: string, password?: string): Promise<AuthResponse> {
+  async login(
+    email: string,
+    password?: string,
+    rememberMe = true,
+  ): Promise<AuthResponse> {
     const res = await this.request<AuthResponse>('POST', '/auth/login', {
       email,
       password,
+      rememberMe,
     });
     this.csrfToken = res.csrfToken;
     if (this.clientType === 'mobile' && res.token) this.authToken = res.token;
@@ -886,5 +893,23 @@ export class ApiClient {
 
   markAllNotificationsRead(): Promise<{ ok: true }> {
     return this.request('POST', '/notifications/read-all');
+  }
+
+  // ---- newsletter ----
+  subscribeNewsletter(email: string): Promise<NewsletterSubscribeResult> {
+    return this.request('POST', '/newsletter/subscribe', { email });
+  }
+
+  adminListNewsletterSubscribers(
+    q = '',
+    limit = 50,
+    offset = 0,
+  ): Promise<NewsletterSubscribersResponse> {
+    const qs = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+      ...(q.trim() ? { q: q.trim() } : {}),
+    });
+    return this.request('GET', `/admin/newsletter/subscribers?${qs}`);
   }
 }

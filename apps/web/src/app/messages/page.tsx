@@ -394,7 +394,7 @@ export default function MessagesPage() {
           </div>
 
           {/* conversation list */}
-          <div ref={leftScrollRef} className="scrollbar-fade flex-1 overflow-y-auto">
+          <div ref={leftScrollRef} className="scrollbar-hidden flex-1 overflow-y-auto">
             {convoLoading ? (
               <div className="text-muted-foreground grid h-full place-items-center py-8 text-sm">
                 <span>Loading…</span>
@@ -409,13 +409,13 @@ export default function MessagesPage() {
                       className="border-0 py-8"
                       quip="Say hi — circles start with a hello."
                       title="No conversations yet"
-                      description="Join a table or connect with people."
+                      description="Join a meetup or connect with people."
                       action={
                         <Link
                           href="/discover"
                           className="bg-primary text-primary-foreground rounded-full px-4 py-2 text-xs font-semibold"
                         >
-                          Browse tables
+                          Browse meetups
                         </Link>
                       }
                     />
@@ -857,7 +857,7 @@ export default function MessagesPage() {
         {/* ========== RIGHT RAIL ========== */}
         <aside
           ref={rightScrollRef}
-          className="scrollbar-fade hidden space-y-4 overflow-y-auto lg:block"
+          className="scrollbar-hidden hidden space-y-4 overflow-y-auto lg:block"
           onClick={() => setPickerOpen(false)}
         >
           {/* active now (presence stub) */}

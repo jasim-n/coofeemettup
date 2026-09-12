@@ -2,8 +2,16 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ApiError, type PublicUser } from '@jrst/api-client';
-import { api, TOKEN_KEY } from '@/lib/api';
+import { api } from '@/lib/api';
+import {
+  clearAuthToken,
+  hasStoredAuthToken,
+  loadStoredAuthToken,
+  persistAuthToken,
+  saveLoginEmail,
+} from '@/lib/auth-storage';
 import { invalidateDataCache } from '@/lib/data-cache';
+import { isPublicPath } from '@/lib/public-paths';
 
 interface AuthContextValue {
   user: PublicUser | null;
@@ -13,7 +21,7 @@ interface AuthContextValue {
     intent?: 'signup' | 'login',
   ) => Promise<{ isNewUser: boolean; devCode?: string }>;
   verifyOtp: (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string; password?: string }) => Promise<void>;
-  login: (email: string, password?: string) => Promise<void>;
+  login: (email: string, password?: string, rememberMe?: boolean) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ devCode?: string }>;
   resetPassword: (email: string, code: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -23,9 +31,14 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function clearClientSession(): void {
-  window.localStorage.removeItem(TOKEN_KEY);
+  clearAuthToken();
   api.setAuthToken(null);
   invalidateDataCache();
+}
+
+function storeSessionToken(token: string, remember: boolean): void {
+  persistAuthToken(token, remember);
+  api.setAuthToken(token);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -33,6 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    const token = loadStoredAuthToken();
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    api.setAuthToken(token);
+
     try {
       // Fail fast on LAN/firewall hangs (Windows → Mac) instead of spinning forever.
       const res = await Promise.race([
@@ -44,9 +64,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.user);
     } catch (err) {
       // 401 = no active session (including suspended/banned). Clear token so
-      // a locked account cannot keep using a stale JWT from localStorage.
-      if (err instanceof ApiError && (err.status === 401 || err.status === 0)) {
+      // a locked account cannot keep using a stale JWT from storage.
+      if (err instanceof ApiError && err.status === 401) {
         clearClientSession();
+        setUser(null);
+      } else if (err instanceof ApiError && err.status === 0) {
+        // Network timeout — keep the stored token; user may still be signed in.
         setUser(null);
       } else {
         throw err;
@@ -68,24 +91,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refresh]);
 
-  // Browser back/forward cache can restore a logged-in page after logout with
-  // stale React state. Re-check the token whenever a persisted page is shown.
+  // Browser back/forward can restore cached pages with stale auth state.
+  const clearSessionIfNoToken = useCallback(() => {
+    if (hasStoredAuthToken()) return;
+    clearClientSession();
+    setUser(null);
+  }, []);
+
   useEffect(() => {
     const onPageShow = (e: PageTransitionEvent) => {
       if (!e.persisted) return;
-      const token = window.localStorage.getItem(TOKEN_KEY);
-      if (!token) {
-        api.setAuthToken(null);
-        setUser(null);
-        invalidateDataCache();
-        if (!['/login', '/privacy', '/terms'].includes(window.location.pathname)) {
+      clearSessionIfNoToken();
+      if (!hasStoredAuthToken()) {
+        if (!isPublicPath(window.location.pathname)) {
           window.location.replace('/login');
         }
+        return;
       }
+      void refresh();
+    };
+    const onPopState = () => {
+      clearSessionIfNoToken();
     };
     window.addEventListener('pageshow', onPageShow);
-    return () => window.removeEventListener('pageshow', onPageShow);
-  }, []);
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, [clearSessionIfNoToken, refresh]);
 
   const requestOtp = useCallback(
     async (email: string, intent: 'signup' | 'login' = 'login') => {
@@ -98,20 +132,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verifyOtp = useCallback(
     async (email: string, code: string, opts?: { phone?: string; firstName?: string; lastName?: string; username?: string; referralCode?: string; password?: string }) => {
       const res = await api.verifyOtp(email, code, opts);
-      // Persist the bearer token so the session survives reloads (no cookies).
       const token = api.getAuthToken();
-      if (token) window.localStorage.setItem(TOKEN_KEY, token);
+      if (token) storeSessionToken(token, true);
       setUser(res.user);
     },
     [],
   );
 
-  const login = useCallback(async (email: string, password?: string) => {
-    const res = await api.login(email, password);
-    const token = api.getAuthToken();
-    if (token) window.localStorage.setItem(TOKEN_KEY, token);
-    setUser(res.user);
-  }, []);
+  const login = useCallback(
+    async (email: string, password?: string, rememberMe = true) => {
+      const res = await api.login(email, password, rememberMe);
+      const token = api.getAuthToken();
+      if (token) storeSessionToken(token, rememberMe);
+      if (rememberMe) saveLoginEmail(email);
+      setUser(res.user);
+    },
+    [],
+  );
 
   const requestPasswordReset = useCallback(async (email: string) => {
     const res = await api.requestPasswordReset(email);
@@ -122,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (email: string, code: string, password: string) => {
       const res = await api.resetPassword(email, code, password);
       const token = api.getAuthToken();
-      if (token) window.localStorage.setItem(TOKEN_KEY, token);
+      if (token) storeSessionToken(token, true);
       setUser(res.user);
     },
     [],
@@ -144,7 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, loading, requestOtp, verifyOtp, login, requestPasswordReset, resetPassword, logout, refresh }}>
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      <div className="flex min-h-dvh flex-1 flex-col">{children}</div>
     </AuthContext.Provider>
   );
 }

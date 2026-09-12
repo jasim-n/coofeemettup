@@ -11,6 +11,7 @@ import {
   PAKISTAN_MAX_BOUNDS,
   isInPakistan,
 } from '@/lib/map-style';
+import { bindMapEnglishLabels } from '@/lib/map-labels';
 
 function validCoord(n: number | undefined): n is number {
   return n != null && Number.isFinite(n);
@@ -27,7 +28,16 @@ export default function LocationPicker({
   onChange: (lat: number, lng: number) => void;
 }) {
   const mapRef = useRef<MapRef | null>(null);
+  const labelCleanupRef = useRef<(() => void) | null>(null);
   const [ready, setReady] = useState(false);
+
+  useEffect(
+    () => () => {
+      labelCleanupRef.current?.();
+      labelCleanupRef.current = null;
+    },
+    [],
+  );
   const hasPin = validCoord(lat) && validCoord(lng);
   const pinLat = hasPin ? lat : undefined;
   const pinLng = hasPin ? lng : undefined;
@@ -56,7 +66,11 @@ export default function LocationPicker({
       <div className="h-56 w-full">
         <MapGL
           ref={mapRef}
-          onLoad={() => setReady(true)}
+          onLoad={(evt) => {
+            setReady(true);
+            labelCleanupRef.current?.();
+            labelCleanupRef.current = bindMapEnglishLabels(evt.target);
+          }}
           initialViewState={{
             longitude: center.lng,
             latitude: center.lat,

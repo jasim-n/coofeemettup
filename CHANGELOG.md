@@ -4,6 +4,89 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-12 — Footer scroll to top
+
+- Site footer adds a Back to top button (smooth scroll, respects reduced motion).
+
+### 2026-09-12 — Explore filters button on mobile
+
+- Discover page mobile Filters control is inline width instead of full-bleed.
+
+### 2026-09-12 — Home sidebar hidden on mobile
+
+- Home right rail (profile, upcoming meetup, invite friends, activity) is desktop-only (`lg+`); mobile home shows the main feed without the stacked sidebar.
+
+### 2026-09-12 — Mobile/desktop nav stickiness over footer
+
+- Top and bottom nav chrome render at the app shell root with `fixed` positioning so they stay visible when scrolling through the footer; desktop nav no longer uses `sticky` (which unpinned at page bottom).
+
+### 2026-09-12 — Footer social links
+
+- Site footer social icons now link to Nine Circles Instagram, Facebook, and LinkedIn profiles (removed placeholder X/YouTube links).
+
+### 2026-09-12 — Nearby map: English labels and filter sync
+
+- Basemap labels prefer English/Latin script (`name:en`, `name:latin`) on Nearby, search preview, and venue picker maps.
+- Nearby map pins now follow the same filters as the list (radius, category, status); empty results center on the user when location is available.
+- Blue pulsing dot shows the user’s current location when geolocation is enabled (or after tapping locate on the map).
+- Nearby geolocation uses high-accuracy live GPS (`watchPosition`), shows accuracy in the sidebar, and keeps the map centered on the user instead of zooming out to distant meetups nationwide.
+
+### 2026-09-11 — Subtle GSAP motion across web
+
+- Added reusable `FadeIn`, `PageEnter`, and improved `StaggerIn` primitives (respect reduced motion).
+- Route transitions, login card steps, hero/marketing content, legal pages, and list grids (home, saved, requests, connections, search, invites) use light fade/stagger entrances; buttons get a soft tap scale.
+
+### 2026-09-11 — Legal pages (Terms, Privacy, Community Guidelines)
+
+- Replaced Terms of Service and Privacy Policy with the new 9 Circles legal drafts; added a public Community Guidelines page with cross-links in the footer and signed-out home hero.
+
+### 2026-09-11 — Remember me on sign-in
+
+- Login adds a “Remember me on this device” option (on by default): persistent sign-in stores the JWT in localStorage for up to 30 days; unchecked uses sessionStorage and a 1-day token.
+- Saved email is prefilled when remember me was last enabled; network timeouts no longer clear a valid stored session.
+
+### 2026-09-11 — Footer newsletter (API + admin)
+
+- Footer subscribe saves emails to the database, sends a Nine Circles welcome email via the configured mail provider, and lists subscribers in Admin → Newsletter.
+
+### 2026-09-11 — Mobile nav stickiness
+
+- Bottom and top mobile chrome use fixed viewport positioning so tabs stay visible when scrolling through the footer.
+
+### 2026-09-11 — Mobile account sidebar
+
+- Avatar on small screens opens a right-side drawer with the full account menu (matching desktop), not a truncated popup.
+
+### 2026-09-11 — Meetup-first site copy
+
+- Replaced coffee-only and “table” marketing copy across web with broader in-person meetup language; updated site title/description and legal page titles to Nine Circles.
+
+### 2026-09-11 — Site footer
+
+- Added dark marketing footer app-wide (Explore + Legal menus, login-sized white logo, working social links, local newsletter signup, responsive mascot layout); hidden on login, chat, and admin.
+
+### 2026-09-11 — Navbar logo size
+
+- Desktop and mobile top nav wordmarks use a dedicated 70px nav size.
+
+### 2026-09-11 — Upcoming tables only for discovery and join
+
+- Browse/discover/nearby/search now return only OPEN tables with a future `startAt`; join requests, invite accept, and host approvals are rejected once a table has started.
+- Group chat auto-closes 3 hours after the scheduled start (sooner if the host completes or closes chat); passed threads drop out of the Messages inbox.
+- Table cards and detail page show “Ended” / block join on past tables while keeping meetup history in My Meetups.
+
+### 2026-09-11 — Auth chrome on public routes
+
+- App navbar/shell now mounts only for authenticated, protected routes — login and other public pages no longer render nav chrome.
+- Back/forward navigation clears stale logged-in UI when no session token is stored.
+- Public auth pages clip horizontal overflow (login mascot / hero blobs no longer cause a sideways scrollbar).
+
+### 2026-09-11 — Login screen public polish
+
+- Removed dev/testing affordances from web login (admin email shortcut, dev OTP display, blank-password hint).
+- Replaced dev-style placeholders with concise, helpful hints on sign-in, signup, and password-reset fields.
+- Buttons and links now use a pointer cursor app-wide (shared Button + base styles).
+
 ### 2026-09-06 — Featured showcase + media URL fixes
 
 - Ported web full-bleed `FeaturedShowcase` (photos / reels via expo-av / collages).

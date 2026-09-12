@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -17,12 +17,15 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/spinner';
+import { StaggerIn } from '@/components/stagger-in';
 import { CategoryPills } from '@/components/category-pills';
 import {
   ISLAMABAD_CENTER,
   MAP_STYLE_EN,
   PAKISTAN_MAX_BOUNDS,
 } from '@/lib/map-style';
+import { bindMapEnglishLabels } from '@/lib/map-labels';
+import type { Map as MaplibreMap } from 'maplibre-gl';
 
 /* ─── types ──────────────────────────────────────────────────────────── */
 
@@ -294,6 +297,15 @@ function TableCoverCard({
 
 function MapPreview({ results }: { results: TableDto[] }) {
   const [mapReady, setMapReady] = useState(false);
+  const labelCleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(
+    () => () => {
+      labelCleanupRef.current?.();
+      labelCleanupRef.current = null;
+    },
+    [],
+  );
 
   const pins = useMemo(() => {
     return results.flatMap((t) => {
@@ -339,7 +351,13 @@ function MapPreview({ results }: { results: TableDto[] }) {
           minZoom={5}
           mapStyle={MAP_STYLE_EN}
           style={{ width: '100%', height: '100%' }}
-          onLoad={() => setMapReady(true)}
+          onLoad={(evt) => {
+            setMapReady(true);
+            labelCleanupRef.current?.();
+            labelCleanupRef.current = bindMapEnglishLabels(
+              evt.target as unknown as MaplibreMap,
+            );
+          }}
         >
           {mapReady &&
             pins.map((p) => (
@@ -859,20 +877,23 @@ function SearchInner() {
 
           {/* results list view */}
           {results.length > 0 && view === 'list' && (
-            <div className="space-y-3">
+            <StaggerIn className="space-y-3" deps={[results.length, view]}>
               {results.map((t) => (
                 <TableListRow key={t.id} t={t} />
               ))}
-            </div>
+            </StaggerIn>
           )}
 
           {/* results grid view */}
           {results.length > 0 && view === 'grid' && (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <StaggerIn
+              className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+              deps={[results.length, view]}
+            >
               {results.map((t) => (
                 <TableCoverCard key={t.id} t={t} coords={coords} viewerId={user?.id} />
               ))}
-            </div>
+            </StaggerIn>
           )}
         </div>
 

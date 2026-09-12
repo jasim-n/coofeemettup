@@ -6,6 +6,8 @@ import { buttonVariants } from '@/components/ui/button';
 import { Wordmark } from '@/components/wordmark';
 import { HomeDashboard } from '@/components/home-dashboard';
 import { PageLoader } from '@/components/spinner';
+import { FadeIn } from '@/components/fade-in';
+import { StaggerIn } from '@/components/stagger-in';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -24,7 +26,7 @@ export default function Home() {
         />
 
         <div className="mx-auto grid w-full max-w-md flex-1 items-center gap-8 px-6 py-14 md:max-w-6xl md:grid-cols-2 md:gap-16 md:py-20">
-          <div className="flex flex-col gap-7">
+          <StaggerIn className="flex flex-col gap-7">
             <Wordmark size="md" />
 
             <div>
@@ -34,17 +36,17 @@ export default function Home() {
                 <br />
                 strangers
                 <br />
-                <span className="text-gradient-hero">over coffee</span>
+                <span className="text-gradient-hero">in person</span>
               </h1>
             </div>
 
             <p className="text-muted-foreground max-w-sm text-base leading-relaxed md:text-lg">
-              Small, curated groups of 6–8. Real conversations, zero small talk — and the first
-              coffee is on us. ☕
+              Small, curated groups of 6–8. Real conversations, zero small talk — at cafes and
+              public venues across the city.
             </p>
 
             <div className="flex flex-wrap gap-2">
-              {['✦ curated groups', '☕ coffee included', '📍 near you'].map((t) => (
+              {['✦ curated groups', '✦ real connections', '📍 near you'].map((t) => (
                 <span
                   key={t}
                   className="glass rounded-full px-3.5 py-1.5 text-xs font-semibold ring-1 ring-border/60"
@@ -67,18 +69,21 @@ export default function Home() {
             <p className="text-muted-foreground -mt-3 text-center text-xs md:text-left">
               Sign in with your phone in seconds. No password.
             </p>
-            <div className="text-muted-foreground mt-2 flex justify-center gap-4 text-xs font-medium md:justify-start">
+            <div className="text-muted-foreground mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs font-medium md:justify-start">
               <Link href="/terms" className="hover:underline">
                 Terms
               </Link>
               <Link href="/privacy" className="hover:underline">
                 Privacy
               </Link>
+              <Link href="/community-guidelines" className="hover:underline">
+                Guidelines
+              </Link>
             </div>
-          </div>
+          </StaggerIn>
 
           {/* desktop visual */}
-          <div className="hidden md:block">
+          <FadeIn className="hidden md:block" delay={0.12}>
             <div className="bg-gradient-hero shadow-glow relative grid aspect-[4/5] place-items-center overflow-hidden rounded-[2rem]">
               <div
                 aria-hidden
@@ -86,11 +91,11 @@ export default function Home() {
               />
               <div className="glass-dark rounded-3xl px-8 py-6 text-center">
                 <i className="fa-solid fa-mug-hot text-7xl text-white" />
-                <p className="mt-3 text-lg font-bold text-white">6–8 people · 1 table</p>
-                <p className="text-sm text-white/80">real conversations over coffee</p>
+                <p className="mt-3 text-lg font-bold text-white">6–8 people · 1 meetup</p>
+                <p className="text-sm text-white/80">real conversations, in person</p>
               </div>
             </div>
-          </div>
+          </FadeIn>
         </div>
       </main>
     );

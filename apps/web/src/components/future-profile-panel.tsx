@@ -197,7 +197,7 @@ export function FutureProfilePanel({
       <div data-testid="interest-mix">
         <h3 className="text-sm font-semibold">Your interest mix</h3>
         <p className="text-muted-foreground mt-0.5 text-xs">
-          Private snapshot from tables, interests, reliability, and peer
+          Private snapshot from meetups, interests, reliability, and peer
           ratings — used later for Surprise Me.
         </p>
 
@@ -251,8 +251,8 @@ export function FutureProfilePanel({
               </div>
               <p className="text-muted-foreground text-xs">
                 {mix.totalTables === 0
-                  ? 'Graph seeds from your profile interests & reliability until you join tables.'
-                  : `Based on ${mix.totalTables} table${mix.totalTables === 1 ? '' : 's'} (${mix.hostedCount} hosted · ${mix.joinedCount} joined).`}
+                  ? 'Graph seeds from your profile interests & reliability until you join meetups.'
+                  : `Based on ${mix.totalTables} meetup${mix.totalTables === 1 ? '' : 's'} (${mix.hostedCount} hosted · ${mix.joinedCount} joined).`}
               </p>
             </div>
           </div>
@@ -309,7 +309,7 @@ export function FutureProfilePanel({
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">Surprise me</span>
             <span className="text-muted-foreground block text-xs leading-snug break-words">
-              Opt in to occasional curated tables matched to how you show up.
+              Opt in to occasional curated meetups matched to how you show up.
               You can always decline an invite.
             </span>
           </span>
@@ -342,11 +342,11 @@ export function FutureProfilePanel({
         {[
           {
             title: 'Host templates',
-            body: 'Reuse a cafe + vibe for recurring tables.',
+            body: 'Reuse a cafe + vibe for recurring meetups.',
           },
           {
             title: 'Waitlist',
-            body: 'Join a queue when a table is full.',
+            body: 'Join a queue when a meetup is full.',
           },
           {
             title: 'No-show signal',

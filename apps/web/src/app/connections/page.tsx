@@ -9,6 +9,7 @@ import { Avatar } from '@/components/avatar';
 import { ConnectButton } from '@/components/connect-button';
 import { UserLink } from '@/components/user-link';
 import { PageLoader } from '@/components/spinner';
+import { StaggerIn } from '@/components/stagger-in';
 
 /* ─── helpers ────────────────────────────────────────────────── */
 
@@ -185,7 +186,10 @@ export default function ConnectionsPage() {
               }
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <StaggerIn
+              className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+              deps={[connections.length]}
+            >
               {connections.map((u) => (
                 <PersonCard
                   key={u.id}
@@ -203,7 +207,7 @@ export default function ConnectionsPage() {
                   connectSlot={<ConnectButton userId={u.id} initial="connected" />}
                 />
               ))}
-            </div>
+            </StaggerIn>
           )}
         </>
       )}
@@ -216,11 +220,11 @@ export default function ConnectionsPage() {
           ) : requests.length === 0 ? (
             <Empty icon="fa-envelope-open" message="No pending connection requests." />
           ) : (
-            <div className="space-y-3">
+            <StaggerIn className="space-y-3" deps={[requests.length]}>
               {requests.map((req) => (
                 <RequestRow key={req.id} req={req} />
               ))}
-            </div>
+            </StaggerIn>
           )}
         </>
       )}
@@ -231,9 +235,12 @@ export default function ConnectionsPage() {
           {suggestions === null ? (
             <PageLoader label="Loading suggestions…" />
           ) : suggestions.length === 0 ? (
-            <Empty icon="fa-user-group" message="No suggestions right now. Join more tables to meet people!" />
+            <Empty icon="fa-user-group" message="No suggestions right now. Join more meetups to meet people!" />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <StaggerIn
+              className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+              deps={[suggestions.length]}
+            >
               {suggestions.map(({ user: u, mutuals }) => (
                 <PersonCard
                   key={u.id}
@@ -251,7 +258,7 @@ export default function ConnectionsPage() {
                   connectSlot={<ConnectButton userId={u.id} initial="none" />}
                 />
               ))}
-            </div>
+            </StaggerIn>
           )}
         </>
       )}

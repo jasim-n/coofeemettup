@@ -17,7 +17,10 @@ export const PAKISTAN_BBOX =
 export const PAKISTAN_CENTER = { lng: 69.3451, lat: 30.3753 };
 export const ISLAMABAD_CENTER = { lng: 73.0479, lat: 33.6844 };
 
-/** Free MapLibre style URL (English-oriented labels vs OSM raster local script). */
+/**
+ * Free MapLibre style (OpenMapTiles). Basemap labels are rewritten to English
+ * on load via `bindMapEnglishLabels()` in `map-labels.ts`.
+ */
 export const MAP_STYLE_EN = 'https://tiles.openfreemap.org/styles/liberty';
 
 export function isInPakistan(lat: number, lng: number): boolean {

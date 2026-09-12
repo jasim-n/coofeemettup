@@ -286,7 +286,7 @@ function DiscoverFiltersPanel({
 
       <div className="mb-5">
         <Input
-          placeholder="🔍 Tables, topics, venues…"
+          placeholder="🔍 Meetups, topics, venues…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -477,7 +477,7 @@ export default function DiscoverPage() {
           setMyJoined(joined);
         }
       } catch (err) {
-        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load tables');
+        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load meetups');
       }
     })();
     return () => {
@@ -578,7 +578,7 @@ export default function DiscoverPage() {
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-6 sm:px-6">
       <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
         {/* ── LEFT RAIL (desktop) ───────────────────────────────────── */}
-        <aside className="bg-card shadow-soft hidden rounded-3xl border p-5 lg:sticky lg:top-24 lg:block lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <aside className="scrollbar-hidden bg-card shadow-soft hidden rounded-3xl border p-5 lg:sticky lg:top-24 lg:block lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
           <div className="mb-4 flex items-center justify-between gap-2">
             <p className="font-heading font-bold tracking-tight">Filters</p>
             <button
@@ -595,13 +595,13 @@ export default function DiscoverPage() {
         {/* ── MAIN ──────────────────────────────────────────────────── */}
         <div className="min-w-0 space-y-8">
           {/* mobile toolbar */}
-          <div className="flex gap-2 lg:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setFilterDrawerOpen(true)}
-              className="flex-1"
+              className="w-auto shrink-0"
             >
               <i className="fa-solid fa-sliders mr-2" />
               Filters
@@ -629,12 +629,12 @@ export default function DiscoverPage() {
                 <span className="text-primary">that matter</span>
               </h2>
               <p className="mt-3 max-w-md text-sm leading-relaxed text-white/70">
-                Find like-minded people, join interesting tables and make meaningful connections.
+                Find like-minded people, join interesting meetups and make meaningful connections.
               </p>
               {tables && (
                 <span className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/20">
                   <span className="bg-primary inline-block size-2 rounded-full" />
-                  {openCount} {openCount === 1 ? 'table' : 'tables'} open now
+                  {openCount} {openCount === 1 ? 'meetup' : 'meetups'} open now
                 </span>
               )}
             </div>
@@ -680,7 +680,7 @@ export default function DiscoverPage() {
                         >
                           <span className="lg:hidden">· {count}</span>
                           <span className="hidden lg:inline">
-                            {count} {count === 1 ? 'table' : 'tables'}
+                            {count} {count === 1 ? 'meetup' : 'meetups'}
                           </span>
                         </span>
                       </span>
@@ -707,8 +707,8 @@ export default function DiscoverPage() {
           )}
           {tables && results.length === 0 && (
             <EmptyMascot
-              quip="Hmm… no tables in that filter."
-              title="No tables match your filters"
+              quip="Hmm… no meetups in that filter."
+              title="No meetups match your filters"
               description="Try clearing filters or pick another vibe."
               action={
                 <button
@@ -746,7 +746,7 @@ export default function DiscoverPage() {
             <section>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-heading text-xl font-bold tracking-tight">
-                  More tables you might like
+                  More meetups you might like
                 </h2>
               </div>
               <StaggerIn
@@ -762,7 +762,7 @@ export default function DiscoverPage() {
         </div>
 
         {/* ── RIGHT RAIL ────────────────────────────────────────────── */}
-        <aside className="space-y-4 max-lg:hidden lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+        <aside className="scrollbar-hidden space-y-4 max-lg:hidden lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
           {/* TRENDING NOW */}
           <div className="bg-card shadow-soft rounded-3xl border p-5">
             <div className="mb-3">
@@ -819,12 +819,12 @@ export default function DiscoverPage() {
             </div>
             {upcomingJoined.length === 0 ? (
               <div className="rounded-2xl border border-dashed py-5 text-center">
-                <p className="text-muted-foreground text-xs">No upcoming tables yet.</p>
+                <p className="text-muted-foreground text-xs">No upcoming meetups yet.</p>
                 <Link
                   href="/discover"
                   className="text-primary mt-1 block text-xs font-semibold hover:underline"
                 >
-                  Find a table →
+                  Find a meetup →
                 </Link>
               </div>
             ) : (
@@ -875,7 +875,7 @@ export default function DiscoverPage() {
                     ) : (
                       <p className="text-muted-foreground text-xs">
                         {cityCount(tablesView ?? [], city)}{' '}
-                        {cityCount(tablesView ?? [], city) === 1 ? 'table' : 'tables'}
+                        {cityCount(tablesView ?? [], city) === 1 ? 'meetup' : 'meetups'}
                       </p>
                     )}
                   </div>

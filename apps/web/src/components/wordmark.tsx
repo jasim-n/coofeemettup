@@ -3,12 +3,12 @@ import Image from 'next/image';
 type WordmarkProps = {
   className?: string;
   /** Visual size for nav vs hero */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'nav' | 'lg';
   /** `white` = /brand/logo-in-white.png (login / dark surfaces) */
   variant?: 'default' | 'white';
 };
 
-const HEIGHT = { sm: 52, md: 64, lg: 112 } as const;
+const HEIGHT = { sm: 52, md: 64, nav: 70, lg: 112 } as const;
 
 /**
  * App logo — Nine Circles wordmark.
