@@ -9,6 +9,8 @@ import { isPublicPath } from '@/lib/public-paths';
 import { shouldShowSiteFooter } from '@/lib/site-footer';
 import { RequestsBadgeProvider } from '@/components/requests-badge';
 import { DesktopNav } from '@/components/desktop-nav';
+import { MobileNav } from '@/components/mobile-nav';
+import { MobileTopBar } from '@/components/mobile-top-bar';
 import { AppShell } from '@/components/app-shell';
 import { SiteFooter } from '@/components/site-footer';
 import { PageEnter } from '@/components/page-enter';
@@ -44,8 +46,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     <RequestsBadgeProvider>
       <div className="flex min-h-dvh flex-col">
         <DesktopNav />
+        <MobileTopBar />
         <AppShell>{children}</AppShell>
         {showFooter && <SiteFooter />}
+        <MobileNav />
       </div>
     </RequestsBadgeProvider>
   );

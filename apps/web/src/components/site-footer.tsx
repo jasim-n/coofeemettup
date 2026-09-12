@@ -31,24 +31,19 @@ const LEGAL_LINKS = [
 
 const SOCIAL_LINKS = [
   {
-    href: 'https://www.instagram.com/9circles.pk',
+    href: 'https://www.instagram.com/9circles.pk/',
     icon: 'fa-brands fa-instagram',
     label: 'Instagram',
   },
   {
-    href: 'https://x.com/9circlespk',
-    icon: 'fa-brands fa-x-twitter',
-    label: 'X',
+    href: 'https://www.facebook.com/people/Nine-Circles/61593679121893/',
+    icon: 'fa-brands fa-facebook-f',
+    label: 'Facebook',
   },
   {
-    href: 'https://www.linkedin.com/company/9circlespk',
+    href: 'https://www.linkedin.com/company/ninecircles/',
     icon: 'fa-brands fa-linkedin-in',
     label: 'LinkedIn',
-  },
-  {
-    href: 'https://www.youtube.com/@9circlespk',
-    icon: 'fa-brands fa-youtube',
-    label: 'YouTube',
   },
 ] as const;
 
@@ -92,6 +87,13 @@ export function SiteFooter() {
   const [newsletterNote, setNewsletterNote] = useState<string | null>(null);
   const [noteSuccess, setNoteSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  function scrollToTop() {
+    window.scrollTo({
+      top: 0,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    });
+  }
 
   async function onNewsletterSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -245,11 +247,20 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 sm:mt-12 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-white/50">
+        <div className="mt-10 flex flex-col items-center gap-4 border-t border-white/10 pt-6 sm:mt-12 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-white/50 sm:order-1">
             © {new Date().getFullYear()} Nine Circles. All rights reserved.
           </p>
-          <p className="text-[10px] font-semibold tracking-[0.25em] text-white/40 uppercase">
+          <button
+            type="button"
+            onClick={scrollToTop}
+            className="border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-colors sm:order-2"
+            aria-label="Scroll to top"
+          >
+            <i className="fa-solid fa-arrow-up text-[10px]" aria-hidden />
+            Back to top
+          </button>
+          <p className="text-[10px] font-semibold tracking-[0.25em] text-white/40 uppercase sm:order-3">
             Better people. Better experiences.
           </p>
         </div>

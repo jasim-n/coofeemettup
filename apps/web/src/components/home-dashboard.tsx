@@ -277,8 +277,8 @@ export function HomeDashboard({ user }: { user: PublicUser }) {
         </div>
       </div>
 
-      {/* ---------- right rail ---------- */}
-      <aside className="scrollbar-hidden space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+      {/* ---------- right rail (desktop only — mobile uses top/bottom nav) ---------- */}
+      <aside className="scrollbar-hidden hidden space-y-4 lg:block lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
         {/* profile card */}
         <div className="bg-card shadow-soft rounded-3xl border p-5">
           <div className="flex items-center gap-3">

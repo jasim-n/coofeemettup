@@ -4,6 +4,26 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-12 — Footer scroll to top
+
+- Site footer adds a Back to top button (smooth scroll, respects reduced motion).
+
+### 2026-09-12 — Explore filters button on mobile
+
+- Discover page mobile Filters control is inline width instead of full-bleed.
+
+### 2026-09-12 — Home sidebar hidden on mobile
+
+- Home right rail (profile, upcoming meetup, invite friends, activity) is desktop-only (`lg+`); mobile home shows the main feed without the stacked sidebar.
+
+### 2026-09-12 — Mobile/desktop nav stickiness over footer
+
+- Top and bottom nav chrome render at the app shell root with `fixed` positioning so they stay visible when scrolling through the footer; desktop nav no longer uses `sticky` (which unpinned at page bottom).
+
+### 2026-09-12 — Footer social links
+
+- Site footer social icons now link to Nine Circles Instagram, Facebook, and LinkedIn profiles (removed placeholder X/YouTube links).
+
 ### 2026-09-12 — Nearby map: English labels and filter sync
 
 - Basemap labels prefer English/Latin script (`name:en`, `name:latin`) on Nearby, search preview, and venue picker maps.

@@ -61,7 +61,7 @@ export function MobileTopBar() {
   return (
     <>
       <header
-        className="glass ring-border/60 fixed inset-x-0 top-0 z-40 border-b ring-1 md:hidden"
+        className="glass ring-border/60 fixed inset-x-0 top-0 z-50 border-b ring-1 md:hidden"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="mx-auto flex w-full max-w-[1508px] items-center gap-2 px-3 py-2.5">

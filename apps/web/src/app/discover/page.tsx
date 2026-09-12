@@ -595,13 +595,13 @@ export default function DiscoverPage() {
         {/* ── MAIN ──────────────────────────────────────────────────── */}
         <div className="min-w-0 space-y-8">
           {/* mobile toolbar */}
-          <div className="flex gap-2 lg:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setFilterDrawerOpen(true)}
-              className="flex-1"
+              className="w-auto shrink-0"
             >
               <i className="fa-solid fa-sliders mr-2" />
               Filters
