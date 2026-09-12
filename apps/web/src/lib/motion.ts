@@ -8,6 +8,12 @@ gsap.registerPlugin(useGSAP);
 /** Brand-default easing for UI motion. */
 export const MOTION_EASE = 'power2.out';
 
+/** Premium cover / route transitions — smooth accel-decel. */
+export const PREMIUM_WIPE_EASE = 'expo.inOut';
+export const PREMIUM_ENTER_EASE = 'expo.out';
+export const PREMIUM_LEAVE_EASE = 'expo.in';
+export const PREMIUM_FADE_EASE = 'power2.inOut';
+
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;

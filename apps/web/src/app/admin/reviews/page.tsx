@@ -10,7 +10,8 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { Spinner } from '@/components/spinner';
+import { ListSkeleton } from '@/components/skeletons/list-skeleton';
 
 const PAGE_SIZE = 30;
 
@@ -105,8 +106,7 @@ export default function AdminReviewsPage() {
     }
   }
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only.{' '}
@@ -164,11 +164,7 @@ export default function AdminReviewsPage() {
       )}
 
       {/* Loading */}
-      {fetching && (
-        <div className="flex justify-center py-12">
-          <Spinner className="text-primary size-6" />
-        </div>
-      )}
+      {fetching && <ListSkeleton rows={6} />}
 
       {/* Empty state */}
       {!fetching && reviews.length === 0 && !globalError && (

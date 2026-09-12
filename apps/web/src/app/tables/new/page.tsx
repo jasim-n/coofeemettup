@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { Spinner } from '@/components/spinner';
 
 const LocationPicker = dynamic(() => import('@/components/location-picker'), {
   ssr: false,
@@ -57,13 +57,13 @@ export default function NewTablePage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please <Link href="/login" className="underline">sign in</Link> first.
       </main>
     );
+  if (!user) return null;
   if (!user.canHost)
     return (
       <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-16 text-center">

@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { UserLink } from '@/components/user-link';
-import { PageLoader } from '@/components/spinner';
+import { MessagesSkeleton } from '@/components/skeletons/messages-skeleton';
 import { formatDateTime } from '@/lib/format';
 import { isAdminRole } from '@/lib/roles';
 import { useFadeScrollbar } from '@/hooks/use-fade-scrollbar';
@@ -218,8 +218,7 @@ export default function MessagesPage() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [dmMsgs.length, groupChat?.messages.length]);
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please{' '}
@@ -229,6 +228,8 @@ export default function MessagesPage() {
         first.
       </main>
     );
+  if (!user) return null;
+  if (convoLoading) return <MessagesSkeleton />;
 
   // ---- send ----
   async function send(e: React.FormEvent) {

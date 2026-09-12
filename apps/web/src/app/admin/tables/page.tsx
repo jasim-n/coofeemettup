@@ -11,7 +11,8 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { Spinner } from '@/components/spinner';
+import { ListSkeleton } from '@/components/skeletons/list-skeleton';
 import { categoryIcon } from '@/lib/category-icon';
 
 const STATUS_FILTERS = ['ALL', 'OPEN', 'FULL', 'CLOSED', 'CANCELLED', 'COMPLETED'] as const;
@@ -81,8 +82,7 @@ export default function AdminTablesPage() {
     };
   }, [user]);
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only.{' '}
@@ -272,11 +272,7 @@ export default function AdminTablesPage() {
       </div>
 
       {/* Loading */}
-      {tables === null && !error && (
-        <div className="flex justify-center py-12">
-          <Spinner className="text-primary size-6" />
-        </div>
-      )}
+      {tables === null && !error && <ListSkeleton rows={6} />}
 
       {/* Empty state */}
       {tables !== null && visible.length === 0 && (

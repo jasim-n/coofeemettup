@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { Spinner } from '@/components/spinner';
 
 // MapLibre touches window/document — load client-only.
 const LocationPicker = dynamic(() => import('@/components/location-picker'), {
@@ -90,8 +90,7 @@ export default function AdminCafesPage() {
     load();
   }, [load]);
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only. <Link href="/" className="underline">Home</Link>

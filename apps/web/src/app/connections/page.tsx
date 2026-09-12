@@ -8,7 +8,8 @@ import { api } from '@/lib/api';
 import { Avatar } from '@/components/avatar';
 import { ConnectButton } from '@/components/connect-button';
 import { UserLink } from '@/components/user-link';
-import { PageLoader } from '@/components/spinner';
+import { ContentPlaceholder } from '@/components/spinner';
+import { ListSkeleton } from '@/components/skeletons/list-skeleton';
 import { StaggerIn } from '@/components/stagger-in';
 
 /* ─── helpers ────────────────────────────────────────────────── */
@@ -119,8 +120,7 @@ export default function ConnectionsPage() {
     };
   }, [user]);
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please <Link href="/login" className="underline">sign in</Link> first.
@@ -169,9 +169,11 @@ export default function ConnectionsPage() {
       {/* ── connections tab ────────────────────────────────────── */}
       {tab === 'connections' && (
         <>
-          {connections === null ? (
-            <PageLoader label="Loading connections…" />
-          ) : connections.length === 0 ? (
+          <ContentPlaceholder
+            loading={connections === null}
+            skeleton={<ListSkeleton rows={6} />}
+          >
+          {connections !== null && connections.length === 0 ? (
             <Empty
               icon="fa-handshake"
               message="You don't have any connections yet."
@@ -185,7 +187,7 @@ export default function ConnectionsPage() {
                 </button>
               }
             />
-          ) : (
+          ) : connections !== null ? (
             <StaggerIn
               className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
               deps={[connections.length]}
@@ -208,35 +210,35 @@ export default function ConnectionsPage() {
                 />
               ))}
             </StaggerIn>
-          )}
+          ) : null}
+          </ContentPlaceholder>
         </>
       )}
 
       {/* ── requests tab ───────────────────────────────────────── */}
       {tab === 'requests' && (
         <>
-          {requests === null ? (
-            <PageLoader label="Loading requests…" />
-          ) : requests.length === 0 ? (
+          <ContentPlaceholder loading={requests === null} skeleton={<ListSkeleton rows={4} />}>
+          {requests !== null && requests.length === 0 ? (
             <Empty icon="fa-envelope-open" message="No pending connection requests." />
-          ) : (
+          ) : requests !== null ? (
             <StaggerIn className="space-y-3" deps={[requests.length]}>
               {requests.map((req) => (
                 <RequestRow key={req.id} req={req} />
               ))}
             </StaggerIn>
-          )}
+          ) : null}
+          </ContentPlaceholder>
         </>
       )}
 
       {/* ── suggestions tab ────────────────────────────────────── */}
       {tab === 'suggestions' && (
         <>
-          {suggestions === null ? (
-            <PageLoader label="Loading suggestions…" />
-          ) : suggestions.length === 0 ? (
+          <ContentPlaceholder loading={suggestions === null} skeleton={<ListSkeleton rows={6} />}>
+          {suggestions !== null && suggestions.length === 0 ? (
             <Empty icon="fa-user-group" message="No suggestions right now. Join more meetups to meet people!" />
-          ) : (
+          ) : suggestions !== null ? (
             <StaggerIn
               className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
               deps={[suggestions.length]}
@@ -259,7 +261,8 @@ export default function ConnectionsPage() {
                 />
               ))}
             </StaggerIn>
-          )}
+          ) : null}
+          </ContentPlaceholder>
         </>
       )}
     </main>

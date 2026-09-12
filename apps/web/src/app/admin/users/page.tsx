@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageLoader, Spinner } from '@/components/spinner';
+import { Spinner } from '@/components/spinner';
 
 type UserMap = Record<string, AdminUserDto>;
 type BusyMap = Record<string, boolean>;
@@ -189,8 +189,7 @@ export default function AdminUsersPage() {
     }
   }
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only.{' '}

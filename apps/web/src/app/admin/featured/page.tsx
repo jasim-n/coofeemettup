@@ -15,7 +15,8 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { PageLoader } from '@/components/spinner';
+import { ContentPlaceholder } from '@/components/spinner';
+import { ListSkeleton } from '@/components/skeletons/list-skeleton';
 import { formatDateTime } from '@/lib/format';
 import { categoryIcon } from '@/lib/category-icon';
 import { COLLAGE_PRESET_OPTIONS } from '@/lib/media-layout';
@@ -73,8 +74,7 @@ export default function AdminFeaturedPage() {
     api.adminTableImages(selected.id).then(setImages).catch(() => setImages([]));
   }, [selected]);
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only.{' '}
@@ -186,9 +186,7 @@ export default function AdminFeaturedPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          {listLoading ? (
-            <PageLoader />
-          ) : (
+          <ContentPlaceholder loading={listLoading} skeleton={<ListSkeleton rows={6} />}>
             <div className="space-y-2">
               {events.map((ev) => {
                 const active = selected?.id === ev.id;
@@ -226,7 +224,7 @@ export default function AdminFeaturedPage() {
                 );
               })}
             </div>
-          )}
+          </ContentPlaceholder>
         </div>
 
         <div>

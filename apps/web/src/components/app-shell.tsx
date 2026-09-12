@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
-import { PageEnter } from '@/components/page-enter';
+import { PageTransitionProvider } from '@/components/page-transition-provider';
 
 /** Content shell — fixed nav chrome lives in AuthGate so it stays viewport-bound over the footer. */
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -17,6 +17,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     : 'md:pt-[4.25rem]';
 
   return (
-    <PageEnter className={`flex flex-1 flex-col ${chromePad}`}>{children}</PageEnter>
+    <PageTransitionProvider className={`flex flex-1 flex-col ${chromePad}`}>
+      {children}
+    </PageTransitionProvider>
   );
 }

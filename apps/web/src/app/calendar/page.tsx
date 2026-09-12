@@ -7,7 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { peekCache, swrGet, tablesCacheKeys } from '@/lib/data-cache';
 import { formatDateTime } from '@/lib/format';
-import { PageLoader } from '@/components/spinner';
+import { PageShellSkeleton } from '@/components/skeletons/page-shell-skeleton';
 import { CategoryPills } from '@/components/category-pills';
 
 /* ─── module-level NOW (same pattern as meetups/page.tsx) ────────── */
@@ -49,7 +49,7 @@ export default function CalendarPage() {
   const joinedView = joined.length > 0 ? joined : (seedJoined ?? []);
   const hostedView = hosted.length > 0 ? hosted : (seedHosted ?? []);
   const showLoader =
-    loading || (Boolean(user) && fetching && joinedView.length === 0 && hostedView.length === 0);
+    Boolean(user) && fetching && joinedView.length === 0 && hostedView.length === 0;
 
   // viewed month state — initialised from NOW once
   const [viewYear, setViewYear] = useState(() => new Date(NOW).getFullYear());
@@ -84,9 +84,7 @@ export default function CalendarPage() {
     };
   }, [user]);
 
-  if (showLoader) return <PageLoader />;
-
-  if (!user) {
+    if (!user) {
     return (
       <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 py-6 sm:px-6">
         <p className="text-sm">
@@ -146,6 +144,8 @@ export default function CalendarPage() {
 
   const dayMeetups =
     selectedDay !== null ? tablesForDay(allTables, viewYear, viewMonth, selectedDay) : [];
+
+  if (showLoader) return <PageShellSkeleton rows={8} />;
 
   /* ── render ─────────────────────────────────────────────────────── */
   return (

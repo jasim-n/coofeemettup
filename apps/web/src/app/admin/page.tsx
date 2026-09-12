@@ -8,15 +8,13 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PageLoader } from '@/components/spinner';
 
 export default function AdminPage() {
   const { user, loading } = useAuth();
 
   const isAdmin = user && (user.role === 'ADMIN' || user.role === 'ORGANIZER');
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only.{' '}

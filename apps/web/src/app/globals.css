@@ -169,6 +169,13 @@
   }
   html {
     @apply font-sans;
+    scrollbar-gutter: stable;
+  }
+
+  /* Counter loader — keep viewport width stable while the overlay runs. */
+  html.page-loader-active,
+  html.page-loader-active body {
+    overflow: hidden;
   }
   button:not(:disabled),
   a[href] {

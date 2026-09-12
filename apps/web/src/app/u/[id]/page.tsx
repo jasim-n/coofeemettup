@@ -14,7 +14,7 @@ import { isAdminRole } from '@/lib/roles';
 import { Avatar } from '@/components/avatar';
 import { ConnectButton } from '@/components/connect-button';
 import { Stars } from '@/components/stars';
-import { PageLoader } from '@/components/spinner';
+import { ProfileSkeleton } from '@/components/skeletons/profile-skeleton';
 
 /* ── helpers ─────────────────────────────────────────────────────── */
 
@@ -133,8 +133,6 @@ export default function PublicProfilePage() {
     };
   }, [id, authLoading, forbidden]);
 
-  if (authLoading) return <PageLoader />;
-
   if (forbidden || (error && !profile)) {
     return (
       <main className="p-6 text-sm text-muted-foreground">
@@ -142,7 +140,8 @@ export default function PublicProfilePage() {
       </main>
     );
   }
-  if (!profile) return <PageLoader />;
+
+  if (authLoading || !profile) return <ProfileSkeleton />;
 
   const { user: p, stats, connectionState, isSelf } = profile;
 
@@ -171,7 +170,7 @@ export default function PublicProfilePage() {
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-8">
       <div className="space-y-6">
 
-        {/* ── Hero band ─────────────────────────────────────────── */}
+        {/* Hero band */}
         <div className="bg-gradient-hero relative overflow-hidden rounded-3xl p-6 shadow-glow">
           <div
             className="pointer-events-none absolute -right-12 -top-12 size-64 rounded-full opacity-20 blur-3xl bg-primary/40"

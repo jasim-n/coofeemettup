@@ -1,4 +1,4 @@
-/** Teal ring spinner. Inherits color via `text-*`; size via `size-*`. */
+/** Teal ring spinner — for small inline fetches (not page-level). */
 export function Spinner({ className = '' }: { className?: string }) {
   return (
     <span
@@ -9,14 +9,7 @@ export function Spinner({ className = '' }: { className?: string }) {
   );
 }
 
-/** Centered page-level loader with an optional label. */
-export function PageLoader({ label }: { label?: string }) {
-  return (
-    <div className="grid flex-1 place-items-center py-24">
-      <div className="text-muted-foreground flex flex-col items-center gap-3">
-        <Spinner className="text-primary size-8" />
-        {label && <p className="text-sm font-medium">{label}</p>}
-      </div>
-    </div>
-  );
-}
+/** Full-page counter loader — auth boot only (via LoadingGate in AuthGate). */
+export { PageLoader } from '@/components/page-loader';
+export { LoadingGate } from '@/components/loading-gate';
+export { ContentPlaceholder } from '@/components/content-placeholder';

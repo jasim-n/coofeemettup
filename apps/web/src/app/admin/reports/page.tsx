@@ -8,7 +8,6 @@ import { api } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageLoader } from '@/components/spinner';
 
 type ReportMap = Record<string, ReportDto>;
 
@@ -83,8 +82,7 @@ export default function AdminReportsPage() {
     }
   }
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin)
+  if (!loading && !isAdmin)
     return (
       <main className="p-6 text-sm">
         Admins only. <Link href="/" className="underline">Home</Link>

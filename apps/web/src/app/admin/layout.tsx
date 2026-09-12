@@ -3,8 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
-import { PageLoader } from '@/components/spinner';
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -17,8 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [loading, isAdmin, router]);
 
-  if (loading) return <PageLoader />;
-  if (!isAdmin) return null;
+  if (!loading && !isAdmin) return null;
 
-  return <>{children}</>;
+  return children;
 }

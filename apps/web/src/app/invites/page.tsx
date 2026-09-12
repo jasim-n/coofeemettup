@@ -16,7 +16,8 @@ import { categoryIcon } from '@/lib/category-icon';
 import { Cover } from '@/components/cover-image';
 import { Avatar } from '@/components/avatar';
 import { UserLink } from '@/components/user-link';
-import { PageLoader } from '@/components/spinner';
+import { ContentPlaceholder } from '@/components/spinner';
+import { TableCardGridSkeleton } from '@/components/skeletons/table-card-skeleton';
 import { Button } from '@/components/ui/button';
 import { CategoryPills } from '@/components/category-pills';
 import { EmptyMascot } from '@/components/empty-mascot';
@@ -193,8 +194,7 @@ export default function InvitesPage() {
     setToast(msg);
   }
 
-  if (loading) return <PageLoader />;
-  if (!user)
+  if (!loading && !user)
     return (
       <main className="p-6 text-sm">
         Please{' '}
@@ -215,6 +215,10 @@ export default function InvitesPage() {
         <h1 className="display text-2xl sm:text-3xl">Your invitations</h1>
       </div>
 
+      <ContentPlaceholder
+        loading={!fetched}
+        skeleton={<TableCardGridSkeleton count={3} />}
+      >
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
 
       {/* Empty state */}
@@ -238,6 +242,7 @@ export default function InvitesPage() {
           ))}
         </StaggerIn>
       )}
+      </ContentPlaceholder>
     </main>
   );
 }
