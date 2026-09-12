@@ -87,7 +87,6 @@ export default function MessagesPage() {
   // ---- shared loading / send state ----
   const [chatLoading, setChatLoading] = useState(false);
   const [body, setBody] = useState('');
-  const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
   // ---- search + tab ----
@@ -102,8 +101,10 @@ export default function MessagesPage() {
 
   const QUICK_EMOJIS = ['❤️', '👍', '😂', '🎉', '☕', '😮'];
 
-  const endRef = useRef<HTMLDivElement | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Number of sends in flight — poll results are skipped while > 0 so a stale
+  // fetch can't wipe an optimistic bubble before the server has it.
+  const inflightRef = useRef(0);
   const leftScrollRef = useFadeScrollbar();
   const centerScrollRef = useFadeScrollbar();
   const rightScrollRef = useFadeScrollbar();
@@ -146,7 +147,14 @@ export default function MessagesPage() {
       setConvos(all);
       setConnections(conns);
       setConvoLoading(false);
-      setSelectedKey((prev) => prev ?? all[0]?.key ?? null);
+      // Desktop shows list + thread side by side, so pre-opening the newest
+      // thread is helpful. On small screens the thread replaces the list, so
+      // stay on the list until the user picks one.
+      setSelectedKey((prev) => {
+        if (prev) return prev;
+        const twoPane = window.matchMedia('(min-width: 1024px)').matches;
+        return twoPane ? (all[0]?.key ?? null) : null;
+      });
     };
     void loadConvos().catch(() => {
       if (active) setConvoLoading(false);
@@ -189,11 +197,11 @@ export default function MessagesPage() {
         if (selectedKey?.startsWith('dm:')) {
           const uid = selectedKey.slice(3);
           const msgs = await api.dmThread(uid);
-          if (active) setDmMsgs(msgs);
+          if (active && (initial || inflightRef.current === 0)) setDmMsgs(msgs);
         } else if (selectedKey?.startsWith('group:')) {
           const tid = selectedKey.slice(6);
           const res = await api.tableChat(tid);
-          if (active) setGroupChat(res);
+          if (active && (initial || inflightRef.current === 0)) setGroupChat(res);
         }
       } finally {
         if (initial && active) setChatLoading(false);
@@ -213,10 +221,16 @@ export default function MessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKey, user?.id]);
 
-  // ---- scroll to bottom on new messages ----
+  // ---- keep the thread pinned to the newest message ----
+  // Scroll the messages pane only (never the page): scrollIntoView would also
+  // move the window whenever the pane isn't fully in view.
+  const dmCount = dmMsgs.length;
+  const groupCount = groupChat?.messages.length ?? 0;
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [dmMsgs.length, groupChat?.messages.length]);
+    const el = centerScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [dmCount, groupCount, chatLoading, centerScrollRef]);
 
   if (!loading && !user)
     return (
@@ -231,31 +245,73 @@ export default function MessagesPage() {
   if (!user) return null;
   if (convoLoading) return <MessagesSkeleton />;
 
-  // ---- send ----
+  // ---- send (optimistic) ----
+  // The bubble appears the instant the user hits send; the composer clears and
+  // stays enabled so they can keep typing. The server copy replaces the
+  // placeholder when it lands; on failure the placeholder is removed and the
+  // text is restored to the input.
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const text = body.trim();
-    if (!text || !selectedKey) return;
-    setSending(true);
+    if (!text || !selectedKey || !user) return;
+
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+    const me = user;
+
+    setBody('');
     setSendError(null);
+    inflightRef.current += 1;
+
     try {
       if (selectedKey.startsWith('dm:')) {
         const uid = selectedKey.slice(3);
-        await api.sendDm(uid, text);
-        setBody('');
-        const msgs = await api.dmThread(uid);
-        setDmMsgs(msgs);
+        const placeholder: DmMessage = {
+          id: tempId,
+          senderId: me.id,
+          recipientId: uid,
+          body: text,
+          createdAt: now,
+          readAt: null,
+          reactions: [],
+        };
+        setDmMsgs((prev) => [...prev, placeholder]);
+        try {
+          const saved = await api.sendDm(uid, text);
+          setDmMsgs((prev) => prev.map((m) => (m.id === tempId ? saved : m)));
+        } catch (err) {
+          setDmMsgs((prev) => prev.filter((m) => m.id !== tempId));
+          throw err;
+        }
       } else if (selectedKey.startsWith('group:')) {
         const tid = selectedKey.slice(6);
-        await api.sendTableMessage(tid, text);
-        setBody('');
-        const res = await api.tableChat(tid);
-        setGroupChat(res);
+        const placeholder: ChatMessage = {
+          id: tempId,
+          userId: me.id,
+          body: text,
+          createdAt: now,
+          username: me.username ?? null,
+          reactions: [],
+        };
+        setGroupChat((prev) =>
+          prev ? { ...prev, messages: [...prev.messages, placeholder] } : prev,
+        );
+        try {
+          await api.sendTableMessage(tid, text);
+          const res = await api.tableChat(tid);
+          setGroupChat(res);
+        } catch (err) {
+          setGroupChat((prev) =>
+            prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== tempId) } : prev,
+          );
+          throw err;
+        }
       }
     } catch (err) {
       setSendError(err instanceof ApiError ? err.message : 'Could not send');
+      setBody((current) => (current.trim() ? current : text));
     } finally {
-      setSending(false);
+      inflightRef.current = Math.max(0, inflightRef.current - 1);
     }
   }
 
@@ -298,7 +354,9 @@ export default function MessagesPage() {
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-4">
-      <div className="grid gap-4 lg:h-[calc(100dvh-6rem)] lg:grid-cols-[330px_1fr_300px]">
+      {/* Height = viewport − shell nav pad (5.75rem) − main py-4 (2rem), so the
+          thread pane is the scroller and the page itself never scrolls. */}
+      <div className="grid gap-4 lg:h-[calc(100dvh-7.75rem)] lg:grid-cols-[330px_1fr_300px]">
 
         {/* ========== LEFT — conversations panel ========== */}
         <aside
@@ -475,7 +533,7 @@ export default function MessagesPage() {
         {/* ========== CENTER — thread ========== */}
         {selected ? (
           <section
-            className="bg-card shadow-soft flex min-h-[70dvh] flex-col overflow-hidden rounded-3xl border lg:min-h-0"
+            className="bg-card shadow-soft flex flex-col overflow-hidden rounded-3xl border max-lg:h-[calc(100dvh-11.125rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:min-h-0"
             onClick={() => setPickerOpen(false)}
           >
             {/* thread header */}
@@ -790,7 +848,6 @@ export default function MessagesPage() {
                   })}
                 </>
               )}
-              <div ref={endRef} />
             </div>
 
             {/* composer */}
@@ -816,8 +873,7 @@ export default function MessagesPage() {
                     }}
                     placeholder="Type a message…"
                     maxLength={1000}
-                    disabled={sending}
-                    className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+                    className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground/60"
                   />
                   <button
                     type="button"
@@ -828,7 +884,7 @@ export default function MessagesPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={sending || !body.trim()}
+                    disabled={!body.trim()}
                     className="bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-full transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                     aria-label="Send"
                   >
