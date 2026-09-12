@@ -165,7 +165,9 @@ export class InvitesService {
     }
 
     const { tableId } = invite;
-    const table = await this.prisma.table.findUnique({ where: { id: tableId } });
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
     if (!table) throw new NotFoundException('Table not found');
     assertJoinableTable(table);
 

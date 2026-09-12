@@ -84,11 +84,14 @@ export default function TablesMap({
   const labelCleanupRef = useRef<(() => void) | null>(null);
   const railRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [ready, setReady] = useState(false);
-  const [deviceCoords, setDeviceCoords] = useState<DeviceLocation | null>(null);
+  const [deviceCoords, setDeviceCoords] = useState<DeviceLocation | null>(userCoords);
+  const [prevUserCoords, setPrevUserCoords] = useState(userCoords);
 
-  useEffect(() => {
+  // Parent-provided coords override the local fix when they change.
+  if (userCoords !== prevUserCoords) {
+    setPrevUserCoords(userCoords);
     if (userCoords) setDeviceCoords(userCoords);
-  }, [userCoords]);
+  }
 
   // filters
   const [showFilters, setShowFilters] = useState(false);
@@ -261,11 +264,10 @@ export default function TablesMap({
     );
   }, [visible, ready, deviceCoords, mapOnly]);
 
-  useEffect(() => {
-    if (!ready) return;
-    const ids = new Set(visible.map((p) => p.table.id));
-    if (selectedId && !ids.has(selectedId)) setSelectedId(null);
-  }, [visible, selectedId, ready]);
+  // Drop a selection that filtered out of view.
+  if (ready && selectedId && !visible.some((p) => p.table.id === selectedId)) {
+    setSelectedId(null);
+  }
 
   const select = useCallback((p: Pin, scrollRail = false) => {
     setSelectedId(p.table.id);

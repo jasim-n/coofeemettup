@@ -263,17 +263,19 @@ export class UsersService {
       else if (/deep|book|mindful|writ/.test(l)) vibeBuckets.deep += weight;
       else if (/network|language|startup|business|social/.test(l))
         vibeBuckets.social += weight;
-      else if (/focus|work|study|productivity/.test(l)) vibeBuckets.focus += weight;
+      else if (/focus|work|study|productivity/.test(l))
+        vibeBuckets.focus += weight;
       else vibeBuckets.casual += weight * 0.5;
     };
     for (const [label, count] of counts) bumpVibe(label, count);
-    for (const label of user.interests) bumpVibe(label, totalTables === 0 ? 2 : 0.5);
+    for (const label of user.interests)
+      bumpVibe(label, totalTables === 0 ? 2 : 0.5);
 
     const vibeTotal =
       vibeBuckets.casual +
-      vibeBuckets.deep +
-      vibeBuckets.social +
-      vibeBuckets.focus || 1;
+        vibeBuckets.deep +
+        vibeBuckets.social +
+        vibeBuckets.focus || 1;
     const vibePct = (n: number) => Math.round((n / vibeTotal) * 100);
 
     const overallCount = reviewRows.length;
@@ -322,7 +324,10 @@ export class UsersService {
       {
         key: 'casual',
         label: 'Casual coffee',
-        value: Math.min(100, vibePct(vibeBuckets.casual) + (totalTables === 0 ? 5 : 0)),
+        value: Math.min(
+          100,
+          vibePct(vibeBuckets.casual) + (totalTables === 0 ? 5 : 0),
+        ),
       },
       {
         key: 'deep',
@@ -354,17 +359,16 @@ export class UsersService {
     };
   }
 
-  async getPublicProfile(
-    viewer: { id: string; role: Role },
-    targetId: string,
-  ) {
+  async getPublicProfile(viewer: { id: string; role: Role }, targetId: string) {
     const viewerId = viewer.id;
     if (
       viewerId !== targetId &&
       viewer.role !== 'ADMIN' &&
       viewer.role !== 'ORGANIZER'
     ) {
-      throw new ForbiddenException('Only administrators can view member profiles');
+      throw new ForbiddenException(
+        'Only administrators can view member profiles',
+      );
     }
 
     const u = await this.prisma.user.findUnique({ where: { id: targetId } });

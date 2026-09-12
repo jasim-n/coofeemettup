@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { PageLoader } from '@/components/page-loader';
 
 type LoadingGateProps = {
@@ -20,12 +20,16 @@ type LoadingGateProps = {
 export function LoadingGate({ loading, children, label, variant = 'inline' }: LoadingGateProps) {
   const [showLoader, setShowLoader] = useState(loading);
   const [revealContent, setRevealContent] = useState(!loading);
+  const [prevLoading, setPrevLoading] = useState(loading);
 
-  useEffect(() => {
-    if (!loading) return;
-    setShowLoader(true);
-    setRevealContent(false);
-  }, [loading]);
+  // Re-arm the loader when `loading` flips back to true (adjust-state-during-render pattern).
+  if (loading !== prevLoading) {
+    setPrevLoading(loading);
+    if (loading) {
+      setShowLoader(true);
+      setRevealContent(false);
+    }
+  }
 
   const handleLoaderReady = useCallback(() => {
     setRevealContent(true);

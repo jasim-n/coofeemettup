@@ -70,8 +70,22 @@ export default function AdminFeaturedPage() {
 
   useEffect(() => {
     if (!selected) return;
-    setLayoutImgId(null);
-    api.adminTableImages(selected.id).then(setImages).catch(() => setImages([]));
+    let active = true;
+    api
+      .adminTableImages(selected.id)
+      .then((imgs) => {
+        if (!active) return;
+        setImages(imgs);
+        setLayoutImgId(null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setImages([]);
+        setLayoutImgId(null);
+      });
+    return () => {
+      active = false;
+    };
   }, [selected]);
 
   if (!loading && !isAdmin)

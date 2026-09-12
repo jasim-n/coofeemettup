@@ -38,7 +38,12 @@ export class NewsletterService {
 
   async listSubscribers(limit: number, offset: number, q?: string) {
     const where = q?.trim()
-      ? { email: { contains: q.trim().toLowerCase(), mode: 'insensitive' as const } }
+      ? {
+          email: {
+            contains: q.trim().toLowerCase(),
+            mode: 'insensitive' as const,
+          },
+        }
       : {};
     const [subscribers, total] = await Promise.all([
       this.prisma.newsletterSubscriber.findMany({
@@ -60,7 +65,10 @@ export class NewsletterService {
     };
   }
 
-  private async sendWelcomeAndMark(id: string, email: string): Promise<boolean> {
+  private async sendWelcomeAndMark(
+    id: string,
+    email: string,
+  ): Promise<boolean> {
     const sent = await this.mail.sendNewsletterWelcome(email);
     if (!sent) return false;
     await this.prisma.newsletterSubscriber.update({

@@ -63,27 +63,35 @@ export function useDeviceLocation(enabled = true) {
 
   useEffect(() => {
     if (!enabled) return;
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setError('unavailable');
-      setPending(false);
-      return;
-    }
-
-    setPending(true);
+    let cancelled = false;
     let watchId: number | null = null;
 
-    watchId = navigator.geolocation.watchPosition(
-      applyPosition,
-      (err) => {
+    // Deferred so state updates never run synchronously inside the effect body.
+    const start = window.setTimeout(() => {
+      if (cancelled) return;
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        setError('unavailable');
         setPending(false);
-        if (!hasFixRef.current) {
-          setError(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable');
-        }
-      },
-      GEOLOCATION_OPTIONS,
-    );
+        return;
+      }
+
+      setPending(true);
+      watchId = navigator.geolocation.watchPosition(
+        applyPosition,
+        (err) => {
+          if (cancelled) return;
+          setPending(false);
+          if (!hasFixRef.current) {
+            setError(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable');
+          }
+        },
+        GEOLOCATION_OPTIONS,
+      );
+    }, 0);
 
     return () => {
+      cancelled = true;
+      window.clearTimeout(start);
       if (watchId != null) navigator.geolocation.clearWatch(watchId);
     };
   }, [enabled, applyPosition]);

@@ -66,11 +66,14 @@ export function PageLoader({
   const exitScheduledRef = useRef(false);
   const finishStartedRef = useRef(false);
 
-  activeRef.current = active;
-  variantRef.current = variant;
-  labelRef.current = label;
-  onReadyRef.current = onReady;
-  onCompleteRef.current = onComplete;
+  // Keep latest props readable from the ticker without restarting the effect.
+  useLayoutEffect(() => {
+    activeRef.current = active;
+    variantRef.current = variant;
+    labelRef.current = label;
+    onReadyRef.current = onReady;
+    onCompleteRef.current = onComplete;
+  });
 
   const paintProgress = (value: number) => {
     const monotonic = Math.max(progressRef.current, Math.min(100, value));

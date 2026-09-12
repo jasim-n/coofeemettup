@@ -29,8 +29,7 @@ const imageUpload = FileInterceptor('file', {
 const videoUpload = FileInterceptor('file', {
   storage: memoryStorage(),
   limits: { fileSize: 40 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) =>
-    cb(null, file.mimetype.startsWith('video/')),
+  fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('video/')),
 });
 
 @Controller('tables')

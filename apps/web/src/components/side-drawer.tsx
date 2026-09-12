@@ -30,9 +30,8 @@ export function SideDrawer({
   const panelRef = useRef<HTMLDivElement>(null);
   const fromLeft = side === 'left';
 
-  useEffect(() => {
-    if (open) setMounted(true);
-  }, [open]);
+  // Mount as soon as `open` flips true; unmount is handled after the close animation.
+  if (open && !mounted) setMounted(true);
 
   useEffect(() => {
     if (!mounted || !open) return;

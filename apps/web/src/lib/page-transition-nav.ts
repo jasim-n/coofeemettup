@@ -34,7 +34,14 @@ export function shouldUsePageTransition(fromPathname: string, href: string): boo
   }
 }
 
+/** Normalised `pathname + search` for a link; safe to call during SSR/prerender. */
 export function hrefKey(href: string): string {
-  const url = new URL(href, window.location.origin);
-  return url.pathname + url.search;
+  const base =
+    typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+  try {
+    const url = new URL(href, base);
+    return url.pathname + url.search;
+  } catch {
+    return href;
+  }
 }
