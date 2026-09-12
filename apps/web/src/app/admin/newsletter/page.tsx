@@ -43,13 +43,9 @@ export default function AdminNewsletterPage() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    void load('');
-  }, [isAdmin]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => void load(query), 300);
+    // Empty query (initial load / cleared search) loads immediately; typing is debounced.
+    debounceRef.current = setTimeout(() => void load(query), query ? 300 : 0);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };

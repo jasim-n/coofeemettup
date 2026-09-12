@@ -4,6 +4,12 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-12 — CI green: lint, prerender, Prisma generate
+
+- Web: resolved React Compiler lint errors (no synchronous `setState` in effects, no ref reads during render) in loader, drawer, mobile top bar, tables map, device-location hook, and admin featured/newsletter pages using adjust-state-during-render or deferred callbacks. Behavior unchanged.
+- Web: `hrefKey` is SSR-safe so `/login` and other public pages prerender under `next build`.
+- API: `typecheck` runs `prisma generate` first (Prisma 7 no longer generates on install); lint `--fix` formatting applied.
+
 ### 2026-09-12 — Skeleton loading vs counter loader
 
 - Page content loading uses layout skeletons (`ContentPlaceholder`, route-specific skeletons); the ink counter loader remains auth boot only (`AuthGate`).

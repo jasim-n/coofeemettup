@@ -20,7 +20,11 @@ export class MediaService {
   async uploadVideo(
     buffer: Buffer,
     folder = 'table-reels',
-  ): Promise<{ url: string; durationMs: number | null; posterUrl: string | null }> {
+  ): Promise<{
+    url: string;
+    durationMs: number | null;
+    posterUrl: string | null;
+  }> {
     const cloudName = this.config.get('CLOUDINARY_CLOUD_NAME', { infer: true });
     const data = await this.uploadToCloudinaryRaw(buffer, folder, 'video');
     const url = data.secure_url as string;

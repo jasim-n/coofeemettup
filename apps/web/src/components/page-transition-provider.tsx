@@ -65,7 +65,8 @@ export function PageTransitionProvider({ children, className = '' }: PageTransit
   const pendingNavRef = useRef(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const currentKey = hrefKey(pathname + (typeof window !== 'undefined' ? window.location.search : ''));
+  // Render-safe fallback only; navigate() reads the live location when available.
+  const currentKey = hrefKey(pathname);
 
   const resetMotion = useCallback(() => {
     const inner = innerRef.current;

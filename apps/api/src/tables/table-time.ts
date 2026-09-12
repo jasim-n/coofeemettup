@@ -28,14 +28,10 @@ export function chatClosesAt(table: {
   completedAt: Date | null;
   startAt: Date;
 }): Date {
-  const candidates: number[] = [
-    table.startAt.getTime() + MEETUP_CHAT_GRACE_MS,
-  ];
+  const candidates: number[] = [table.startAt.getTime() + MEETUP_CHAT_GRACE_MS];
   if (table.chatClosedAt) candidates.push(table.chatClosedAt.getTime());
   if (table.completedAt) {
-    candidates.push(
-      table.completedAt.getTime() + 24 * 60 * 60 * 1000,
-    );
+    candidates.push(table.completedAt.getTime() + 24 * 60 * 60 * 1000);
   }
   return new Date(Math.min(...candidates));
 }

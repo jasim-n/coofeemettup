@@ -100,7 +100,9 @@ export class TablesService {
     });
     if (!table) throw new NotFoundException('Table not found');
     if (!(await this.canManageMedia(userId, table))) {
-      throw new ForbiddenException('Only the host or an admin can add event photos');
+      throw new ForbiddenException(
+        'Only the host or an admin can add event photos',
+      );
     }
     const url = await this.media.uploadImage(buffer, 'table-photos');
     return this.prisma.tableImage.create({
@@ -154,7 +156,9 @@ export class TablesService {
     });
     if (!table) throw new NotFoundException('Table not found');
     if (!(await this.canManageMedia(userId, table))) {
-      throw new ForbiddenException('Only the host or an admin can create collages');
+      throw new ForbiddenException(
+        'Only the host or an admin can create collages',
+      );
     }
     const imgs = await this.prisma.tableImage.findMany({
       where: {
@@ -164,7 +168,9 @@ export class TablesService {
       },
     });
     if (imgs.length !== imageIds.length) {
-      throw new BadRequestException('All collage photos must belong to this table');
+      throw new BadRequestException(
+        'All collage photos must belong to this table',
+      );
     }
     const ordered = imageIds
       .map((id) => imgs.find((i) => i.id === id)!)
@@ -173,10 +179,10 @@ export class TablesService {
     return this.prisma.tableImage.create({
       data: {
         tableId,
-        url: primary!.url,
+        url: primary.url,
         kind: 'COLLAGE',
         collageUrls: rest.map((i) => i.url),
-        posterUrl: primary!.url,
+        posterUrl: primary.url,
         caption: caption?.trim() || null,
         uploadedById: userId,
         layout:
@@ -209,7 +215,9 @@ export class TablesService {
     });
     if (!table) throw new NotFoundException('Table not found');
     if (!(await this.canManageMedia(userId, table))) {
-      throw new ForbiddenException('Only the host or an admin can remove event photos');
+      throw new ForbiddenException(
+        'Only the host or an admin can remove event photos',
+      );
     }
     await this.prisma.tableImage.deleteMany({
       where: { id: imageId, tableId },
@@ -850,7 +858,10 @@ export class TablesService {
     return u?.role === 'ADMIN' || u?.role === 'ORGANIZER';
   }
 
-  private async canViewMedia(userId: string, tableId: string): Promise<boolean> {
+  private async canViewMedia(
+    userId: string,
+    tableId: string,
+  ): Promise<boolean> {
     if (await this.isMember(userId, tableId)) return true;
     return this.isStaff(userId);
   }

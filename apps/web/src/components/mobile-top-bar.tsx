@@ -44,9 +44,12 @@ export function MobileTopBar() {
     };
   }, [user, pathname]);
 
-  useEffect(() => {
+  // Close the account menu on route change (adjust-state-during-render pattern).
+  const [menuPathname, setMenuPathname] = useState(pathname);
+  if (menuPathname !== pathname) {
+    setMenuPathname(pathname);
     setMenuOpen(false);
-  }, [pathname]);
+  }
 
   if (loading || !user) return null;
   if (pathname.includes('/chat')) return null;
