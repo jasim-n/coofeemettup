@@ -4,6 +4,21 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-12 — Messages inbox cached across visits
+
+- `/messages` seeds the conversation list (and last-opened thread) from the existing SWR cache, so client navigations skip the skeleton and refresh in the background. Cache is written on poll, send, and read; logout still clears it.
+
+### 2026-09-12 — Chat: instant send, no page jump, no auto-open on mobile
+
+- Messages and Table group chat send optimistically: the bubble appears immediately, the composer clears and stays enabled; the server copy replaces the placeholder, and on failure the bubble is removed and the text restored. Poll results are skipped while a send is in flight.
+- Thread panes scroll themselves to the newest message (`scrollTo` on the pane) instead of `scrollIntoView`, so the page no longer jumps after sending. Pane heights account for the fixed nav so the pane, not the page, is the scroller on desktop and mobile.
+- On small screens, `/messages` opens on the conversation list instead of auto-opening the most recent thread; desktop two-pane still pre-selects it.
+- Message reactions toggle instantly (`toggleReactionLocally` in `lib/reactions.ts` mirrors the server toggle); the server summary reconciles afterwards and a failure reverts to the previous state.
+
+### 2026-09-12 — Space below desktop nav
+
+- App shell reserves 1.5rem of breathing room under the fixed desktop header (`md:pt-[5.75rem]`), so page content no longer sits flush against the navbar.
+
 ### 2026-09-12 — CI green: lint, prerender, Prisma generate
 
 - Web: resolved React Compiler lint errors (no synchronous `setState` in effects, no ref reads during render) in loader, drawer, mobile top bar, tables map, device-location hook, and admin featured/newsletter pages using adjust-state-during-render or deferred callbacks. Behavior unchanged.

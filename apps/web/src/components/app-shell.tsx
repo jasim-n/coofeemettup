@@ -12,9 +12,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const showMobileNav = !loading && !!user && !isChat;
 
   // Reserve space for fixed top/bottom chrome (mobile) and fixed DesktopNav (md+).
+  // Desktop: nav is ~4.25rem tall; the extra 1.5rem is breathing room so page
+  // content never sits flush against the header.
   const chromePad = showMobileNav
-    ? 'pt-[calc(5.625rem+env(safe-area-inset-top,0px))] pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pt-[4.25rem] md:pb-0'
-    : 'md:pt-[4.25rem]';
+    ? 'pt-[calc(5.625rem+env(safe-area-inset-top,0px))] pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pt-[5.75rem] md:pb-0'
+    : 'md:pt-[5.75rem]';
 
   return (
     <PageTransitionProvider className={`flex flex-1 flex-col ${chromePad}`}>

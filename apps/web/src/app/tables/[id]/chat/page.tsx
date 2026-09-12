@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ApiError, type ChatMessage } from '@jrst/api-client';
+import { ApiError, type ChatMessage, type ReactionSummary } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatSkeleton } from '@/components/skeletons/chat-skeleton';
 import { UserLink } from '@/components/user-link';
+import { toggleReactionLocally } from '@/lib/reactions';
 
 const POLL_MS = 6000;
 const QUICK_EMOJIS = ['❤️', '👍', '😂', '🎉', '☕', '😮'];
@@ -24,28 +25,42 @@ export default function TableChatPage() {
   const [canClose, setCanClose] = useState(false);
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
   const [closing, setClosing] = useState(false);
   const [reactPickerId, setReactPickerId] = useState<string | null>(null);
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  // Sends in flight — poll results are skipped while > 0 so a stale fetch
+  // can't wipe an optimistic bubble before the server has it.
+  const inflightRef = useRef(0);
 
   async function toggleReaction(messageId: string, emoji: string) {
-    if (closed) return;
+    if (closed || messageId.startsWith('tmp-')) return;
+
+    // Optimistic: apply locally now, reconcile with the server after.
+    const previous = messages.find((m) => m.id === messageId)?.reactions;
+    const apply = (reactions: ReactionSummary[] | undefined) =>
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, reactions } : m)));
+
+    setReactPickerId(null);
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, reactions: toggleReactionLocally(m.reactions, emoji) } : m,
+      ),
+    );
+    inflightRef.current += 1; // keep the poll from overwriting the optimistic state
+
     try {
-      const updated = await api.toggleReaction('group', messageId, emoji);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)),
-      );
-      setReactPickerId(null);
+      apply(await api.toggleReaction('group', messageId, emoji));
     } catch {
-      /* best-effort */
+      apply(previous);
+    } finally {
+      inflightRef.current = Math.max(0, inflightRef.current - 1);
     }
   }
 
   const load = useCallback(async () => {
     const res = await api.tableChat(id);
     setMember(res.member);
-    setMessages(res.messages);
+    if (inflightRef.current === 0) setMessages(res.messages);
     setClosed(res.closed);
     setClosesAt(res.closesAt);
     setCanClose(res.canClose);
@@ -69,9 +84,13 @@ export default function TableChatPage() {
     };
   }, [user, load]);
 
+  // Scroll the list pane only — never the page.
+  const messageCount = messages.length;
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [messageCount]);
 
   if (!loading && !user)
     return (
@@ -80,20 +99,42 @@ export default function TableChatPage() {
       </main>
     );
 
+  // Optimistic: bubble appears immediately, composer clears and stays usable.
+  // The server list replaces the placeholder; on failure it's removed and the
+  // text is restored.
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const text = body.trim();
-    if (!text || closed) return;
-    setSending(true);
+    if (!text || closed || !user) return;
+
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const placeholder: ChatMessage = {
+      id: tempId,
+      userId: user.id,
+      body: text,
+      createdAt: new Date().toISOString(),
+      username: user.username ?? null,
+      reactions: [],
+    };
+
+    setBody('');
     setError(null);
+    inflightRef.current += 1;
+    setMessages((prev) => [...prev, placeholder]);
+
     try {
       await api.sendTableMessage(id, text);
-      setBody('');
-      await load();
+      const res = await api.tableChat(id);
+      setMessages(res.messages);
+      setClosed(res.closed);
+      setClosesAt(res.closesAt);
+      setCanClose(res.canClose);
     } catch (err) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setError(err instanceof ApiError ? err.message : 'Could not send');
+      setBody((current) => (current.trim() ? current : text));
     } finally {
-      setSending(false);
+      inflightRef.current = Math.max(0, inflightRef.current - 1);
     }
   }
 
@@ -124,7 +165,7 @@ export default function TableChatPage() {
   if (member === null && !error) return <ChatSkeleton />;
 
   return (
-    <main className="mx-auto flex h-[100dvh] w-full max-w-[1508px] flex-col px-4 py-4">
+    <main className="mx-auto flex h-[100dvh] w-full max-w-[1508px] flex-col px-4 py-4 md:h-[calc(100dvh-5.75rem)]">
       <div className="mb-3 flex items-center justify-between gap-3 px-2">
         <div>
           <p className="eyebrow text-primary">Table</p>
@@ -161,7 +202,10 @@ export default function TableChatPage() {
         </p>
       )}
 
-      <div className="bg-card flex-1 space-y-3 overflow-y-auto rounded-3xl border p-4 shadow-soft">
+      <div
+        ref={listRef}
+        className="bg-card min-h-0 flex-1 space-y-3 overflow-y-auto rounded-3xl border p-4 shadow-soft"
+      >
         {member === false && (
           <div className="text-muted-foreground grid h-full place-items-center text-center text-sm">
             <p><i className="fa-solid fa-comment mr-1" />Only the host and approved guests can chat here.</p>
@@ -252,7 +296,6 @@ export default function TableChatPage() {
             </div>
           );
         })}
-        <div ref={endRef} />
       </div>
 
       {member && !closed && (
@@ -263,7 +306,7 @@ export default function TableChatPage() {
             placeholder="Message the group…"
             maxLength={1000}
           />
-          <Button type="submit" disabled={sending || !body.trim()}>
+          <Button type="submit" disabled={!body.trim()}>
             Send
           </Button>
         </form>

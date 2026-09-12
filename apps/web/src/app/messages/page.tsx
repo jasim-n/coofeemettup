@@ -7,6 +7,7 @@ import {
   type ChatMessage,
   type DmMessage,
   type PublicUser,
+  type ReactionSummary,
   type TableDto,
 } from '@jrst/api-client';
 import { useAuth } from '@/components/auth-provider';
@@ -18,6 +19,13 @@ import { MessagesSkeleton } from '@/components/skeletons/messages-skeleton';
 import { formatDateTime } from '@/lib/format';
 import { isAdminRole } from '@/lib/roles';
 import { useFadeScrollbar } from '@/hooks/use-fade-scrollbar';
+import { toggleReactionLocally } from '@/lib/reactions';
+import {
+  MESSAGES_CACHE_TTL,
+  messagesCacheKeys,
+  peekCache,
+  putCache,
+} from '@/lib/data-cache';
 import { EmptyMascot } from '@/components/empty-mascot';
 
 const POLL_MS = 10_000;
@@ -58,36 +66,59 @@ type GroupConvo = {
 
 type Convo = DmConvo | GroupConvo;
 
+type InboxCache = {
+  convos: Convo[];
+  connections: PublicUser[];
+};
+
+type ThreadCache = {
+  dmMsgs: DmMessage[];
+  groupChat: { member: boolean; messages: ChatMessage[] } | null;
+};
+
 type TabFilter = 'All' | 'Unread' | 'Groups';
+
+function cacheInbox(userId: string, convos: Convo[], connections: PublicUser[]) {
+  putCache<InboxCache>(messagesCacheKeys(userId).inbox, { convos, connections }, MESSAGES_CACHE_TTL);
+}
+
+function cacheThread(userId: string, key: string, thread: ThreadCache) {
+  putCache<ThreadCache>(messagesCacheKeys(userId).thread(key), thread, MESSAGES_CACHE_TTL);
+}
 
 export default function MessagesPage() {
   const { user, loading } = useAuth();
   const isAdmin = isAdminRole(user?.role);
+  const cacheKeys = messagesCacheKeys(user?.id);
+  const seedInbox = peekCache<InboxCache>(cacheKeys.inbox);
 
-  // ---- unified convo list ----
-  const [convos, setConvos] = useState<Convo[]>([]);
-  const [connections, setConnections] = useState<PublicUser[]>([]);
-  const [convoLoading, setConvoLoading] = useState(true);
+  // ---- unified convo list — seed from SWR cache so revisits skip the skeleton ----
+  const [convos, setConvos] = useState<Convo[]>(() => seedInbox?.convos ?? []);
+  const [connections, setConnections] = useState<PublicUser[]>(() => seedInbox?.connections ?? []);
+  const [convoLoading, setConvoLoading] = useState(() => seedInbox == null);
 
-  // ---- selection — seed from ?dm=<userId> if present ----
+  // ---- selection — seed from ?dm=<userId>, else last inbox on desktop ----
   const [selectedKey, setSelectedKey] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
     const dm = new URLSearchParams(window.location.search).get('dm');
-    return dm ? `dm:${dm}` : null;
+    if (dm) return `dm:${dm}`;
+    const twoPane = window.matchMedia('(min-width: 1024px)').matches;
+    return twoPane ? (seedInbox?.convos[0]?.key ?? null) : null;
   });
 
-  // ---- DM thread state ----
-  const [dmMsgs, setDmMsgs] = useState<DmMessage[]>([]);
+  const seedThread = selectedKey
+    ? peekCache<ThreadCache>(cacheKeys.thread(selectedKey))
+    : undefined;
 
-  // ---- group thread state ----
+  // ---- DM / group thread — seed so opening a known chat is instant ----
+  const [dmMsgs, setDmMsgs] = useState<DmMessage[]>(() => seedThread?.dmMsgs ?? []);
   const [groupChat, setGroupChat] = useState<{ member: boolean; messages: ChatMessage[] } | null>(
-    null,
+    () => seedThread?.groupChat ?? null,
   );
 
   // ---- shared loading / send state ----
-  const [chatLoading, setChatLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(() => selectedKey != null && seedThread == null);
   const [body, setBody] = useState('');
-  const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
   // ---- search + tab ----
@@ -102,8 +133,10 @@ export default function MessagesPage() {
 
   const QUICK_EMOJIS = ['❤️', '👍', '😂', '🎉', '☕', '😮'];
 
-  const endRef = useRef<HTMLDivElement | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Number of sends in flight — poll results are skipped while > 0 so a stale
+  // fetch can't wipe an optimistic bubble before the server has it.
+  const inflightRef = useRef(0);
   const leftScrollRef = useFadeScrollbar();
   const centerScrollRef = useFadeScrollbar();
   const rightScrollRef = useFadeScrollbar();
@@ -114,6 +147,7 @@ export default function MessagesPage() {
   // unread badges / ordering update when new messages arrive.
   useEffect(() => {
     if (!user) return;
+    const uid = user.id;
     let active = true;
     const loadConvos = async () => {
       const [threads, groups, conns] = await Promise.all([
@@ -146,7 +180,15 @@ export default function MessagesPage() {
       setConvos(all);
       setConnections(conns);
       setConvoLoading(false);
-      setSelectedKey((prev) => prev ?? all[0]?.key ?? null);
+      cacheInbox(uid, all, conns);
+      // Desktop shows list + thread side by side, so pre-opening the newest
+      // thread is helpful. On small screens the thread replaces the list, so
+      // stay on the list until the user picks one.
+      setSelectedKey((prev) => {
+        if (prev) return prev;
+        const twoPane = window.matchMedia('(min-width: 1024px)').matches;
+        return twoPane ? (all[0]?.key ?? null) : null;
+      });
     };
     void loadConvos().catch(() => {
       if (active) setConvoLoading(false);
@@ -165,35 +207,52 @@ export default function MessagesPage() {
     void api
       .markGroupRead(tid)
       .then(() =>
-        setConvos((prev) =>
-          prev.map((c) => (c.key === selectedKey ? { ...c, unread: 0 } : c)),
-        ),
+        setConvos((prev) => {
+          const next = prev.map((c) => (c.key === selectedKey ? { ...c, unread: 0 } : c));
+          cacheInbox(user.id, next, connections);
+          return next;
+        }),
       )
       .catch(() => undefined);
-  }, [selectedKey, user]);
+  }, [selectedKey, user, connections]);
 
   // ---- load + poll selected thread ----
   useEffect(() => {
     if (!selectedKey || !user) return;
+    const uid = user.id;
+    const threadKey = selectedKey;
 
     let active = true;
 
     async function fetchThread(initial?: boolean) {
       if (initial) {
-        setChatLoading(true);
-        setDmMsgs([]);
-        setGroupChat(null);
+        const cached = peekCache<ThreadCache>(messagesCacheKeys(uid).thread(threadKey));
+        if (cached) {
+          setDmMsgs(cached.dmMsgs);
+          setGroupChat(cached.groupChat);
+          setChatLoading(false);
+        } else {
+          setChatLoading(true);
+          setDmMsgs([]);
+          setGroupChat(null);
+        }
         setSendError(null);
       }
       try {
-        if (selectedKey?.startsWith('dm:')) {
-          const uid = selectedKey.slice(3);
-          const msgs = await api.dmThread(uid);
-          if (active) setDmMsgs(msgs);
-        } else if (selectedKey?.startsWith('group:')) {
-          const tid = selectedKey.slice(6);
+        if (threadKey.startsWith('dm:')) {
+          const otherId = threadKey.slice(3);
+          const msgs = await api.dmThread(otherId);
+          if (active && (initial || inflightRef.current === 0)) {
+            setDmMsgs(msgs);
+            cacheThread(uid, threadKey, { dmMsgs: msgs, groupChat: null });
+          }
+        } else if (threadKey.startsWith('group:')) {
+          const tid = threadKey.slice(6);
           const res = await api.tableChat(tid);
-          if (active) setGroupChat(res);
+          if (active && (initial || inflightRef.current === 0)) {
+            setGroupChat(res);
+            cacheThread(uid, threadKey, { dmMsgs: [], groupChat: res });
+          }
         }
       } finally {
         if (initial && active) setChatLoading(false);
@@ -213,10 +272,16 @@ export default function MessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKey, user?.id]);
 
-  // ---- scroll to bottom on new messages ----
+  // ---- keep the thread pinned to the newest message ----
+  // Scroll the messages pane only (never the page): scrollIntoView would also
+  // move the window whenever the pane isn't fully in view.
+  const dmCount = dmMsgs.length;
+  const groupCount = groupChat?.messages.length ?? 0;
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [dmMsgs.length, groupChat?.messages.length]);
+    const el = centerScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [dmCount, groupCount, chatLoading, centerScrollRef]);
 
   if (!loading && !user)
     return (
@@ -231,50 +296,143 @@ export default function MessagesPage() {
   if (!user) return null;
   if (convoLoading) return <MessagesSkeleton />;
 
-  // ---- send ----
+  // ---- send (optimistic) ----
+  // The bubble appears the instant the user hits send; the composer clears and
+  // stays enabled so they can keep typing. The server copy replaces the
+  // placeholder when it lands; on failure the placeholder is removed and the
+  // text is restored to the input.
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const text = body.trim();
-    if (!text || !selectedKey) return;
-    setSending(true);
+    if (!text || !selectedKey || !user) return;
+
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+    const me = user;
+
+    setBody('');
     setSendError(null);
+    inflightRef.current += 1;
+
+    const bumpInbox = () => {
+      setConvos((prev) => {
+        const next = prev
+          .map((c) => (c.key === selectedKey ? { ...c, last: text, time: now, unread: 0 } : c))
+          .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        cacheInbox(me.id, next, connections);
+        return next;
+      });
+    };
+
     try {
       if (selectedKey.startsWith('dm:')) {
         const uid = selectedKey.slice(3);
-        await api.sendDm(uid, text);
-        setBody('');
-        const msgs = await api.dmThread(uid);
-        setDmMsgs(msgs);
+        const placeholder: DmMessage = {
+          id: tempId,
+          senderId: me.id,
+          recipientId: uid,
+          body: text,
+          createdAt: now,
+          readAt: null,
+          reactions: [],
+        };
+        setDmMsgs((prev) => {
+          const next = [...prev, placeholder];
+          cacheThread(me.id, selectedKey, { dmMsgs: next, groupChat: null });
+          return next;
+        });
+        bumpInbox();
+        try {
+          const saved = await api.sendDm(uid, text);
+          setDmMsgs((prev) => {
+            const next = prev.map((m) => (m.id === tempId ? saved : m));
+            cacheThread(me.id, selectedKey, { dmMsgs: next, groupChat: null });
+            return next;
+          });
+        } catch (err) {
+          setDmMsgs((prev) => prev.filter((m) => m.id !== tempId));
+          throw err;
+        }
       } else if (selectedKey.startsWith('group:')) {
         const tid = selectedKey.slice(6);
-        await api.sendTableMessage(tid, text);
-        setBody('');
-        const res = await api.tableChat(tid);
-        setGroupChat(res);
+        const placeholder: ChatMessage = {
+          id: tempId,
+          userId: me.id,
+          body: text,
+          createdAt: now,
+          username: me.username ?? null,
+          reactions: [],
+        };
+        setGroupChat((prev) => {
+          const next = prev ? { ...prev, messages: [...prev.messages, placeholder] } : prev;
+          if (next) cacheThread(me.id, selectedKey, { dmMsgs: [], groupChat: next });
+          return next;
+        });
+        bumpInbox();
+        try {
+          await api.sendTableMessage(tid, text);
+          const res = await api.tableChat(tid);
+          setGroupChat(res);
+          cacheThread(me.id, selectedKey, { dmMsgs: [], groupChat: res });
+        } catch (err) {
+          setGroupChat((prev) =>
+            prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== tempId) } : prev,
+          );
+          throw err;
+        }
       }
     } catch (err) {
       setSendError(err instanceof ApiError ? err.message : 'Could not send');
+      setBody((current) => (current.trim() ? current : text));
     } finally {
-      setSending(false);
+      inflightRef.current = Math.max(0, inflightRef.current - 1);
     }
   }
 
   // ---- reaction toggle ----
   async function toggleReaction(messageId: string, emoji: string) {
     const kind = selected?.kind === 'dm' ? 'dm' : 'group';
-    try {
-      const updated = await api.toggleReaction(kind, messageId, emoji);
+    if (messageId.startsWith('tmp-')) return; // placeholder not yet saved
+
+    // Optimistic: apply the toggle locally now, reconcile with the server after.
+    const applyReactions = (
+      update: (current: ReactionSummary[] | undefined) => ReactionSummary[] | undefined,
+    ) => {
       if (kind === 'dm') {
-        setDmMsgs((prev) => prev.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)));
+        setDmMsgs((prev) =>
+          prev.map((m) => (m.id === messageId ? { ...m, reactions: update(m.reactions) } : m)),
+        );
       } else {
         setGroupChat((prev) =>
           prev
-            ? { ...prev, messages: prev.messages.map((m) => (m.id === messageId ? { ...m, reactions: updated } : m)) }
+            ? {
+                ...prev,
+                messages: prev.messages.map((m) =>
+                  m.id === messageId ? { ...m, reactions: update(m.reactions) } : m,
+                ),
+              }
             : prev,
         );
       }
-    } catch { /* ignore */ }
+    };
+
+    const previous =
+      kind === 'dm'
+        ? dmMsgs.find((m) => m.id === messageId)?.reactions
+        : groupChat?.messages.find((m) => m.id === messageId)?.reactions;
+
     setReactPickerId(null);
+    applyReactions((current) => toggleReactionLocally(current, emoji));
+    inflightRef.current += 1; // keep the poll from overwriting the optimistic state
+
+    try {
+      const updated = await api.toggleReaction(kind, messageId, emoji);
+      applyReactions(() => updated);
+    } catch {
+      applyReactions(() => previous);
+    } finally {
+      inflightRef.current = Math.max(0, inflightRef.current - 1);
+    }
   }
 
   // ---- derived ----
@@ -298,7 +456,9 @@ export default function MessagesPage() {
 
   return (
     <main className="mx-auto w-full max-w-[1508px] flex-1 px-4 sm:px-6 lg:px-12 py-4">
-      <div className="grid gap-4 lg:h-[calc(100dvh-6rem)] lg:grid-cols-[330px_1fr_300px]">
+      {/* Height = viewport − shell nav pad (5.75rem) − main py-4 (2rem), so the
+          thread pane is the scroller and the page itself never scrolls. */}
+      <div className="grid gap-4 lg:h-[calc(100dvh-7.75rem)] lg:grid-cols-[330px_1fr_300px]">
 
         {/* ========== LEFT — conversations panel ========== */}
         <aside
@@ -475,7 +635,7 @@ export default function MessagesPage() {
         {/* ========== CENTER — thread ========== */}
         {selected ? (
           <section
-            className="bg-card shadow-soft flex min-h-[70dvh] flex-col overflow-hidden rounded-3xl border lg:min-h-0"
+            className="bg-card shadow-soft flex flex-col overflow-hidden rounded-3xl border max-lg:h-[calc(100dvh-11.125rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:min-h-0"
             onClick={() => setPickerOpen(false)}
           >
             {/* thread header */}
@@ -790,7 +950,6 @@ export default function MessagesPage() {
                   })}
                 </>
               )}
-              <div ref={endRef} />
             </div>
 
             {/* composer */}
@@ -816,8 +975,7 @@ export default function MessagesPage() {
                     }}
                     placeholder="Type a message…"
                     maxLength={1000}
-                    disabled={sending}
-                    className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+                    className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground/60"
                   />
                   <button
                     type="button"
@@ -828,7 +986,7 @@ export default function MessagesPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={sending || !body.trim()}
+                    disabled={!body.trim()}
                     className="bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-full transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                     aria-label="Send"
                   >
