@@ -4,6 +4,10 @@ All notable UI/product changes are logged here.
 
 ## [Unreleased]
 
+### 2026-09-12 — Space below desktop nav
+
+- App shell reserves 1.5rem of breathing room under the fixed desktop header (`md:pt-[5.75rem]`), so page content no longer sits flush against the navbar.
+
 ### 2026-09-12 — CI green: lint, prerender, Prisma generate
 
 - Web: resolved React Compiler lint errors (no synchronous `setState` in effects, no ref reads during render) in loader, drawer, mobile top bar, tables map, device-location hook, and admin featured/newsletter pages using adjust-state-during-render or deferred callbacks. Behavior unchanged.
